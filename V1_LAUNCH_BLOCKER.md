@@ -1,17 +1,17 @@
 # PI V1 Launch Blocker
 
 ## Objective
-Restore genuine live model-backed customer answers without weakening the V1 launch gate.
+Restore genuine live model-backed customer answers on the public PI chat path without weakening the V1 launch gate.
 
-## Observed blocker
-Deployment and CORS pass, but live customer smoke currently falls back to deterministic recovery with `providerFailure=chat_provider_rate_limited`, producing zero live-model answers.
+## Observed failure
+The prior deployed Worker passed deployment and CORS checks but live customer smoke returned deterministic recovery for all customer questions, with `providerFailure=chat_provider_rate_limited` and zero live model-backed answers.
 
-## Execution rule
-Diagnose the actual provider/model failure, implement the smallest reliable fix, test it, run regression, and repeat until the live customer path passes. Deterministic recovery must remain an emergency fallback and must never count as live-model success.
+## Current repair
+- Workers AI uses the documented fast Llama 3.1 model as primary.
+- Edge inference is routed through the account `default` AI Gateway.
+- Edge model alternatives are attempted sequentially rather than concurrently to avoid multiplying rate-limit pressure.
+- OpenAI remains a sequential fallback.
+- Deterministic recovery remains emergency-only and never counts as live-model success.
 
-## Next path
-1. Inspect Workers AI invocation and configured model behavior.
-2. Use documented, available model configuration.
-3. If rate/capacity remains the blocker, evaluate AI Gateway routing/observability.
-4. Keep CORS, security, owner-only gates, and live-model launch criteria intact.
-5. Certify only after same-commit live customer smoke and regression gates pass.
+## Certification rule
+V1 is not launch-ready until a fresh same-commit deployment passes the live customer smoke with at least one genuine model-backed response, then the full V1 regression and release gates pass on the same release candidate.
