@@ -48,3 +48,8 @@ assert.equal(grounded.sources[0].url, 'https://example.com/source');
 const fileGrounded = chatOutcome(ok, { ok: true, status: 'answered', answer: 'The attached document says revenue grew 20%.', truth: 'file-grounded-model-response' });
 assert.equal(fileGrounded.complete, true);
 assert.match(fileGrounded.note, /attached file or image/i);
+
+const provisional = chatOutcome(ok, { ok: true, status: 'answered', answer: 'Exact runway needs monthly burn. With current facts, annual gross profit is $700k.', truth: 'provisional-model-response' });
+assert.equal(provisional.complete, false);
+assert.equal(provisional.state, 'limited');
+assert.match(provisional.note, /verification did not complete/i);
