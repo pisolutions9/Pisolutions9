@@ -161,7 +161,7 @@ const zipBody=await zipFollowup.json();
 globalThis.fetch=originalFetchForFollowup;
 assert.equal(zipFollowup.status,200);
 assert.equal(zipBody.truth,'web-grounded-model-response');
-assert.match(webBody.input.at(-1).content,/36609/);
+assert.match(webBody.input.at(-1).content,/36609/);assert.equal(webBody.tool_choice,'required');
 assert.equal(zipBody.sources.length,1);
 
 let clarificationFetch;
@@ -177,6 +177,22 @@ const clarificationBody=await clarification.json();
 globalThis.fetch=originalFetchForFollowup;
 assert.equal(clarificationBody.truth,'model-response');
 assert.deepEqual(clarificationBody.sources,[]);
+
+let unverifiedFetch;
+globalThis.fetch=async(url,options)=>{
+  if(String(url).includes('api.openai.com/v1/responses')){
+    unverifiedFetch=JSON.parse(options.body);
+    return new Response(JSON.stringify({output_text:'Mobile weather is 91°F and sunny.',output:[]}),{status:200,headers:{'content-type':'application/json'}});
+  }
+  return originalFetchForFollowup(url,options);
+};
+const unverifiedLive=await worker.fetch(request({message:'What is the weather today in Mobile, Alabama?'}),{OPENAI_API_KEY:'test-key'});
+const unverifiedBody=await unverifiedLive.json();
+globalThis.fetch=originalFetchForFollowup;
+assert.equal(unverifiedFetch.tool_choice,'required');
+assert.equal(unverifiedLive.status,503);
+assert.equal(unverifiedBody.error,'live_research_unverified');
+assert.equal(unverifiedBody.truth,'unknown');
 
 let normalModels=[];
 const distributedEnv={AI:{run:async(model)=>{normalModels.push(model);return {response:'A complete customer answer that is comfortably longer than the minimum response threshold for this routing contract.'};}}};
