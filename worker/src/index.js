@@ -14,9 +14,9 @@ const PROVIDER_TIMEOUT_MS = 20000;
 const EDGE_TIMEOUT_MS = 4000;
 const CHAT_REQUEST_BUDGET_MS = 20000;
 const HARD_REASONING_BUDGET_MS = 17500;
-const HARD_CANDIDATE_STAGE_MS = 4500;
+const HARD_CANDIDATE_STAGE_MS = 6500;
 const HARD_REVIEW_STAGE_MS = 4500;
-const HARD_FINAL_STAGE_MS = 4000;
+const HARD_FINAL_STAGE_MS = 3500;
 const DEFAULT_EDGE_MODEL = '@cf/zai-org/glm-4.7-flash';
 const EDGE_MODEL_FALLBACKS = [
   '@cf/openai/gpt-oss-20b',
@@ -83,11 +83,43 @@ async function callProvider({apiKey,model,baseUrl,message,history=[],timeoutMs=P
 function extractAnswer(body){return body?.output_text?.trim()||body?.output?.flatMap(item=>item?.content||[]).find(part=>part?.type==='output_text')?.text?.trim();}
 function extractSources(body){const found=new Map();for(const item of body?.output||[]){if(item?.type==='web_search_call'){for(const source of item?.action?.sources||[]){if(source?.url)found.set(source.url,{url:source.url,title:source.title||source.url});}}for(const part of item?.content||[]){for(const annotation of part?.annotations||[]){const value=annotation?.url_citation||annotation;if(value?.url)found.set(value.url,{url:value.url,title:value.title||value.url});}}}return [...found.values()].slice(0,8);}
 function extractEdgeAnswer(result){if(typeof result==='string')return result.trim()||null;const candidates=[result?.response,result?.output_text,result?.result?.response,result?.result?.output_text,result?.choices?.[0]?.message?.content];for(const value of candidates){if(typeof value==='string'&&value.trim())return value.trim();if(Array.isArray(value)){const text=value.map(part=>typeof part==='string'?part:(part?.text||part?.content||'')).join('').trim();if(text)return text;}}return null;}
-async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INSTRUCTIONS,maxTokens=MAX_OUTPUT_TOKENS,timeoutMs=EDGE_TIMEOUT_MS}={}){const input={messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:maxTokens};const work=env.AI.run(model,input,{gateway:{id:'default',skipCache:false},rejectIfBusy:true});let timer;const boundedTimeout=Math.max(1,Math.min(EDGE_TIMEOUT_MS,timeoutMs));const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`edge model timeout: ${model}`)),boundedTimeout);});try{return await Promise.race([work,timeout]);}finally{clearTimeout(timer);}}
+async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INSTRUCTIONS,maxTokens=MAX_OUTPUT_TOKENS,timeoutMs=EDGE_TIMEOUT_MS,rejectIfBusy=true}={}){const input={messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:maxTokens};const options={gateway:{id:'default',skipCache:false},...(rejectIfBusy?{rejectIfBusy:true}:{})};const work=env.AI.run(model,input,options);let timer;const boundedTimeout=Math.max(1,timeoutMs);const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`edge model timeout: ${model}`)),boundedTimeout);});try{return await Promise.race([work,timeout]);}finally{clearTimeout(timer);}}
 function edgeResultIncomplete(result,maxTokens){const finishReasons=[result?.finish_reason,result?.choices?.[0]?.finish_reason,result?.result?.finish_reason,result?.result?.choices?.[0]?.finish_reason];if(finishReasons.some(reason=>['length','max_tokens','max_output_tokens'].includes(reason)))return true;const usages=[result?.usage,result?.result?.usage].filter(Boolean);return usages.some(usage=>[usage.completion_tokens,usage.output_tokens,usage.tokens_generated].some(value=>Number.isFinite(value)&&value>=maxTokens));}
 async function callWorkersAI(env,message,history,{preferStrong=false,instructions=PI_INSTRUCTIONS,deadline=null}={}){if(!env.AI||typeof env.AI.run!=='function')return null;const configured=env.PI_EDGE_MODEL||DEFAULT_EDGE_MODEL;const models=preferStrong
   ? [...new Set(['@cf/zai-org/glm-4.7-flash','@cf/openai/gpt-oss-120b','@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it',configured].filter(Boolean))]
-  : [...new Set([configured,...EDGE_MODEL_FALLBACKS].filter(Boolean))];for(const model of models){try{const timeLeft=deadline?remainingBudget(deadline):EDGE_TIMEOUT_MS;if(timeLeft<=0)return null;const result=await runEdgeWithTimeout(env,model,message,history,{instructions,timeoutMs:timeLeft});const answer=extractEdgeAnswer(result);if(answer){const incomplete=edgeResultIncomplete(result,MAX_OUTPUT_TOKENS);if(!incomplete)return {answer,model,incomplete:false};try{const compactTimeLeft=deadline?remainingBudget(deadline):EDGE_TIMEOUT_MS;if(compactTimeLeft<=0)return {answer,model,incomplete:true};const compactResult=await runEdgeWithTimeout(env,model,message,history,{instructions:instructions===PI_INSTRUCTIONS?COMPACT_RETRY_INSTRUCTIONS:instructions,maxTokens:COMPACT_OUTPUT_TOKENS,timeoutMs:compactTimeLeft});const compactAnswer=extractEdgeAnswer(compactResult);if(compactAnswer&&!edgeResultIncomplete(compactResult,COMPACT_OUTPUT_TOKENS))return {answer:compactAnswer,model,incomplete:false,recoveredFrom:'output_limit'};}catch(error){console.error(`Workers AI compact retry failed: ${model}`,error instanceof Error?error.message:String(error));}return {answer,model,incomplete:true};}console.error(`Workers AI empty response: ${model}`);}catch(error){console.error(`Workers AI model failed: ${model}`,error instanceof Error?error.message:String(error));}await new Promise(resolve=>setTimeout(resolve,25));}return null;}
+  : [...new Set([configured,...EDGE_MODEL_FALLBACKS].filter(Boolean))];
+  const tryResult=async(model,rejectIfBusy,timeoutMs)=>{
+    const result=await runEdgeWithTimeout(env,model,message,history,{instructions,timeoutMs,rejectIfBusy});
+    const answer=extractEdgeAnswer(result);
+    if(!answer){console.error(`Workers AI empty response: ${model}`);return null;}
+    const incomplete=edgeResultIncomplete(result,MAX_OUTPUT_TOKENS);
+    if(!incomplete)return {answer,model,incomplete:false};
+    try{
+      const compactTimeLeft=deadline?remainingBudget(deadline):EDGE_TIMEOUT_MS;
+      if(compactTimeLeft<=0)return {answer,model,incomplete:true};
+      const compactResult=await runEdgeWithTimeout(env,model,message,history,{instructions:instructions===PI_INSTRUCTIONS?COMPACT_RETRY_INSTRUCTIONS:instructions,maxTokens:COMPACT_OUTPUT_TOKENS,timeoutMs:Math.min(compactTimeLeft,EDGE_TIMEOUT_MS),rejectIfBusy});
+      const compactAnswer=extractEdgeAnswer(compactResult);
+      if(compactAnswer&&!edgeResultIncomplete(compactResult,COMPACT_OUTPUT_TOKENS))return {answer:compactAnswer,model,incomplete:false,recoveredFrom:'output_limit'};
+    }catch(error){console.error(`Workers AI compact retry failed: ${model}`,error instanceof Error?error.message:String(error));}
+    return {answer,model,incomplete:true};
+  };
+  for(const model of models){
+    try{
+      const timeLeft=deadline?remainingBudget(deadline):EDGE_TIMEOUT_MS;
+      if(timeLeft<=0)return null;
+      const result=await tryResult(model,true,Math.min(timeLeft,EDGE_TIMEOUT_MS));
+      if(result)return result;
+    }catch(error){console.error(`Workers AI fast-capacity attempt failed: ${model}`,error instanceof Error?error.message:String(error));}
+    await new Promise(resolve=>setTimeout(resolve,25));
+  }
+  const queuedTimeLeft=deadline?remainingBudget(deadline):EDGE_TIMEOUT_MS;
+  if(queuedTimeLeft<1200)return null;
+  const queuedModel=preferStrong?'@cf/zai-org/glm-4.7-flash':configured;
+  try{
+    const result=await tryResult(queuedModel,false,queuedTimeLeft);
+    if(result)return {...result,recoveredFrom:result.recoveredFrom||'capacity-queue'};
+  }catch(error){console.error(`Workers AI bounded queue attempt failed: ${queuedModel}`,error instanceof Error?error.message:String(error));}
+  return null;}
 async function reviewHardAnswer(env,message,history,candidate,candidateModel,deadline=Date.now()+HARD_REVIEW_STAGE_MS){
   if(!env.AI||typeof env.AI.run!=='function')return {ok:false,reason:'reviewer_unavailable'};
   const reviewPrompt=`QUESTION:\n${message}\n\nCANDIDATE ANSWER:\n${candidate}\n\nReview independently. If materially wrong, return CORRECT followed by the full corrected answer.`;
