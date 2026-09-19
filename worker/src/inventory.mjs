@@ -1,6 +1,9 @@
 // A bounded tool: only explicit item,quantity,unit_price rows are accepted.
 export function planInventory(message) {
-  if (!/\bcsv\b/i.test(message)) return null;
+  // Only explicit file-creation requests enter this tool. Mentioning an existing
+  // CSV in a conversational follow-up must remain normal chat so history works.
+  const explicitCsvCreation = /\b(?:create|make|generate|build|export|produce|download)\b[^\n]{0,80}\bcsv\b|\bcsv\b[^\n]{0,80}\b(?:create|make|generate|build|export|produce|download)\b/i;
+  if (!explicitCsvCreation.test(message)) return null;
   const rows = [];
   const pattern = /(?:^|[\n;:]|\band\b)\s*([\p{L}][\p{L}\p{N} _-]{0,79})\s*,\s*(\d+)\s*,\s*(\d+(?:\.\d{1,2})?)(?=\s*(?:$|[\n;]|\.(?!\d)|\band\b))/gu;
   for (const match of message.matchAll(pattern)) {
