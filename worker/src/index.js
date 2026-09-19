@@ -40,17 +40,18 @@ function rateLimitHeaders(response){const headers={};for(const name of['x-rateli
 async function callProvider({apiKey,model,baseUrl,message,history=[]}){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),PROVIDER_TIMEOUT_MS);try{return await fetch(`${baseUrl.replace(/\/$/,'')}/responses`,{method:'POST',headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},body:JSON.stringify({model,store:false,max_output_tokens:MAX_OUTPUT_TOKENS,instructions:PI_INSTRUCTIONS,input:[...history,{role:'user',content:message}]}),signal:controller.signal});}finally{clearTimeout(timer);}}
 function extractAnswer(body){return body?.output_text?.trim()||body?.output?.flatMap(item=>item?.content||[]).find(part=>part?.type==='output_text')?.text?.trim();}
 function extractEdgeAnswer(result){if(typeof result==='string')return result.trim()||null;const candidates=[result?.response,result?.output_text,result?.result?.response,result?.result?.output_text,result?.choices?.[0]?.message?.content];for(const value of candidates){if(typeof value==='string'&&value.trim())return value.trim();if(Array.isArray(value)){const text=value.map(part=>typeof part==='string'?part:(part?.text||part?.content||'')).join('').trim();if(text)return text;}}return null;}
-async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INSTRUCTIONS,maxTokens=MAX_OUTPUT_TOKENS}={}){const input={messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:maxTokens};const work=env.AI.run(model,input,{gateway:{id:'default',skipCache:false}});let timer;const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`edge model timeout: ${model}`)),EDGE_TIMEOUT_MS);});try{return await Promise.race([work,timeout]);}finally{clearTimeout(timer);}}
+async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INSTRUCTIONS,maxTokens=MAX_OUTPUT_TOKENS,timeoutMs=EDGE_TIMEOUT_MS}={}){const input={messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:maxTokens};const work=env.AI.run(model,input,{gateway:{id:'default',skipCache:false}});let timer;const boundedTimeout=Math.max(1,Math.min(EDGE_TIMEOUT_MS,timeoutMs));const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`edge model timeout: ${model}`)),boundedTimeout);});try{return await Promise.race([work,timeout]);}finally{clearTimeout(timer);}}
 function edgeResultIncomplete(result,maxTokens){const finishReasons=[result?.finish_reason,result?.choices?.[0]?.finish_reason,result?.result?.finish_reason,result?.result?.choices?.[0]?.finish_reason];if(finishReasons.some(reason=>['length','max_tokens','max_output_tokens'].includes(reason)))return true;const usages=[result?.usage,result?.result?.usage].filter(Boolean);return usages.some(usage=>[usage.completion_tokens,usage.output_tokens,usage.tokens_generated].some(value=>Number.isFinite(value)&&value>=maxTokens));}
 async function callWorkersAI(env,message,history,{preferStrong=false,instructions=PI_INSTRUCTIONS}={}){if(!env.AI||typeof env.AI.run!=='function')return null;const configured=env.PI_EDGE_MODEL||DEFAULT_EDGE_MODEL;const models=preferStrong
   ? [...new Set(['@cf/meta/llama-3.3-70b-instruct-fp8-fast','@cf/zai-org/glm-4.7-flash',configured].filter(Boolean))]
   : [...new Set([configured,...EDGE_MODEL_FALLBACKS].filter(Boolean))];for(const model of models){try{const result=await runEdgeWithTimeout(env,model,message,history,{instructions});const answer=extractEdgeAnswer(result);if(answer){const incomplete=edgeResultIncomplete(result,MAX_OUTPUT_TOKENS);if(!incomplete)return {answer,model,incomplete:false};try{const compactResult=await runEdgeWithTimeout(env,model,message,history,{instructions:instructions===PI_INSTRUCTIONS?COMPACT_RETRY_INSTRUCTIONS:instructions,maxTokens:COMPACT_OUTPUT_TOKENS});const compactAnswer=extractEdgeAnswer(compactResult);if(compactAnswer&&!edgeResultIncomplete(compactResult,COMPACT_OUTPUT_TOKENS))return {answer:compactAnswer,model,incomplete:false,recoveredFrom:'output_limit'};}catch(error){console.error(`Workers AI compact retry failed: ${model}`,error instanceof Error?error.message:String(error));}return {answer,model,incomplete:true};}console.error(`Workers AI empty response: ${model}`);}catch(error){console.error(`Workers AI model failed: ${model}`,error instanceof Error?error.message:String(error));}await new Promise(resolve=>setTimeout(resolve,250));}return null;}
-async function verifyHardAnswer(env,message,history,candidate){
+async function verifyHardAnswer(env,message,history,candidate,deadline=Date.now()+HARD_REQUEST_BUDGET_MS){
   if(!env.AI||typeof env.AI.run!=='function')return {ok:false,reason:'verifier_unavailable'};
   const verificationPrompt=`QUESTION:\n${message}\n\nCANDIDATE ANSWER:\n${candidate}\n\nVerify independently.`;
   for(const model of ['@cf/zai-org/glm-4.7-flash','@cf/meta/llama-3.3-70b-instruct-fp8-fast']){
     try{
-      const result=await runEdgeWithTimeout(env,model,verificationPrompt,history,{instructions:VERIFY_INSTRUCTIONS,maxTokens:900});
+      const timeLeft=remainingBudget(deadline);if(timeLeft<=0)return {ok:false,reason:'verification_deadline_exceeded'};
+      const result=await runEdgeWithTimeout(env,model,verificationPrompt,history,{instructions:VERIFY_INSTRUCTIONS,maxTokens:900,timeoutMs:timeLeft});
       const verdict=extractEdgeAnswer(result);
       if(!verdict)continue;
       if(/^PASS\b/i.test(verdict))return {ok:true,model};
@@ -64,14 +65,14 @@ async function produceVerifiedHardAnswer(env,message,history){
   const deadline=Date.now()+HARD_REQUEST_BUDGET_MS;
   const first=await callWorkersAI(env,message,history,{preferStrong:true,instructions:HARD_REASONING_INSTRUCTIONS});
   if(!first||first.incomplete||remainingBudget(deadline)<EDGE_TIMEOUT_MS)return null;
-  const check=await verifyHardAnswer(env,message,history,first.answer);
+  const check=await verifyHardAnswer(env,message,history,first.answer,deadline);
   if(check.ok)return {...first,verified:true,verifier:check.model};
   if(remainingBudget(deadline)<EDGE_TIMEOUT_MS)return null;
   const correction=check.reason||'Independent verification found a material defect. Recompute and correct the answer.';
   const retryMessage=`${message}\n\nIndependent verification rejected the previous draft. Correction brief:\n${correction}\nProduce a corrected self-contained answer. Recalculate from the original facts and do not repeat the rejected error.`;
   const revised=await callWorkersAI(env,retryMessage,history,{preferStrong:true,instructions:HARD_REASONING_INSTRUCTIONS});
   if(!revised||revised.incomplete)return null;
-  const recheck=await verifyHardAnswer(env,message,history,revised.answer);
+  const recheck=await verifyHardAnswer(env,message,history,revised.answer,deadline);
   return recheck.ok?{...revised,verified:true,verifier:recheck.model,recoveredFrom:'verification'}:null;
 }
 function recoveryResponse(message,request,failure){const answer=deterministicFallback(message);if(!answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return json({ok:true,answer,source:'pi-chat-deterministic-recovery',truth:'deterministic',providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,headers);}
