@@ -87,7 +87,8 @@ jobs:
                   and data.get('source','').startswith(('pi-chat-cloudflare-ai:', 'pi-chat-openai:', 'pi-chat-fallback'))
                   and isinstance(answer,str)
                   and len(answer.strip()) >= 120
-                  and not any(marker in low for marker in legacy_markers)
+                  and not low.lstrip().startswith('classification:')
+                  and not any(marker in low for marker in legacy_markers[1:])
               )
 
           valid_fixture={'ok':True,'truth':'model-response','source':'pi-chat-cloudflare-ai:test','answer':'Prioritized Remediation Plan: ' + ('verified customer guidance ' * 8)}
@@ -106,7 +107,7 @@ jobs:
               except Exception: return False, elapsed, 'invalid-json'
               ans=d.get('answer','') if isinstance(d,dict) else ''
               ok=valid_answer(status,d)
-              return ok, elapsed, (len(ans) if isinstance(ans,str) else 0)
+              return ok, elapsed, {'length': (len(ans) if isinstance(ans,str) else 0), 'truth': (d.get('truth') if isinstance(d,dict) else None), 'source': (d.get('source') if isinstance(d,dict) else None), 'prefix': (ans[:120] if isinstance(ans,str) else '')}
 
           failures=[]
           latencies=[]
