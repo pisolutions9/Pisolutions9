@@ -211,15 +211,22 @@ const coldBody=await (await worker.fetch(request({message:'Calculate cold-path r
 assert.equal(coldBody.truth,'verified-model-response');
 assert.equal(coldCalls,2);
 
-// A complete review can use time the candidate did not consume.
-const delayedReview=await (await worker.fetch(request({message:'Calculate a review-budget scenario.'}),{AI:{run:async(_model,input)=>{
+// A congested first reviewer must not consume the whole review budget.
+let delayedReviewCalls=[];
+const delayedReview=await (await worker.fetch(request({message:'Calculate a review-budget scenario.'}),{AI:{run:async(model,input)=>{
+  delayedReviewCalls.push(model);
   if(input.messages[0].content.includes('independent reviewer')){
-    await new Promise(resolve=>setTimeout(resolve,5700));
-    return {response:'PASS',finish_reason:'stop',usage:{completion_tokens:850}};
+    if(model==='@cf/qwen/qwen3-30b-a3b-fp8'){
+      await new Promise(resolve=>setTimeout(resolve,4200));
+      return {response:'PASS',finish_reason:'stop',usage:{completion_tokens:850}};
+    }
+    return {response:'PASS',finish_reason:'stop',usage:{completion_tokens:120}};
   }
   return {response:'A complete candidate answer.',finish_reason:'stop'};
 }}})).json();
 assert.equal(delayedReview.truth,'verified-model-response');
+assert.ok(delayedReviewCalls.includes('@cf/qwen/qwen3-30b-a3b-fp8'));
+assert.ok(delayedReviewCalls.includes('@cf/openai/gpt-oss-20b') || delayedReviewCalls.includes('@cf/google/gemma-4-26b-a4b-it'));
 
 // Truncated output cannot certify an answer, including a visible PASS prefix.
 for(const verdict of ['PASS','CORRECT\nAn incomplete correction']){
