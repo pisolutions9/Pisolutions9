@@ -8,6 +8,9 @@ const history=[{role:'user',content:'My budget is 73000 rupees.'},{role:'assista
 let result=await (await worker.fetch(request({message:'What was my budget?',history}),env)).json();
 assert.equal(result.truth,'model-response');assert.deepEqual(seen.messages.slice(1,-1),history);
 assert.ok(seen.max_tokens>=2048);
+const technicalResponse=await worker.fetch(request({message:'Explain quantum computing to a software engineer. Compare it with classical computing, give one concrete example where it could matter, and clearly separate what is practical today from what is still experimental.'}),env);
+const technicalBody=await technicalResponse.json();
+assert.equal(technicalResponse.status,200);assert.equal(technicalBody.ok,true);assert.ok(technicalBody.answer);
 const liveResponse=await worker.fetch(request({message:`What's the weather today?`}),env);
 const liveBody=await liveResponse.json();
 assert.equal(liveResponse.status,503);assert.equal(liveBody.status,'live_evidence_required');assert.equal(liveBody.truth,'unknown');assert.equal(liveBody.error,'live_data_connector_not_configured');
