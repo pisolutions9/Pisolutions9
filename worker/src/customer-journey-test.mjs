@@ -30,8 +30,8 @@ const hardEnv={AI:{run:async(model,input)=>{
 const hardResponse=await worker.fetch(request({message:'Calculate a Bayesian posterior probability with two independent positive tests and show enough calculations to audit the answer.'}),hardEnv);
 const hardBody=await hardResponse.json();
 assert.equal(hardResponse.status,200);assert.equal(hardBody.truth,'verified-model-response');assert.equal(hardBody.verification,'independent-pass');
-assert.equal(hardCalls[0].model,'@cf/zai-org/glm-4.7-flash');
-assert.equal(hardCalls[1].model,'@cf/openai/gpt-oss-20b');
+assert.equal(hardCalls[0].model,'@cf/openai/gpt-oss-20b');
+assert.equal(hardCalls[1].model,'@cf/zai-org/glm-4.7-flash');
 assert.notEqual(hardCalls[0].model,hardCalls[1].model);
 assert.match(hardCalls[0].input.messages[0].content,/net burn/i);
 assert.match(hardCalls[0].input.messages[0].content,/source of truth/i);
@@ -49,8 +49,8 @@ const corrected=await worker.fetch(request({message:'Calculate a Bayesian poster
 const correctedBody=await corrected.json();
 assert.equal(corrected.status,200);assert.equal(correctedBody.truth,'verified-model-response');assert.equal(correctedBody.verification,'independent-pass');
 assert.match(correctedBody.answer,/67\.37%/);assert.equal(correctionCalls.length,3);
-assert.equal(correctionCalls[0].model,'@cf/zai-org/glm-4.7-flash');
-assert.equal(correctionCalls[1].model,'@cf/openai/gpt-oss-20b');
+assert.equal(correctionCalls[0].model,'@cf/openai/gpt-oss-20b');
+assert.equal(correctionCalls[1].model,'@cf/zai-org/glm-4.7-flash');
 assert.notEqual(correctionCalls[2].model,correctionCalls[0].model);assert.notEqual(correctionCalls[2].model,correctionCalls[1].model);
 
 let rejectCalls=0;
