@@ -33,6 +33,8 @@ assert.equal(hardResponse.status,200);assert.equal(hardBody.truth,'verified-mode
 assert.equal(hardCalls[0].model,'@cf/openai/gpt-oss-20b');
 assert.equal(hardCalls[1].model,'@cf/zai-org/glm-4.7-flash');
 assert.notEqual(hardCalls[0].model,hardCalls[1].model);
+assert.equal(hardCalls[0].input.max_tokens,700);
+assert.match(hardCalls[0].input.messages[0].content,/350-500 words/i);
 assert.match(hardCalls[0].input.messages[0].content,/net burn/i);
 assert.match(hardCalls[0].input.messages[0].content,/source of truth/i);
 assert.match(hardCalls[1].input.messages[0].content,/clearly labeled illustrative assumption/i);
