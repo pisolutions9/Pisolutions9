@@ -36,10 +36,14 @@ const correctionEnv={AI:{run:async(model,input)=>{
 const corrected=await worker.fetch(request({message:'Calculate a Bayesian posterior probability and show enough calculations to audit the answer.'}),correctionEnv);
 const correctedBody=await corrected.json();
 assert.equal(corrected.status,200);assert.equal(correctedBody.truth,'verified-model-response');assert.equal(correctedBody.verification,'independent-pass');
-assert.match(correctedBody.answer,/67\.37%/);assert.equal(correctionCalls.length,3);
+assert.match(correctedBody.answer,/67\.37%/);assert.ok(correctionCalls.length>=4);
 assert.equal(correctionCalls[0].model,'@cf/zai-org/glm-4.7-flash');
 assert.equal(correctionCalls[1].model,'@cf/openai/gpt-oss-20b');
-assert.notEqual(correctionCalls[2].model,correctionCalls[0].model);assert.notEqual(correctionCalls[2].model,correctionCalls[1].model);
+assert.notEqual(correctionCalls[0].model,correctionCalls[1].model);
+const correctionStageCalls=correctionCalls.filter(call=>(call.input.messages?.[0]?.content||'').includes("independent reviewer and corrector"));
+const finalStageCalls=correctionCalls.filter(call=>(call.input.messages?.[0]?.content||'').includes("final independent verifier"));
+assert.ok(correctionStageCalls.length>=1);assert.ok(finalStageCalls.length>=1);
+assert.notEqual(finalStageCalls[0].model,correctionStageCalls[0].model);
 
 let rejectCalls=0;
 const rejectEnv={AI:{run:async(_model,input)=>{
