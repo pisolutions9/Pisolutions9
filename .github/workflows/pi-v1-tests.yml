@@ -60,10 +60,13 @@ jobs:
           url=os.environ['PI_CHAT_URL']; questions=json.load(open('/tmp/questions.json')); rounds=int(os.environ['STRESS_ROUNDS']); cases=questions*rounds
           print(f"Running {len(cases)} customer questions ({rounds} rounds x {len(questions)} complex prompts; {'deep soak' if rounds >= 100 else 'release sample'})")
           legacy_markers=('classification:','i recognized this as an informational question','temporarily operating in verified recovery mode','live model execution is currently unavailable')
-          acceptable_truth={'model-response','verified-model-response','provisional-model-response'}
+          readiness_truth={'model-response','verified-model-response'}
           def valid_answer(status,data):
               answer=data.get('answer','') if isinstance(data,dict) else ''; low=answer.lower() if isinstance(answer,str) else ''
-              return status=='200' and isinstance(data,dict) and data.get('ok') is True and data.get('truth') in acceptable_truth and data.get('source','').startswith(('pi-chat-cloudflare-ai:','pi-chat-openai:','pi-chat-fallback')) and isinstance(answer,str) and len(answer.strip())>=120 and not low.lstrip().startswith('classification:') and not any(marker in low for marker in legacy_markers[1:])
+              return status=='200' and isinstance(data,dict) and data.get('ok') is True and data.get('truth') in readiness_truth and data.get('source','').startswith(('pi-chat-cloudflare-ai:','pi-chat-openai:','pi-chat-fallback')) and isinstance(answer,str) and len(answer.strip())>=120 and not low.lstrip().startswith('classification:') and not any(marker in low for marker in legacy_markers[1:])
+          def provisional_answer(status,data):
+              answer=data.get('answer','') if isinstance(data,dict) else ''
+              return status=='200' and isinstance(data,dict) and data.get('ok') is True and data.get('truth')=='provisional-model-response' and isinstance(answer,str) and bool(answer.strip())
           def safe_refusal(status,data):
               return status=='503' and isinstance(data,dict) and data.get('ok') is False and data.get('status')=='verification_failed' and data.get('error')=='hard_reasoning_not_verified' and data.get('truth')=='unknown' and isinstance(data.get('answer'),str) and bool(data['answer'].strip())
           def safe_recovery(status,data):
@@ -73,7 +76,7 @@ jobs:
           refusal_fixture={'ok':False,'status':'verification_failed','error':'hard_reasoning_not_verified','truth':'unknown','answer':'I could not independently verify this high-depth answer, so I will not present an unverified result as reliable.'}
           recovery_fixture={'ok':True,'truth':'deterministic','source':'pi-chat-deterministic-recovery','answer':'Live model unavailable; no facts or actions are being invented.'}
           legacy_fixture={'ok':True,'truth':'model-response','source':'pi-chat-cloudflare-ai:test','answer':'Classification: BUSINESS_OBJECTIVE\n\nPlan:\n'+('internal routing output '*8)}
-          if not valid_answer('200',valid_fixture) or not valid_answer('200',provisional_fixture) or not safe_refusal('503',refusal_fixture) or not safe_recovery('200',recovery_fixture) or valid_answer('200',legacy_fixture): raise SystemExit('customer answer contract regression')
+          if not valid_answer('200',valid_fixture) or not provisional_answer('200',provisional_fixture) or not safe_refusal('503',refusal_fixture) or not safe_recovery('200',recovery_fixture) or valid_answer('200',legacy_fixture): raise SystemExit('customer answer contract regression')
           def ask(q):
               payload=json.dumps({'message':q}); t=time.time(); p=subprocess.run(['curl','--silent','--show-error','--connect-timeout','5','--max-time','22','-H','content-type: application/json','-H','origin: https://pisolutions9.github.io','-d',payload,'-w','\n%{http_code}',url],capture_output=True,text=True); elapsed=time.time()-t
               if p.returncode!=0:return False,elapsed,{'transport':f'curl:{p.returncode}','stderr':p.stderr[-240:]}
@@ -81,8 +84,9 @@ jobs:
               body,status=p.stdout.rsplit('\n',1)
               try:d=json.loads(body)
               except Exception:return False,elapsed,{'transport':'invalid-json','http':status,'body_prefix':body[:240]}
-              ans=d.get('answer','') if isinstance(d,dict) else ''; ok=valid_answer(status,d) or safe_refusal(status,d) or safe_recovery(status,d)
-              return ok,elapsed,{'http':status,'ok':d.get('ok') if isinstance(d,dict) else None,'status':d.get('status') if isinstance(d,dict) else None,'length':len(ans) if isinstance(ans,str) else 0,'truth':d.get('truth') if isinstance(d,dict) else None,'source':d.get('source') if isinstance(d,dict) else None,'prefix':ans[:120] if isinstance(ans,str) else ''}
+              ans=d.get('answer','') if isinstance(d,dict) else ''; ready=valid_answer(status,d)
+              safe=ready or provisional_answer(status,d) or safe_refusal(status,d) or safe_recovery(status,d)
+              return ready,elapsed,{'http':status,'ok':d.get('ok') if isinstance(d,dict) else None,'status':d.get('status') if isinstance(d,dict) else None,'length':len(ans) if isinstance(ans,str) else 0,'truth':d.get('truth') if isinstance(d,dict) else None,'source':d.get('source') if isinstance(d,dict) else None,'safe':safe,'prefix':ans[:120] if isinstance(ans,str) else ''}
           failures=[]; latencies=[]; truth_counts={}
           with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
               futs=[ex.submit(ask,q) for q in cases]
@@ -90,6 +94,6 @@ jobs:
                   ok,lat,detail=f.result(); latencies.append(lat); truth_counts[detail.get('truth')]=truth_counts.get(detail.get('truth'),0)+1
                   if not ok:failures.append((i,detail))
                   if i%100==0:print(f'completed={i} failures={len(failures)}')
-          latencies.sort(); print(f'total={len(cases)} failures={len(failures)} p50={latencies[len(latencies)//2]:.2f}s p95={latencies[int(len(latencies)*.95)-1]:.2f}s max={max(latencies):.2f}s truth={truth_counts}')
+          latencies.sort(); print(f'total={len(cases)} readiness_failures={len(failures)} p50={latencies[len(latencies)//2]:.2f}s p95={latencies[int(len(latencies)*.95)-1]:.2f}s max={max(latencies):.2f}s truth={truth_counts}')
           if failures: print('first failures:',failures[:20]); raise SystemExit(1)
           PY
