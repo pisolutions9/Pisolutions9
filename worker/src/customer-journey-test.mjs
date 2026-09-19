@@ -83,3 +83,41 @@ assert.match(attachmentPrompt,/Quarterly revenue was \$120,000/);
 assert.equal(attachmentBody.attachment.name,'report.pdf');
 const oversized=await worker.fetch(request({message:'Read this',attachment:{name:'report.pdf',type:'application/pdf',data:'A'.repeat(6000000)}}),attachmentEnv);
 assert.equal(oversized.status,400);
+
+const followupHistory=[
+  {role:'user',content:'What is the weather today?'},
+  {role:'assistant',content:'What city or ZIP code should I check the weather for?'}
+];
+let webBody;
+const originalFetchForFollowup=globalThis.fetch;
+globalThis.fetch=async(url,options)=>{
+  if(String(url).includes('api.openai.com/v1/responses')){
+    webBody=JSON.parse(options.body);
+    return new Response(JSON.stringify({
+      output_text:'Mobile, AL weather is 82°F with partly cloudy conditions.',
+      output:[{type:'web_search_call',action:{sources:[{type:'url',url:'https://weather.example/mobile',title:'Mobile weather'}]}}]
+    }),{status:200,headers:{'content-type':'application/json'}});
+  }
+  return originalFetchForFollowup(url,options);
+};
+const zipFollowup=await worker.fetch(request({message:'36609',history:followupHistory}),{OPENAI_API_KEY:'test-key'});
+const zipBody=await zipFollowup.json();
+globalThis.fetch=originalFetchForFollowup;
+assert.equal(zipFollowup.status,200);
+assert.equal(zipBody.truth,'web-grounded-model-response');
+assert.match(webBody.input.at(-1).content,/36609/);
+assert.equal(zipBody.sources.length,1);
+
+let clarificationFetch;
+globalThis.fetch=async(url,options)=>{
+  if(String(url).includes('api.openai.com/v1/responses')){
+    clarificationFetch=JSON.parse(options.body);
+    return new Response(JSON.stringify({output_text:'What city or ZIP code should I check?'}),{status:200,headers:{'content-type':'application/json'}});
+  }
+  return originalFetchForFollowup(url,options);
+};
+const clarification=await worker.fetch(request({message:'What is the weather today?'}),{OPENAI_API_KEY:'test-key'});
+const clarificationBody=await clarification.json();
+globalThis.fetch=originalFetchForFollowup;
+assert.equal(clarificationBody.truth,'model-response');
+assert.deepEqual(clarificationBody.sources,[]);
