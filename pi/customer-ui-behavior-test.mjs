@@ -10,7 +10,8 @@ const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const script = app.replace(/^import \{ chatOutcome, transportOutcome \} from '\.\/pi\/customer-response\.mjs';\n/, '');
 assert.notEqual(app, script, 'test must load the actual UI with only its import bound by the test');
 assert.match(html, /type="module" src="app.js/);
-assert.match(html, /Owner sign-in and cross-device sync are not connected yet/);
+assert.match(html, /This browser remembers recent conversation/);
+assert.match(html, /Cross-device sync requires owner sign-in/);
 assert.doesNotMatch(html, /id="systemStatus">Online/);
 assert.match(html, /rel="canonical" href="https:\/\/pisolutions9.github.io\/Pisolutions9\/"/);
 
@@ -31,7 +32,7 @@ class Element {
   focus() {}
 }
 
-function harness({ fetcher, store = new Map(), online = true, failStorage = false } = {}) {
+function harness({ fetcher, store = new Map(), sessionStore = new Map(), online = true, failStorage = false } = {}) {
   const nodes = Object.fromEntries(['command', 'mission', 'missionTitle', 'steps', 'confidence', 'run', 'ownerToken', 'systemStatus', 'clearChat', 'attachFile', 'fileInput', 'attachmentStatus', 'welcome', 'transcript'].map(id => [id, new Element()]));
   const status = new Element(); status.append(nodes.systemStatus);
   const events = {};
@@ -39,15 +40,20 @@ function harness({ fetcher, store = new Map(), online = true, failStorage = fals
     document: { querySelector: selector => nodes[selector.slice(1)], querySelectorAll: () => [], createElement: () => new Element(), documentElement: { dataset: {} } },
     window: { addEventListener: (name, fn) => { events[name] = fn; } },
     navigator: { onLine: online },
-    sessionStorage: {
-      getItem: key => { if (failStorage) throw new Error('storage disabled'); return store.get(key) || null; },
+    localStorage: {
+      getItem: key => { if (failStorage) throw new Error('storage disabled'); return store.has(key) ? store.get(key) : null; },
       setItem: (key, value) => { if (failStorage) throw new Error('storage disabled'); store.set(key, value); },
       removeItem: key => { if (failStorage) throw new Error('storage disabled'); store.delete(key); },
+    },
+    sessionStorage: {
+      getItem: key => { if (failStorage) throw new Error('storage disabled'); return sessionStore.has(key) ? sessionStore.get(key) : null; },
+      setItem: (key, value) => { if (failStorage) throw new Error('storage disabled'); sessionStore.set(key, value); },
+      removeItem: key => { if (failStorage) throw new Error('storage disabled'); sessionStore.delete(key); },
     },
     fetch: (...args) => fetcher(...args), AbortController, setTimeout, clearTimeout, URL, Blob, chatOutcome, transportOutcome,
   });
   vm.runInContext(script, context);
-  return { nodes, status, store, events, context, run: text => vm.runInContext(`runCustomerChat(${JSON.stringify(text)})`, context) };
+  return { nodes, status, store, sessionStore, events, context, run: text => vm.runInContext(`runCustomerChat(${JSON.stringify(text)})`, context) };
 }
 const response = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const success = { ok: true, answer: 'Photosynthesis uses light to make food.', truth: 'model-response', status: 'answered' };
@@ -88,12 +94,16 @@ assert.equal(await h.run('Long question'), false);
 assert.equal(h.nodes.systemStatus.textContent, 'Answer incomplete');
 assert.match(h.nodes.transcript.children[1].children[1].textContent, /incomplete/);
 
-const pendingStore = new Map([['pi-v1-pending-question', 'Question interrupted by refresh']]);
-h = harness({ store: pendingStore, fetcher: async () => response(success) });
+const legacySession = new Map([['pi-v1-pending-question', 'Question interrupted by refresh']]);
+h = harness({ sessionStore: legacySession, fetcher: async () => response(success) });
 assert.equal(h.nodes.command.value, 'Question interrupted by refresh');
+assert.equal(h.store.get('pi-v1-pending-question'), 'Question interrupted by refresh', 'legacy tab state migrates to persistent browser storage');
+assert.equal(h.sessionStore.has('pi-v1-pending-question'), false, 'legacy tab key is removed after migration');
 h.nodes.command.value = 'Draft from this device'; h.nodes.command.listeners.input();
-const reloaded = harness({ store: pendingStore, fetcher: async () => response(success) });
+const reloaded = harness({ store: h.store, fetcher: async () => response(success) });
 assert.equal(reloaded.nodes.command.value, 'Draft from this device');
+const otherTabSameBrowser = harness({ store: h.store, fetcher: async () => response(success) });
+assert.equal(otherTabSameBrowser.nodes.command.value, 'Draft from this device', 'same browser tabs share persistent draft state');
 const otherDevice = harness({ fetcher: async () => response(success) });
 assert.equal(otherDevice.nodes.command.value, '', 'guest sessions must not pretend to sync');
 assert.equal(otherDevice.nodes.transcript.children.length, 0);
@@ -115,4 +125,4 @@ assert.equal(requestHistory[1].artifacts, undefined, 'artifact metadata must not
 assert.equal(requestHistory[1].role, 'assistant');
 h.nodes.clearChat.listeners.click(); withSavedFile.nodes.clearChat.listeners.click();
 assert.equal(withSavedFile.nodes.transcript.children.length, 0);
-console.log('Actual UI handler tests passed: status, recovery, concurrent drafts, reload, storage denial, partials, artifact restoration, and honest device isolation.');
+console.log('Actual UI handler tests passed: status, recovery, persistent browser continuity, migration, storage denial, partials, artifact restoration, and honest device isolation.');
