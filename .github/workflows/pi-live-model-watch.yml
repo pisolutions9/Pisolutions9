@@ -8,7 +8,7 @@ on:
     - cron: '10 * * * *'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   live-model-watch:
@@ -41,25 +41,15 @@ jobs:
           done
           echo "Live model-backed responses: $live"
           test "$live" -ge 1
-      - name: Record exact live-model evidence when newly verified
+      - name: Record exact live-model evidence
         shell: bash
         run: |
           set -euo pipefail
-          marker='PI_LIVE_MODEL_READY.md'
-          if [[ -f "$marker" ]] && grep -q "Verified commit: $GITHUB_SHA" "$marker"; then
-            echo 'Live-model evidence already recorded for this exact commit.'
-            exit 0
-          fi
-          cat > "$marker" <<EOF
-# PI Live Model Verification
-
-Verified commit: $GITHUB_SHA
-Verified at: $(date -u '+%Y-%m-%dT%H:%M:%SZ')
-
-The public customer chat path returned at least one genuine model-backed response from the live deployment. Deterministic recovery was not counted as success.
-EOF
-          git config user.name 'PI Release Watch'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add "$marker"
-          git commit -m "chore: record live model verification"
-          git push
+          {
+            echo '# PI Live Model Verification'
+            echo
+            echo "Verified commit: $GITHUB_SHA"
+            echo "Verified at: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+            echo
+            echo 'The public customer chat path returned at least one genuine model-backed response from the live deployment. Deterministic recovery was not counted as success.'
+          } >> "$GITHUB_STEP_SUMMARY"
