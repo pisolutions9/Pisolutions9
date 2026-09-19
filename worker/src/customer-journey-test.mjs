@@ -9,6 +9,18 @@ const history=[{role:'user',content:'My budget is 73000 rupees.'},{role:'assista
 let result=await (await worker.fetch(request({message:'What was my budget?',history}),env)).json();
 assert.equal(result.truth,'model-response');assert.deepEqual(seen.messages.slice(1,-1),history);
 assert.equal(seen.max_tokens,1200);assert.equal(seenOptions.rejectIfBusy,true);assert.equal(seenOptions.gateway.id,'default');
+
+let capacityCalls=[];
+const capacityEnv={AI:{run:async(model,input,options)=>{
+  capacityCalls.push({model,options});
+  if(options?.rejectIfBusy)throw new Error('Capacity temporarily exceeded');
+  return {response:'Queued capacity recovered with a complete customer-quality answer that is long enough to satisfy the normal response contract and prove the bounded queue path works.'};
+}}};
+const capacityRecovered=await worker.fetch(request({message:'Explain how a startup should prioritize customer retention, pricing, and support operations during its first year.'}),capacityEnv);
+const capacityBody=await capacityRecovered.json();
+assert.equal(capacityRecovered.status,200);assert.equal(capacityBody.truth,'model-response');assert.match(capacityBody.source,/cloudflare-ai/);
+assert.ok(capacityCalls.some(call=>call.options?.rejectIfBusy===true));assert.ok(capacityCalls.some(call=>!call.options?.rejectIfBusy));
+
 let hardCalls=[];
 const hardEnv={AI:{run:async(model,input)=>{
   hardCalls.push({model,input});
