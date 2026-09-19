@@ -83,15 +83,9 @@ async function callProvider({apiKey,model,baseUrl,message,history=[],timeoutMs=P
 function extractAnswer(body){return body?.output_text?.trim()||body?.output?.flatMap(item=>item?.content||[]).find(part=>part?.type==='output_text')?.text?.trim();}
 function extractSources(body){const found=new Map();for(const item of body?.output||[]){if(item?.type==='web_search_call'){for(const source of item?.action?.sources||[]){if(source?.url)found.set(source.url,{url:source.url,title:source.title||source.url});}}for(const part of item?.content||[]){for(const annotation of part?.annotations||[]){const value=annotation?.url_citation||annotation;if(value?.url)found.set(value.url,{url:value.url,title:value.title||value.url});}}}return [...found.values()].slice(0,8);}
 function extractEdgeAnswer(result){if(typeof result==='string')return result.trim()||null;const candidates=[result?.response,result?.output_text,result?.result?.response,result?.result?.output_text,result?.choices?.[0]?.message?.content];for(const value of candidates){if(typeof value==='string'&&value.trim())return value.trim();if(Array.isArray(value)){const text=value.map(part=>typeof part==='string'?part:(part?.text||part?.content||'')).join('').trim();if(text)return text;}}return null;}
-async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INSTRUCTIONS,maxTokens=MAX_OUTPUT_TOKENS,timeoutMs=EDGE_TIMEOUT_MS,rejectIfBusy=true}={}){const input={messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:maxTokens};const options={gateway:{id:'default',skipCache:false},...(rejectIfBusy?{rejectIfBusy:true}:{})};const work=env.AI.run(model,input,options);let timer;const boundedTimeout=Math.max(1,timeoutMs);const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`edge model timeout: ${model}`)),boundedTimeout);});try{return await Promise.race([work,timeout]);}finally{clearTimeout(timer);}}
+async function edgeCacheKey(model,input){const source=JSON.stringify({v:1,model,input});const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(source));return 'pi-v1-'+[...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join('');}
+async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INSTRUCTIONS,maxTokens=MAX_OUTPUT_TOKENS,timeoutMs=EDGE_TIMEOUT_MS,rejectIfBusy=true}={}){const input={messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:maxTokens};const cacheKey=await edgeCacheKey(model,input);const options={gateway:{id:'default',skipCache:false,cacheTtl:300,cacheKey},...(rejectIfBusy?{rejectIfBusy:true}:{})};const work=env.AI.run(model,input,options);let timer;const boundedTimeout=Math.max(1,timeoutMs);const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`edge model timeout: ${model}`)),boundedTimeout);});try{return await Promise.race([work,timeout]);}finally{clearTimeout(timer);}}
 function edgeResultIncomplete(result,maxTokens){const finishReasons=[result?.finish_reason,result?.choices?.[0]?.finish_reason,result?.result?.finish_reason,result?.result?.choices?.[0]?.finish_reason];if(finishReasons.some(reason=>['length','max_tokens','max_output_tokens'].includes(reason)))return true;const usages=[result?.usage,result?.result?.usage].filter(Boolean);return usages.some(usage=>[usage.completion_tokens,usage.output_tokens,usage.tokens_generated].some(value=>Number.isFinite(value)&&value>=maxTokens));}
-function routeModels(models,message=''){
-  if(models.length<2)return models;
-  let hash=2166136261;
-  for(const char of String(message)){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619)>>>0;}
-  const offset=hash%models.length;
-  return offset?[...models.slice(offset),...models.slice(0,offset)]:models;
-}
 async function callWorkersAI(env,message,history,{preferStrong=false,instructions=PI_INSTRUCTIONS,deadline=null}={}){if(!env.AI||typeof env.AI.run!=='function')return null;const configured=env.PI_EDGE_MODEL||DEFAULT_EDGE_MODEL;const models=preferStrong
   ? [...new Set(['@cf/zai-org/glm-4.7-flash','@cf/openai/gpt-oss-120b','@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it',configured].filter(Boolean))]
   : [...new Set([configured,...EDGE_MODEL_FALLBACKS].filter(Boolean))];
@@ -119,11 +113,12 @@ async function callWorkersAI(env,message,history,{preferStrong=false,instruction
     }catch(error){console.error(`Workers AI fast-capacity attempt failed: ${model}`,error instanceof Error?error.message:String(error));}
     await new Promise(resolve=>setTimeout(resolve,25));
   }
-  for(const queuedModel of models.slice(0,2)){
+  const queuedModels=preferStrong?models.slice(0,1):models.slice(0,2);
+  for(let index=0;index<queuedModels.length;index++){
+    const queuedModel=queuedModels[index];
     const queuedTimeLeft=deadline?remainingBudget(deadline):EDGE_TIMEOUT_MS;
     if(queuedTimeLeft<1200)break;
-    const attemptsLeft=Math.max(1,Math.min(2,models.length));
-    const queuedTimeout=Math.min(7000,Math.max(1200,Math.floor(queuedTimeLeft/attemptsLeft)));
+    const queuedTimeout=preferStrong?queuedTimeLeft:Math.min(7000,Math.max(1200,Math.floor(queuedTimeLeft/(queuedModels.length-index))));
     try{
       const result=await tryResult(queuedModel,false,queuedTimeout);
       if(result)return {...result,recoveredFrom:result.recoveredFrom||'capacity-queue'};
