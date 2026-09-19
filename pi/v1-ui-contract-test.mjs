@@ -13,7 +13,7 @@ assert.match(app, /meta\.textContent\s*=\s*source/);
 assert.match(app, /finally\s*\{\s*run\.disabled\s*=\s*false/s);
 assert.match(app, /response\.ok/);
 assert.match(app, /body\.error/);
-assert.match(app, /if \(!text \|\| run\.disabled\)/);
+assert.match(app, /if \(\(!text && !attachedFile\) \|\| run\.disabled\)/);
 assert.match(app, /command\.value = ''/);
 assert.doesNotMatch(app, /Build the next PI capability/);
 
