@@ -14,13 +14,13 @@ const PROVIDER_TIMEOUT_MS = 20000;
 const EDGE_TIMEOUT_MS = 4000;
 const CHAT_REQUEST_BUDGET_MS = 20000;
 const HARD_REASONING_BUDGET_MS = CHAT_REQUEST_BUDGET_MS;
-const HARD_CANDIDATE_STAGE_MS = 6500;
+const HARD_CANDIDATE_STAGE_MS = 8000;
 const HARD_CANDIDATE_TOKENS = 1100;
 // A cold inference needs time to finish; a sub-second race only warms the cache.
-const HARD_FAST_PROBE_MS = 3000;
+const HARD_FAST_PROBE_MS = 2200;
 const HARD_REVIEW_STAGE_MS = 12000;
 const HARD_REVIEW_TOKENS = 1400;
-const HARD_FINAL_STAGE_MS = 4500;
+const HARD_FINAL_STAGE_MS = 3000;
 const HARD_FINAL_TOKENS = 1200;
 const DEFAULT_EDGE_MODEL = '@cf/zai-org/glm-4.7-flash';
 const EDGE_MODEL_FALLBACKS = [
@@ -109,7 +109,8 @@ async function callWorkersAI(env,message,history,{preferStrong=false,instruction
     }catch(error){console.error(`Workers AI compact retry failed: ${model}`,error instanceof Error?error.message:String(error));}
     return {answer,model,incomplete:true};
   };
-  for(const model of models){
+  const probeModels=preferStrong?models.slice(0,2):models;
+  for(const model of probeModels){
     try{
       const timeLeft=deadline?remainingBudget(deadline):EDGE_TIMEOUT_MS;
       if(timeLeft<=0)return null;
@@ -118,15 +119,16 @@ async function callWorkersAI(env,message,history,{preferStrong=false,instruction
     }catch(error){console.error(`Workers AI fast-capacity attempt failed: ${model}`,error instanceof Error?error.message:String(error));}
     await new Promise(resolve=>setTimeout(resolve,25));
   }
-  const queuedModels=models.slice(0,2);
+  const queuedModels=preferStrong?[...new Set([configured,models[0]].filter(Boolean))]:models.slice(0,2);
   for(let index=0;index<queuedModels.length;index++){
     const queuedModel=queuedModels[index];
     const queuedTimeLeft=deadline?remainingBudget(deadline):EDGE_TIMEOUT_MS;
     if(queuedTimeLeft<1200)break;
     const remainingAttempts=queuedModels.length-index;
-    const queuedTimeout=preferStrong
-      ? (index===0?Math.min(5000,Math.max(2500,queuedTimeLeft-3000)):queuedTimeLeft)
+    const desiredTimeout=preferStrong
+      ? (index===0?Math.min(4000,Math.max(2500,queuedTimeLeft-1500)):queuedTimeLeft)
       : Math.min(7000,Math.max(1200,Math.floor(queuedTimeLeft/remainingAttempts)));
+    const queuedTimeout=Math.max(1200,Math.min(queuedTimeLeft,desiredTimeout));
     try{
       const result=await tryResult(queuedModel,false,queuedTimeout);
       if(result)return {...result,recoveredFrom:result.recoveredFrom||'capacity-queue'};
@@ -144,7 +146,7 @@ async function reviewHardAnswer(env,message,history,candidate,candidateModel,dea
       const timeLeft=remainingBudget(deadline);if(timeLeft<=0)return {ok:false,reason:'review_deadline_exceeded'};
       // Bound each reviewer so one congested model cannot consume the whole verification window.
       // This preserves independent verification while allowing a second model to take over.
-      const attemptCap=index===0?3500:index===1?4500:timeLeft;
+      const attemptCap=index===0?4500:index===1?3500:timeLeft;
       const attemptTimeout=Math.max(1200,Math.min(timeLeft,attemptCap));
       // Reasoning tokens share the output budget. Never accept a truncated verdict
       // or correction, even when its visible text begins with PASS or CORRECT.
