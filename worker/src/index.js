@@ -14,10 +14,10 @@ const PROVIDER_TIMEOUT_MS = 20000;
 const EDGE_TIMEOUT_MS = 4000;
 const CHAT_REQUEST_BUDGET_MS = 20000;
 const HARD_REASONING_BUDGET_MS = 17500;
-const HARD_CANDIDATE_STAGE_MS = 10500;
+const HARD_CANDIDATE_STAGE_MS = 8500;
 const HARD_CANDIDATE_TOKENS = 700;
 const HARD_FAST_PROBE_MS = 650;
-const HARD_REVIEW_STAGE_MS = 4500;
+const HARD_REVIEW_STAGE_MS = 5500;
 const HARD_FINAL_STAGE_MS = 3500;
 const DEFAULT_EDGE_MODEL = '@cf/zai-org/glm-4.7-flash';
 const EDGE_MODEL_FALLBACKS = [
@@ -89,7 +89,7 @@ async function edgeCacheKey(model,input){const source=JSON.stringify({v:1,model,
 async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INSTRUCTIONS,maxTokens=MAX_OUTPUT_TOKENS,timeoutMs=EDGE_TIMEOUT_MS,rejectIfBusy=true}={}){const input={messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:maxTokens};const cacheKey=await edgeCacheKey(model,input);const options={gateway:{id:'default',skipCache:false,cacheTtl:300,cacheKey},...(rejectIfBusy?{rejectIfBusy:true}:{})};const work=env.AI.run(model,input,options);let timer;const boundedTimeout=Math.max(1,timeoutMs);const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`edge model timeout: ${model}`)),boundedTimeout);});try{return await Promise.race([work,timeout]);}finally{clearTimeout(timer);}}
 function edgeResultIncomplete(result,maxTokens){const finishReasons=[result?.finish_reason,result?.choices?.[0]?.finish_reason,result?.result?.finish_reason,result?.result?.choices?.[0]?.finish_reason];if(finishReasons.some(reason=>['length','max_tokens','max_output_tokens'].includes(reason)))return true;const usages=[result?.usage,result?.result?.usage].filter(Boolean);return usages.some(usage=>[usage.completion_tokens,usage.output_tokens,usage.tokens_generated].some(value=>Number.isFinite(value)&&value>=maxTokens));}
 async function callWorkersAI(env,message,history,{preferStrong=false,instructions=PI_INSTRUCTIONS,deadline=null,maxTokens=MAX_OUTPUT_TOKENS,fastProbeMs=EDGE_TIMEOUT_MS}={}){if(!env.AI||typeof env.AI.run!=='function')return null;const configured=env.PI_EDGE_MODEL||DEFAULT_EDGE_MODEL;const models=preferStrong
-  ? [...new Set(['@cf/openai/gpt-oss-20b','@cf/zai-org/glm-4.7-flash','@cf/google/gemma-4-26b-a4b-it','@cf/qwen/qwen3-30b-a3b-fp8',configured].filter(Boolean))]
+  ? [...new Set([configured,'@cf/openai/gpt-oss-20b','@cf/zai-org/glm-4.7-flash','@cf/google/gemma-4-26b-a4b-it','@cf/qwen/qwen3-30b-a3b-fp8'].filter(Boolean))]
   : [...new Set([configured,...EDGE_MODEL_FALLBACKS].filter(Boolean))];
   const tryResult=async(model,rejectIfBusy,timeoutMs)=>{
     const result=await runEdgeWithTimeout(env,model,message,history,{instructions,maxTokens,timeoutMs,rejectIfBusy});
@@ -133,11 +133,11 @@ async function callWorkersAI(env,message,history,{preferStrong=false,instruction
 async function reviewHardAnswer(env,message,history,candidate,candidateModel,deadline=Date.now()+HARD_REVIEW_STAGE_MS){
   if(!env.AI||typeof env.AI.run!=='function')return {ok:false,reason:'reviewer_unavailable'};
   const reviewPrompt=`QUESTION:\n${message}\n\nCANDIDATE ANSWER:\n${candidate}\n\nReview independently. If materially wrong, return CORRECT followed by the full corrected answer.`;
-  const reviewerModels=['@cf/zai-org/glm-4.7-flash','@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it','@cf/qwen/qwen3-30b-a3b-fp8'].filter(model=>model!==candidateModel);
+  const reviewerModels=['@cf/openai/gpt-oss-20b','@cf/zai-org/glm-4.7-flash','@cf/google/gemma-4-26b-a4b-it','@cf/qwen/qwen3-30b-a3b-fp8'].filter(model=>model!==candidateModel);
   for(const model of reviewerModels){
     try{
       const timeLeft=remainingBudget(deadline);if(timeLeft<=0)return {ok:false,reason:'review_deadline_exceeded'};
-      const result=await runEdgeWithTimeout(env,model,reviewPrompt,history,{instructions:REVIEW_INSTRUCTIONS,maxTokens:1000,timeoutMs:timeLeft});
+      const result=await runEdgeWithTimeout(env,model,reviewPrompt,history,{instructions:REVIEW_INSTRUCTIONS,maxTokens:700,timeoutMs:timeLeft});
       const verdict=extractEdgeAnswer(result);
       if(!verdict)continue;
       if(/^PASS\s*$/i.test(verdict))return {ok:true,model};
