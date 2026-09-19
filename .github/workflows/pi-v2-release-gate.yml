@@ -31,6 +31,8 @@ jobs:
         run: |
           test -f PI_V2_RELEASE_REPORT.md
           grep -q 'PI V2' PI_V2_RELEASE_REPORT.md
+      - name: Run V1.02 trust and governor suite
+        run: npm run test:v1.02
       - name: Run full V1 + V2 release suite
         run: npm test
       - name: Confirm V2 release gate
