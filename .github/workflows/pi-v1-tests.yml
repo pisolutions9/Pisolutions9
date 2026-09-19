@@ -87,7 +87,7 @@ jobs:
               except Exception:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'invalid-json','http':status,'body_prefix':body[:240]}
               ans=d.get('answer','') if isinstance(d,dict) else ''; ready=valid_answer(status,d)
               safe=ready or provisional_answer(status,d) or safe_refusal(status,d) or safe_recovery(status,d)
-              return ready,elapsed,{'round':round_i+1,'question':q_i,'http':status,'ok':d.get('ok') if isinstance(d,dict) else None,'status':d.get('status') if isinstance(d,dict) else None,'length':len(ans) if isinstance(ans,str) else 0,'truth':d.get('truth') if isinstance(d,dict) else None,'source':d.get('source') if isinstance(d,dict) else None,'safe':safe,'prefix':ans[:120] if isinstance(ans,str) else ''}
+              return ready,elapsed,{'round':round_i+1,'question':q_i,'http':status,'ok':d.get('ok') if isinstance(d,dict) else None,'status':d.get('status') if isinstance(d,dict) else None,'length':len(ans) if isinstance(ans,str) else 0,'truth':d.get('truth') if isinstance(d,dict) else None,'source':d.get('source') if isinstance(d,dict) else None,'safe':safe,'verificationReason':d.get('verificationReason') if isinstance(d,dict) else None,'prefix':ans[:120] if isinstance(ans,str) else ''}
           failures=[]; latencies=[]; truth_counts={}
           with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
               futs=[ex.submit(ask,q) for q in cases]
