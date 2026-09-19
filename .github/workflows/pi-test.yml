@@ -31,15 +31,6 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Full regression gate
         run: npm test
-      - name: Deploy chat worker before live smoke test
-        working-directory: worker
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          npm install --no-save --no-package-lock wrangler@4
-          node src/deterministic-fallback-test.mjs
-          npx wrangler deploy
       - name: Live production customer HTTP smoke test
         shell: bash
         run: |
