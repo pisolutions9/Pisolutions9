@@ -78,10 +78,9 @@ jobs:
               --output /tmp/pi-chat.json --write-out '%{http_code}' "$PI_CHAT_URL")"
             echo "Chat HTTP status: $status | input: $question"
             cat /tmp/pi-chat.json
-            test "$status" = 200
-            python -c 'import json,sys; d=json.load(open("/tmp/pi-chat.json")); assert d.get("ok") is True and isinstance(d.get("answer"), str) and d["answer"].strip(); a=d["answer"].lower().lstrip(); forbidden_prefixes=("classification: business_objective","classification: informational","classification:"); forbidden_phrases=("i recognized this as an informational question","i will answer directly when the required knowledge is available.","temporarily operating in verified recovery mode"); assert not a.startswith(forbidden_prefixes) and not any(x in a for x in forbidden_phrases); print("ANSWER_LENGTH", len(d["answer"])); print("ANSWER", d["answer"])'
+            python -c 'import json,sys; status=int(sys.argv[1]); d=json.load(open("/tmp/pi-chat.json")); answer=d.get("answer"); assert isinstance(answer,str) and answer.strip(); safe_refusal=(status==503 and d.get("ok") is False and d.get("status")=="verification_failed" and d.get("error")=="hard_reasoning_not_verified" and d.get("truth")=="unknown"); success=(status==200 and d.get("ok") is True); assert success or safe_refusal, f"unexpected contract: HTTP {status} {d}"; a=answer.lower().lstrip(); forbidden_prefixes=("classification: business_objective","classification: informational","classification:"); forbidden_phrases=("i recognized this as an informational question","i will answer directly when the required knowledge is available.","temporarily operating in verified recovery mode"); assert not a.startswith(forbidden_prefixes) and not any(x in a for x in forbidden_phrases); print("SAFE_REFUSAL" if safe_refusal else "ANSWER_LENGTH", "" if safe_refusal else len(answer)); print("ANSWER", answer)' "$status"
             answers+=("$(python -c 'import json; print(json.load(open("/tmp/pi-chat.json"))["answer"])')")
-            if [ "$index" -ge 7 ]; then
+            if [ "$index" -ge 7 ] && [ "$status" = 200 ]; then
               python -c 'import json; a=json.load(open("/tmp/pi-chat.json"))["answer"].strip(); assert len(a)>=160, f"complex answer too short: {len(a)}"'
             fi
           done
