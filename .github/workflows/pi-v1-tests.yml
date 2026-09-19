@@ -95,7 +95,7 @@ jobs:
           def ask(q):
               payload=json.dumps({'message':q})
               t=time.time()
-              p=subprocess.run(['curl','--silent','--show-error','--max-time','20','-H','content-type: application/json','-H','origin: https://pisolutions9.github.io','-d',payload,'-w','\n%{http_code}',url],capture_output=True,text=True)
+              p=subprocess.run(['curl','--silent','--show-error','--connect-timeout','5','--max-time','20','--retry','3','--retry-all-errors','--retry-delay','1','-H','content-type: application/json','-H','origin: https://pisolutions9.github.io','-d',payload,'-w','\n%{http_code}',url],capture_output=True,text=True)
               elapsed=time.time()-t
               if p.returncode != 0: return False, elapsed, f'curl:{p.returncode}'
               body,status=p.stdout.rsplit('\n',1)
