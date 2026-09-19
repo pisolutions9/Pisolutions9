@@ -217,7 +217,7 @@ const delayedReview=await (await worker.fetch(request({message:'Calculate a revi
   delayedReviewCalls.push(model);
   if(input.messages[0].content.includes('independent reviewer')){
     if(model==='@cf/meta/llama-3.1-8b-instruct-fast'){
-      await new Promise(resolve=>setTimeout(resolve,4200));
+      await new Promise(resolve=>setTimeout(resolve,5200));
       return {response:'PASS',finish_reason:'stop',usage:{completion_tokens:850}};
     }
     return {response:'PASS',finish_reason:'stop',usage:{completion_tokens:120}};
@@ -227,6 +227,18 @@ const delayedReview=await (await worker.fetch(request({message:'Calculate a revi
 assert.equal(delayedReview.truth,'verified-model-response');
 assert.ok(delayedReviewCalls.includes('@cf/meta/llama-3.1-8b-instruct-fast'));
 assert.ok(delayedReviewCalls.includes('@cf/qwen/qwen3-30b-a3b-fp8') || delayedReviewCalls.includes('@cf/openai/gpt-oss-20b'));
+
+// Hard candidate routing must preserve enough time for a bounded queued recovery.
+let hardCapacityCalls=[];
+const hardCapacity=await (await worker.fetch(request({message:'Calculate a resilient capacity-routing scenario and show enough calculations to audit the answer.'}),{AI:{run:async(model,input,options)=>{
+  hardCapacityCalls.push({model,options,system:input.messages?.[0]?.content||''});
+  if(input.messages?.[0]?.content?.includes('independent reviewer'))return {response:'PASS',finish_reason:'stop'};
+  if(options?.rejectIfBusy)throw new Error('Capacity temporarily exceeded');
+  return {response:'A complete hard-reasoning candidate recovered through the bounded queued path with stated assumptions and auditable calculations.',finish_reason:'stop'};
+}}})).json();
+assert.equal(hardCapacity.truth,'verified-model-response');
+assert.ok(hardCapacityCalls.some(call=>call.options?.rejectIfBusy===true));
+assert.ok(hardCapacityCalls.some(call=>call.options?.rejectIfBusy===false));
 
 // Truncated output cannot certify an answer, including a visible PASS prefix.
 for(const verdict of ['PASS','CORRECT\nAn incomplete correction']){
