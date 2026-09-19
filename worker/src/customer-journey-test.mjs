@@ -3,11 +3,12 @@ import worker, { validateHistory } from './index.js';
 import { inventoryMission, executeInventory, verifyInventory } from './inventory.mjs';
 const request = payload => new Request('https://pi.test/api/chat', { method:'POST', headers:{'content-type':'application/json',origin:'https://pisolutions9.github.io'}, body:JSON.stringify(payload) });
 let seen; let seenModel;
-const env = { AI:{run:async(model,input)=>{seen=input;seenModel=model;return {response:'Your budget was 73000 rupees.'};}} };
+let seenOptions;
+const env = { AI:{run:async(model,input,options)=>{seen=input;seenModel=model;seenOptions=options;return {response:'Your budget was 73000 rupees.'};}} };
 const history=[{role:'user',content:'My budget is 73000 rupees.'},{role:'assistant',content:'Understood.'}];
 let result=await (await worker.fetch(request({message:'What was my budget?',history}),env)).json();
 assert.equal(result.truth,'model-response');assert.deepEqual(seen.messages.slice(1,-1),history);
-assert.ok(seen.max_tokens>=2048);
+assert.ok(seen.max_tokens>=2048);assert.equal(seenOptions.rejectIfBusy,true);assert.equal(seenOptions.gateway.id,'default');
 let hardCalls=[];
 const hardEnv={AI:{run:async(model,input)=>{
   hardCalls.push({model,input});
@@ -20,6 +21,7 @@ assert.equal(hardResponse.status,200);assert.equal(hardBody.truth,'verified-mode
 assert.equal(hardCalls[0].model,'@cf/zai-org/glm-4.7-flash');
 assert.equal(hardCalls[1].model,'@cf/openai/gpt-oss-20b');
 assert.notEqual(hardCalls[0].model,hardCalls[1].model);
+assert.match(hardCalls[1].input.messages[0].content,/clearly labeled illustrative assumption/i);
 let rejectCalls=0;
 const rejectEnv={AI:{run:async(_model,input)=>{
   rejectCalls+=1;
