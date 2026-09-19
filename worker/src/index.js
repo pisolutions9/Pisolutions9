@@ -8,7 +8,8 @@ const MAX_INPUT = 8000;
 const MAX_OUTPUT_TOKENS = 2048;
 const COMPACT_OUTPUT_TOKENS = 1536;
 const PROVIDER_TIMEOUT_MS = 20000;
-const EDGE_TIMEOUT_MS = 20000;
+const EDGE_TIMEOUT_MS = 7000;
+const HARD_REQUEST_BUDGET_MS = 18000;
 const DEFAULT_EDGE_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
 const EDGE_MODEL_FALLBACKS = [
   '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
@@ -58,11 +59,14 @@ async function verifyHardAnswer(env,message,history,candidate){
   }
   return {ok:false,reason:'verification_inconclusive'};
 }
+function remainingBudget(deadline){return Math.max(0,deadline-Date.now());}
 async function produceVerifiedHardAnswer(env,message,history){
+  const deadline=Date.now()+HARD_REQUEST_BUDGET_MS;
   const first=await callWorkersAI(env,message,history,{preferStrong:true,instructions:HARD_REASONING_INSTRUCTIONS});
-  if(!first||first.incomplete)return null;
+  if(!first||first.incomplete||remainingBudget(deadline)<EDGE_TIMEOUT_MS)return null;
   const check=await verifyHardAnswer(env,message,history,first.answer);
   if(check.ok)return {...first,verified:true,verifier:check.model};
+  if(remainingBudget(deadline)<EDGE_TIMEOUT_MS)return null;
   const correction=check.reason||'Independent verification found a material defect. Recompute and correct the answer.';
   const retryMessage=`${message}\n\nIndependent verification rejected the previous draft. Correction brief:\n${correction}\nProduce a corrected self-contained answer. Recalculate from the original facts and do not repeat the rejected error.`;
   const revised=await callWorkersAI(env,retryMessage,history,{preferStrong:true,instructions:HARD_REASONING_INSTRUCTIONS});
