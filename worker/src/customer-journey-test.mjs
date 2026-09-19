@@ -8,7 +8,7 @@ const env = { AI:{run:async(model,input,options)=>{seen=input;seenModel=model;se
 const history=[{role:'user',content:'My budget is 73000 rupees.'},{role:'assistant',content:'Understood.'}];
 let result=await (await worker.fetch(request({message:'What was my budget?',history}),env)).json();
 assert.equal(result.truth,'model-response');assert.deepEqual(seen.messages.slice(1,-1),history);
-assert.ok(seen.max_tokens>=2048);assert.equal(seenOptions.rejectIfBusy,true);assert.equal(seenOptions.gateway.id,'default');
+assert.ok(seen.max_tokens>=2048);assert.equal(seenOptions.rejectIfBusy,undefined);assert.equal(seenOptions.gateway.id,'default');
 let hardCalls=[];
 const hardEnv={AI:{run:async(model,input)=>{
   hardCalls.push({model,input});
@@ -18,9 +18,11 @@ const hardEnv={AI:{run:async(model,input)=>{
 const hardResponse=await worker.fetch(request({message:'Calculate a Bayesian posterior probability with two independent positive tests and show enough calculations to audit the answer.'}),hardEnv);
 const hardBody=await hardResponse.json();
 assert.equal(hardResponse.status,200);assert.equal(hardBody.truth,'verified-model-response');assert.equal(hardBody.verification,'independent-pass');
-assert.equal(hardCalls[0].model,'@cf/zai-org/glm-4.7-flash');
-assert.equal(hardCalls[1].model,'@cf/openai/gpt-oss-20b');
+assert.equal(hardCalls[0].model,'@cf/openai/gpt-oss-120b');
+assert.equal(hardCalls[1].model,'@cf/zai-org/glm-4.7-flash');
 assert.notEqual(hardCalls[0].model,hardCalls[1].model);
+assert.match(hardCalls[0].input.messages[0].content,/net burn/i);
+assert.match(hardCalls[0].input.messages[0].content,/source of truth/i);
 assert.match(hardCalls[1].input.messages[0].content,/clearly labeled illustrative assumption/i);
 let rejectCalls=0;
 const rejectEnv={AI:{run:async(_model,input)=>{
