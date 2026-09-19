@@ -12,7 +12,7 @@ permissions:
 
 env:
   PI_CHAT_URL: https://pi-chat.premchandyadlapati.workers.dev/api/chat
-  STRESS_ROUNDS: ${{ github.event_name == 'schedule' && '10' || '100' }}
+  STRESS_ROUNDS: ${{ github.event_name == 'schedule' && '100' || '3' }}
 
 jobs:
   stress-customer-chat:
@@ -65,7 +65,7 @@ jobs:
           questions=json.load(open('/tmp/questions.json'))
           rounds=int(os.environ['STRESS_ROUNDS'])
           cases=questions*rounds
-          print(f"Running {len(cases)} customer questions ({rounds} rounds x {len(questions)} complex prompts)")
+          print(f"Running {len(cases)} customer questions ({rounds} rounds x {len(questions)} complex prompts; {'deep soak' if rounds >= 100 else 'release sample'})")
 
           # Reject the old internal-routing response contract without rejecting
           # ordinary customer answers that legitimately contain headings such as
