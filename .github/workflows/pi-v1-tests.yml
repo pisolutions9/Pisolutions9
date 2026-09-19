@@ -1,7 +1,9 @@
 name: PI V1 Tests
 
 on:
-  push:
+  workflow_run:
+    workflows: ["PI Chat Worker"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
   schedule:
@@ -16,10 +18,13 @@ env:
 
 jobs:
   stress-customer-chat:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
       - uses: actions/setup-node@v5
         with:
           node-version: 22
