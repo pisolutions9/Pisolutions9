@@ -34,6 +34,7 @@ export function chatOutcome(response, body) {
   const notes = {
     'verified-calculation': 'CSV checked: rows and totals independently recomputed.',
     'verified-model-response': 'Reviewed by another model · facts not independently established.',
+    'web-grounded-model-response': 'Current answer grounded with live web research sources.',
     deterministic: 'Limited offline recovery; live model unavailable.',
     'needs-input': 'Waiting for valid inventory rows.',
   };
