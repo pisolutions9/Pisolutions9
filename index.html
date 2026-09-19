@@ -33,8 +33,11 @@
 
     <section class="composer-wrap" aria-label="Ask PI">
       <p class="session-notice">This tab only · Owner sign-in and cross-device sync are not connected yet.</p>
+      <p id="attachmentStatus" class="attachment-status hidden" aria-live="polite"></p>
       <div class="composer">
         <button id="clearChat" class="icon-button" type="button" title="New conversation" aria-label="New conversation">＋</button>
+        <button id="attachFile" class="icon-button attach-button" type="button" title="Attach file or image" aria-label="Attach file or image">⌕</button>
+        <input id="fileInput" class="hidden-file" type="file" accept=".pdf,.jpeg,.jpg,.png,.webp,.svg,.gif,.bmp,.html,.htm,.xml,.xlsx,.xlsm,.xlsb,.xls,.docx,.ods,.odt,.csv,.numbers" />
         <textarea aria-label="Message to PI" aria-describedby="sessionScope" maxlength="8000" id="command" placeholder="Ask me anything…" rows="1"></textarea>
         <button id="run" class="run" aria-label="Send">➜</button>
       </div>
