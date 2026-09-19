@@ -53,6 +53,24 @@ assert.equal(correctionCalls[0].model,'@cf/openai/gpt-oss-20b');
 assert.equal(correctionCalls[1].model,'@cf/zai-org/glm-4.7-flash');
 assert.notEqual(correctionCalls[2].model,correctionCalls[0].model);assert.notEqual(correctionCalls[2].model,correctionCalls[1].model);
 
+let singleflightCalls=0;
+const singleflightEnv={AI:{run:async(model,input)=>{
+  singleflightCalls+=1;
+  await new Promise(resolve=>setTimeout(resolve,30));
+  const system=input.messages?.[0]?.content||'';
+  if(system.includes("independent reviewer and corrector"))return {response:'PASS'};
+  return {response:'Posterior = 67.37%. Calculation shown and constraints checked.'};
+}}};
+const hardPayload={message:'Calculate a Bayesian posterior probability with two independent positive tests and show enough calculations to audit the answer.'};
+const concurrentHard=await Promise.all([
+  worker.fetch(request(hardPayload),singleflightEnv),
+  worker.fetch(request(hardPayload),singleflightEnv),
+  worker.fetch(request(hardPayload),singleflightEnv)
+]);
+const concurrentBodies=await Promise.all(concurrentHard.map(response=>response.json()));
+assert.ok(concurrentBodies.every(body=>body.truth==='verified-model-response'));
+assert.equal(singleflightCalls,2);
+
 let rejectCalls=0;
 const rejectEnv={AI:{run:async(_model,input)=>{
   rejectCalls+=1;
