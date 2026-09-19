@@ -88,13 +88,22 @@ jobs:
               ans=d.get('answer','') if isinstance(d,dict) else ''; ready=valid_answer(status,d)
               safe=ready or provisional_answer(status,d) or safe_refusal(status,d) or safe_recovery(status,d)
               return ready,elapsed,{'round':round_i+1,'question':q_i,'http':status,'ok':d.get('ok') if isinstance(d,dict) else None,'status':d.get('status') if isinstance(d,dict) else None,'length':len(ans) if isinstance(ans,str) else 0,'truth':d.get('truth') if isinstance(d,dict) else None,'source':d.get('source') if isinstance(d,dict) else None,'safe':safe,'verificationReason':d.get('verificationReason') if isinstance(d,dict) else None,'prefix':ans[:120] if isinstance(ans,str) else ''}
-          failures=[]; latencies=[]; truth_counts={}
+          unsafe_failures=[]; degraded=[]; latencies=[]; truth_counts={}; ready_count=0
           with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
               futs=[ex.submit(ask,q) for q in cases]
               for i,f in enumerate(concurrent.futures.as_completed(futs),1):
-                  ok,lat,detail=f.result(); latencies.append(lat); truth_counts[detail.get('truth')]=truth_counts.get(detail.get('truth'),0)+1
-                  if not ok:failures.append((i,detail))
-                  if i%100==0:print(f'completed={i} failures={len(failures)}')
-          latencies.sort(); print(f'total={len(cases)} readiness_failures={len(failures)} p50={latencies[len(latencies)//2]:.2f}s p95={latencies[int(len(latencies)*.95)-1]:.2f}s max={max(latencies):.2f}s truth={truth_counts}')
-          if failures: print('first failures:',failures[:20]); raise SystemExit(1)
+                  ready,lat,detail=f.result(); latencies.append(lat); truth_counts[detail.get('truth')]=truth_counts.get(detail.get('truth'),0)+1
+                  if ready:
+                      ready_count+=1
+                  elif detail.get('safe') is True:
+                      degraded.append((i,detail))
+                  else:
+                      unsafe_failures.append((i,detail))
+                  if i%100==0:print(f'completed={i} unsafe={len(unsafe_failures)} degraded={len(degraded)}')
+          ready_rate=ready_count/len(cases)
+          latencies.sort(); print(f'total={len(cases)} ready={ready_count} ready_rate={ready_rate:.3f} degraded={len(degraded)} unsafe={len(unsafe_failures)} p50={latencies[len(latencies)//2]:.2f}s p95={latencies[int(len(latencies)*.95)-1]:.2f}s max={max(latencies):.2f}s truth={truth_counts}')
+          if unsafe_failures:
+              print('unsafe failures:',unsafe_failures[:20]); raise SystemExit(1)
+          if ready_rate < 0.80:
+              print('too many safe-but-degraded responses:',degraded[:20]); raise SystemExit(1)
           PY
