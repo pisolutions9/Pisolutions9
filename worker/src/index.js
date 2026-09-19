@@ -18,7 +18,7 @@ const DEFAULT_EDGE_MODEL = '@cf/zai-org/glm-4.7-flash';
 const EDGE_MODEL_FALLBACKS = [
   '@cf/openai/gpt-oss-20b',
   '@cf/google/gemma-4-26b-a4b-it',
-  '@cf/meta/llama-3.1-8b-instruct-fast'
+  '@cf/qwen/qwen3-30b-a3b-fp8'
 ];
 const OPENAI_MODEL_FALLBACKS = ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5'];
 const HARD_REASONING = /\b(calculate|posterior|bayes|probability|optimi[sz]|linear programming|profit-maximi[sz]|cash model|cash flow|runway|break-even|constraint|corner points?|binding constraints?|distributed systems?|network partition|cap theorem|exactly.once|no double charges?|ledger|migration|reconciliation|invariants?|rollback|shard(?:ed|ing)?|25,?000 writes|prove why|show enough calculations|audit the answer)\b/i;
@@ -35,7 +35,8 @@ function recentConversationContext(history=[],message=''){
 }
 const PI_INSTRUCTIONS = "You are PI, an autonomous intelligence assistant coordinated by Krishna. Answer the user's actual question directly and naturally. Use the provided conversation history to resolve follow-ups, short replies, locations, pronouns, and answers to questions you just asked; do not treat each turn as isolated. Do not expose internal routing, classification, planning, tool, or verification language. If current facts or an external action cannot be verified, say what is missing instead of inventing it. Never claim an action was completed unless it actually was. Never present invented market sizes, competitor counts, prices, locations, financial projections, statistics, dates, or operational facts as known. When useful assumptions are needed, label them clearly as illustrative assumptions and separate them from known facts and items needing research. If some requested calculation cannot be completed because inputs are missing, calculate what can be established, name the missing variables, give the formula or decision framework, and continue with the useful parts instead of refusing the entire request. You can discuss, explain, and draft text. Inventory CSV creation is handled by a separate tool. Unless this request was explicitly routed through a connected live-research provider, you cannot browse, deploy, or run other external actions. Give a complete response within 1000 tokens; prioritize the most useful points and avoid repetition.";
 const HARD_REASONING_INSTRUCTIONS = `${PI_INSTRUCTIONS} This is a high-depth reasoning task. Work from the stated facts only. Do not invent costs, constraints, guarantees, sources, or hidden inputs. Recompute every material numeric conclusion. If an exact result needs missing inputs, explicitly identify them, calculate every quantity that is still derivable, and provide formulas or scenario ranges only when their assumptions are clearly labeled. For finance questions, distinguish net burn from operating expense before revenue: if the prompt says monthly burn, treat it as net cash burn unless it explicitly says expenses/costs, and do not subtract stated revenue from net burn a second time. If wording is ambiguous, show the materially different interpretations instead of silently choosing one. For database migrations, define the source of truth and write ownership at each phase; prefer snapshot/backfill plus CDC or replication over naive dual writes; require idempotency, ordering, lag and reconciliation checks; and never claim rollback is simple after the target accepts writes unless reverse replication or an explicit reconciliation path exists. Check every proposed solution against every stated constraint. For impossibility/tradeoff questions, do not claim simultaneous guarantees that conflict. For financial/data-integrity designs, state invariants and failure boundaries. Before finalizing, silently try to disprove your own conclusion.`;
-const VERIFY_INSTRUCTIONS = "You are PI's independent verifier. Review the candidate answer against the user's question for material correctness. Check arithmetic, probability, recurrence, feasibility, omitted terms that change the conclusion, unsupported facts presented as known, contradictory guarantees, and unsafe data-integrity claims. A clearly labeled illustrative assumption or scenario is acceptable when the prompt lacks an input needed for an exact answer. If the candidate explicitly says an exact quantity cannot be determined, identifies the missing inputs, calculates what is derivable, and labels any example assumptions, do not reject it merely for using those assumptions. Do not reject for style, verbosity, or a harmless simplification. Return exactly PASS if no material defect exists. Otherwise return REVISE followed by a compact correction brief naming the specific material defect. Do not praise the answer.";
+const REVIEW_INSTRUCTIONS = "You are PI's independent reviewer and corrector. Review the candidate answer against the user's question for material correctness. Check arithmetic, probability, recurrence, feasibility, omitted terms that change the conclusion, unsupported facts presented as known, contradictory guarantees, and unsafe data-integrity claims. A clearly labeled illustrative assumption or scenario is acceptable when the prompt lacks an input needed for an exact answer. If the candidate explicitly says an exact quantity cannot be determined, identifies the missing inputs, calculates what is derivable, and labels any example assumptions, do not reject it merely for using those assumptions. Do not reject for style, verbosity, or a harmless simplification. If there is no material defect, return exactly PASS. If there is a material defect, return CORRECT on the first line followed by a complete corrected self-contained answer that satisfies the original question. Never return a correction brief without the corrected answer. Do not praise the candidate.";
+const FINAL_VERIFY_INSTRUCTIONS = "You are PI's final independent verifier. Check the proposed corrected answer against the original question for material correctness, arithmetic, feasibility, unsupported facts, contradictory guarantees, and unsafe data-integrity claims. Clearly labeled illustrative assumptions are allowed when exact inputs are missing. Return exactly PASS if no material defect exists. Otherwise return REVISE followed by a compact description of the remaining material defect. Do not rewrite the answer and do not praise it.";
 const COMPACT_RETRY_INSTRUCTIONS = `${PI_INSTRUCTIONS} The previous attempt reached its output limit. Rewrite the answer from the beginning as a complete, self-contained response under 700 words. Do not mention the retry or truncation.`;
 
 function validateAttachment(value) {
@@ -84,19 +85,38 @@ function edgeResultIncomplete(result,maxTokens){const finishReasons=[result?.fin
 async function callWorkersAI(env,message,history,{preferStrong=false,instructions=PI_INSTRUCTIONS,deadline=null}={}){if(!env.AI||typeof env.AI.run!=='function')return null;const configured=env.PI_EDGE_MODEL||DEFAULT_EDGE_MODEL;const models=preferStrong
   ? [...new Set(['@cf/openai/gpt-oss-120b','@cf/zai-org/glm-4.7-flash','@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it',configured].filter(Boolean))]
   : [...new Set([configured,...EDGE_MODEL_FALLBACKS].filter(Boolean))];for(const model of models){try{const timeLeft=deadline?remainingBudget(deadline):EDGE_TIMEOUT_MS;if(timeLeft<=0)return null;const result=await runEdgeWithTimeout(env,model,message,history,{instructions,timeoutMs:timeLeft});const answer=extractEdgeAnswer(result);if(answer){const incomplete=edgeResultIncomplete(result,MAX_OUTPUT_TOKENS);if(!incomplete)return {answer,model,incomplete:false};try{const compactTimeLeft=deadline?remainingBudget(deadline):EDGE_TIMEOUT_MS;if(compactTimeLeft<=0)return {answer,model,incomplete:true};const compactResult=await runEdgeWithTimeout(env,model,message,history,{instructions:instructions===PI_INSTRUCTIONS?COMPACT_RETRY_INSTRUCTIONS:instructions,maxTokens:COMPACT_OUTPUT_TOKENS,timeoutMs:compactTimeLeft});const compactAnswer=extractEdgeAnswer(compactResult);if(compactAnswer&&!edgeResultIncomplete(compactResult,COMPACT_OUTPUT_TOKENS))return {answer:compactAnswer,model,incomplete:false,recoveredFrom:'output_limit'};}catch(error){console.error(`Workers AI compact retry failed: ${model}`,error instanceof Error?error.message:String(error));}return {answer,model,incomplete:true};}console.error(`Workers AI empty response: ${model}`);}catch(error){console.error(`Workers AI model failed: ${model}`,error instanceof Error?error.message:String(error));}await new Promise(resolve=>setTimeout(resolve,250));}return null;}
-async function verifyHardAnswer(env,message,history,candidate,candidateModel,deadline=Date.now()+HARD_REASONING_BUDGET_MS){
+async function reviewHardAnswer(env,message,history,candidate,candidateModel,deadline=Date.now()+HARD_REASONING_BUDGET_MS){
+  if(!env.AI||typeof env.AI.run!=='function')return {ok:false,reason:'reviewer_unavailable'};
+  const reviewPrompt=`QUESTION:\n${message}\n\nCANDIDATE ANSWER:\n${candidate}\n\nReview independently. If materially wrong, return CORRECT followed by the full corrected answer.`;
+  const reviewerModels=['@cf/zai-org/glm-4.7-flash','@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it','@cf/qwen/qwen3-30b-a3b-fp8'].filter(model=>model!==candidateModel);
+  for(const model of reviewerModels){
+    try{
+      const timeLeft=remainingBudget(deadline);if(timeLeft<=0)return {ok:false,reason:'review_deadline_exceeded'};
+      const result=await runEdgeWithTimeout(env,model,reviewPrompt,history,{instructions:REVIEW_INSTRUCTIONS,maxTokens:COMPACT_OUTPUT_TOKENS,timeoutMs:timeLeft});
+      const verdict=extractEdgeAnswer(result);
+      if(!verdict)continue;
+      if(/^PASS\s*$/i.test(verdict))return {ok:true,model};
+      if(/^CORRECT\b/i.test(verdict)){
+        const correctedAnswer=verdict.replace(/^CORRECT\b[:\s-]*/i,'').trim();
+        if(correctedAnswer)return {ok:false,model,correctedAnswer,reason:'material_defect_corrected'};
+      }
+    }catch(error){console.error('PI reviewer failed',model,error instanceof Error?error.message:String(error));}
+  }
+  return {ok:false,reason:'review_inconclusive'};
+}
+async function verifyCorrectedHardAnswer(env,message,history,answer,excludedModels=[],deadline=Date.now()+HARD_REASONING_BUDGET_MS){
   if(!env.AI||typeof env.AI.run!=='function')return {ok:false,reason:'verifier_unavailable'};
-  const verificationPrompt=`QUESTION:\n${message}\n\nCANDIDATE ANSWER:\n${candidate}\n\nVerify independently.`;
-  const verifierModels=['@cf/zai-org/glm-4.7-flash','@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it'].filter(model=>model!==candidateModel);
+  const verificationPrompt=`QUESTION:\n${message}\n\nPROPOSED CORRECTED ANSWER:\n${answer}\n\nVerify independently.`;
+  const verifierModels=['@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it','@cf/qwen/qwen3-30b-a3b-fp8','@cf/zai-org/glm-4.7-flash'].filter(model=>!excludedModels.includes(model));
   for(const model of verifierModels){
     try{
       const timeLeft=remainingBudget(deadline);if(timeLeft<=0)return {ok:false,reason:'verification_deadline_exceeded'};
-      const result=await runEdgeWithTimeout(env,model,verificationPrompt,history,{instructions:VERIFY_INSTRUCTIONS,maxTokens:500,timeoutMs:timeLeft});
+      const result=await runEdgeWithTimeout(env,model,verificationPrompt,history,{instructions:FINAL_VERIFY_INSTRUCTIONS,maxTokens:500,timeoutMs:timeLeft});
       const verdict=extractEdgeAnswer(result);
       if(!verdict)continue;
       if(/^PASS\b/i.test(verdict))return {ok:true,model};
       if(/^REVISE\b/i.test(verdict))return {ok:false,model,reason:verdict};
-    }catch(error){console.error('PI verifier failed',model,error instanceof Error?error.message:String(error));}
+    }catch(error){console.error('PI final verifier failed',model,error instanceof Error?error.message:String(error));}
   }
   return {ok:false,reason:'verification_inconclusive'};
 }
@@ -105,18 +125,14 @@ async function produceVerifiedHardAnswer(env,message,history){
   const deadline=Date.now()+HARD_REASONING_BUDGET_MS;
   const first=await callWorkersAI(env,message,history,{preferStrong:true,instructions:HARD_REASONING_INSTRUCTIONS,deadline});
   if(!first||first.incomplete)return null;
-  if(remainingBudget(deadline)<EDGE_TIMEOUT_MS)return {...first,verified:false,provisional:true,verificationReason:'verification_budget_exhausted'};
-  const check=await verifyHardAnswer(env,message,history,first.answer,first.model,deadline);
-  if(check.ok)return {...first,verified:true,verifier:check.model};
-  if(!String(check.reason||'').match(/^REVISE\b/i))return {...first,verified:false,provisional:true,verificationReason:check.reason||'verification_inconclusive'};
+  if(remainingBudget(deadline)<EDGE_TIMEOUT_MS)return {...first,verified:false,provisional:true,verificationReason:'review_budget_exhausted'};
+  const review=await reviewHardAnswer(env,message,history,first.answer,first.model,deadline);
+  if(review.ok)return {...first,verified:true,verifier:review.model};
+  if(!review.correctedAnswer)return {...first,verified:false,provisional:true,verificationReason:review.reason||'review_inconclusive'};
   if(remainingBudget(deadline)<EDGE_TIMEOUT_MS)return null;
-  const correction=check.reason;
-  const retryMessage=`${message}\n\nIndependent verification rejected the previous draft. Correction brief:\n${correction}\nProduce a corrected self-contained answer. Recalculate from the original facts and do not repeat the rejected error.`;
-  const revised=await callWorkersAI(env,retryMessage,history,{preferStrong:true,instructions:HARD_REASONING_INSTRUCTIONS,deadline});
-  if(!revised||revised.incomplete)return null;
-  const recheck=await verifyHardAnswer(env,message,history,revised.answer,revised.model,deadline);
-  if(recheck.ok)return {...revised,verified:true,verifier:recheck.model,recoveredFrom:'verification'};
-  if(!String(recheck.reason||'').match(/^REVISE\b/i))return {...revised,verified:false,provisional:true,verificationReason:recheck.reason||'verification_inconclusive'};
+  const finalCheck=await verifyCorrectedHardAnswer(env,message,history,review.correctedAnswer,[first.model,review.model],deadline);
+  if(finalCheck.ok)return {answer:review.correctedAnswer,model:review.model,incomplete:false,verified:true,verifier:finalCheck.model,recoveredFrom:'independent-correction'};
+  if(!String(finalCheck.reason||'').match(/^REVISE\b/i))return {answer:review.correctedAnswer,model:review.model,incomplete:false,verified:false,provisional:true,verificationReason:finalCheck.reason||'verification_inconclusive'};
   return null;
 }
 function recoveryResponse(message,request,failure){const answer=deterministicFallback(message);if(!answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return json({ok:true,answer,source:'pi-chat-deterministic-recovery',truth:'deterministic',providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,headers);}
