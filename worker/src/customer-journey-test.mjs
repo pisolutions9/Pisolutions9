@@ -8,7 +8,7 @@ const env = { AI:{run:async(model,input,options)=>{seen=input;seenModel=model;se
 const history=[{role:'user',content:'My budget is 73000 rupees.'},{role:'assistant',content:'Understood.'}];
 let result=await (await worker.fetch(request({message:'What was my budget?',history}),env)).json();
 assert.equal(result.truth,'model-response');assert.deepEqual(seen.messages.slice(1,-1),history);
-assert.equal(seen.max_tokens,1200);assert.equal(seenOptions.rejectIfBusy,true);assert.equal(seenOptions.gateway.id,'default');
+assert.equal(seen.max_tokens,1200);assert.equal(seenOptions.rejectIfBusy,true);assert.equal(seenOptions.gateway.id,'default');assert.equal(seenOptions.gateway.cacheTtl,300);assert.match(seenOptions.gateway.cacheKey,/^pi-v1-[0-9a-f]{64}$/);
 
 let capacityCalls=[];
 const capacityEnv={AI:{run:async(model,input,options)=>{
@@ -30,7 +30,8 @@ const hardEnv={AI:{run:async(model,input)=>{
 const hardResponse=await worker.fetch(request({message:'Calculate a Bayesian posterior probability with two independent positive tests and show enough calculations to audit the answer.'}),hardEnv);
 const hardBody=await hardResponse.json();
 assert.equal(hardResponse.status,200);assert.equal(hardBody.truth,'verified-model-response');assert.equal(hardBody.verification,'independent-pass');
-assert.ok(['@cf/zai-org/glm-4.7-flash','@cf/openai/gpt-oss-120b','@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it'].includes(hardCalls[0].model));
+assert.equal(hardCalls[0].model,'@cf/zai-org/glm-4.7-flash');
+assert.equal(hardCalls[1].model,'@cf/openai/gpt-oss-20b');
 assert.notEqual(hardCalls[0].model,hardCalls[1].model);
 assert.match(hardCalls[0].input.messages[0].content,/net burn/i);
 assert.match(hardCalls[0].input.messages[0].content,/source of truth/i);
@@ -48,7 +49,8 @@ const corrected=await worker.fetch(request({message:'Calculate a Bayesian poster
 const correctedBody=await corrected.json();
 assert.equal(corrected.status,200);assert.equal(correctedBody.truth,'verified-model-response');assert.equal(correctedBody.verification,'independent-pass');
 assert.match(correctedBody.answer,/67\.37%/);assert.equal(correctionCalls.length,3);
-assert.notEqual(correctionCalls[1].model,correctionCalls[0].model);
+assert.equal(correctionCalls[0].model,'@cf/zai-org/glm-4.7-flash');
+assert.equal(correctionCalls[1].model,'@cf/openai/gpt-oss-20b');
 assert.notEqual(correctionCalls[2].model,correctionCalls[0].model);assert.notEqual(correctionCalls[2].model,correctionCalls[1].model);
 
 let rejectCalls=0;
