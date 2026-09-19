@@ -31,7 +31,7 @@ const hardResponse=await worker.fetch(request({message:'Calculate a Bayesian pos
 const hardBody=await hardResponse.json();
 assert.equal(hardResponse.status,200);assert.equal(hardBody.truth,'verified-model-response');assert.equal(hardBody.verification,'independent-pass');
 assert.equal(hardCalls[0].model,'@cf/zai-org/glm-4.7-flash');
-assert.equal(hardCalls[1].model,'@cf/qwen/qwen3-30b-a3b-fp8');
+assert.equal(hardCalls[1].model,'@cf/meta/llama-3.1-8b-instruct-fast');
 assert.notEqual(hardCalls[0].model,hardCalls[1].model);
 assert.equal(hardCalls[0].input.max_tokens,1100);
 assert.match(hardCalls[0].input.messages[0].content,/350-500 words/i);
@@ -52,7 +52,7 @@ const correctedBody=await corrected.json();
 assert.equal(corrected.status,200);assert.equal(correctedBody.truth,'verified-model-response');assert.equal(correctedBody.verification,'independent-pass');
 assert.match(correctedBody.answer,/67\.37%/);assert.equal(correctionCalls.length,3);
 assert.equal(correctionCalls[0].model,'@cf/zai-org/glm-4.7-flash');
-assert.equal(correctionCalls[1].model,'@cf/qwen/qwen3-30b-a3b-fp8');
+assert.equal(correctionCalls[1].model,'@cf/meta/llama-3.1-8b-instruct-fast');
 assert.notEqual(correctionCalls[2].model,correctionCalls[0].model);assert.notEqual(correctionCalls[2].model,correctionCalls[1].model);
 
 let singleflightCalls=0;
@@ -216,7 +216,7 @@ let delayedReviewCalls=[];
 const delayedReview=await (await worker.fetch(request({message:'Calculate a review-budget scenario.'}),{AI:{run:async(model,input)=>{
   delayedReviewCalls.push(model);
   if(input.messages[0].content.includes('independent reviewer')){
-    if(model==='@cf/qwen/qwen3-30b-a3b-fp8'){
+    if(model==='@cf/meta/llama-3.1-8b-instruct-fast'){
       await new Promise(resolve=>setTimeout(resolve,4200));
       return {response:'PASS',finish_reason:'stop',usage:{completion_tokens:850}};
     }
@@ -225,8 +225,8 @@ const delayedReview=await (await worker.fetch(request({message:'Calculate a revi
   return {response:'A complete candidate answer.',finish_reason:'stop'};
 }}})).json();
 assert.equal(delayedReview.truth,'verified-model-response');
-assert.ok(delayedReviewCalls.includes('@cf/qwen/qwen3-30b-a3b-fp8'));
-assert.ok(delayedReviewCalls.includes('@cf/openai/gpt-oss-20b') || delayedReviewCalls.includes('@cf/google/gemma-4-26b-a4b-it'));
+assert.ok(delayedReviewCalls.includes('@cf/meta/llama-3.1-8b-instruct-fast'));
+assert.ok(delayedReviewCalls.includes('@cf/qwen/qwen3-30b-a3b-fp8') || delayedReviewCalls.includes('@cf/openai/gpt-oss-20b'));
 
 // Truncated output cannot certify an answer, including a visible PASS prefix.
 for(const verdict of ['PASS','CORRECT\nAn incomplete correction']){
