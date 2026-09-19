@@ -58,6 +58,16 @@ function downloadArtifact(artifact, card) {
   const url = URL.createObjectURL(new Blob([artifact.content], { type: artifact.mimeType })); artifactUrls.push(url);
   const link = document.createElement('a'); link.href = url; link.download = artifact.filename; link.textContent = 'Download ' + artifact.filename; link.className = 'download'; card.append(link);
 }
+function renderSources(sources, card) {
+  if (!Array.isArray(sources) || !sources.length) return;
+  const wrap = document.createElement('div'); wrap.className = 'sources';
+  const label = document.createElement('small'); label.textContent = 'Sources'; wrap.append(label);
+  for (const source of sources.slice(0, 8)) {
+    if (!source || typeof source.url !== 'string' || !/^https:\/\//.test(source.url)) continue;
+    const link = document.createElement('a'); link.href = source.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = source.title || new URL(source.url).hostname; wrap.append(link);
+  }
+  if (wrap.children.length > 1) card.append(wrap);
+}
 for (const turn of conversation) {
   const card = addTranscript(turn.role, turn.content);
   if (turn.role === 'assistant' && Array.isArray(turn.artifacts)) for (const artifact of turn.artifacts.slice(0, 1)) downloadArtifact(artifact, card);
@@ -211,6 +221,7 @@ async function runCustomerChat(text) {
     note.textContent = outcome.note;
     card.append(note);
     for (const artifact of outcome.artifacts) downloadArtifact(artifact, card);
+    renderSources(outcome.sources, card);
     if (outcome.remember) { rememberTurn('user', text); rememberTurn('assistant', outcome.answer, outcome.artifacts); }
     if (outcome.restoreDraft) restoreDraft(text);
     mission.classList.add('hidden');
