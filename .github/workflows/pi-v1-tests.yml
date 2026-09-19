@@ -66,6 +66,32 @@ jobs:
           cases=questions*rounds
           print(f"Running {len(cases)} customer questions ({rounds} rounds x {len(questions)} complex prompts)")
 
+          # Reject the old internal-routing response contract without rejecting
+          # ordinary customer answers that legitimately contain headings such as
+          # "Remediation Plan:" or "Launch Plan:".
+          legacy_markers=(
+              'classification:',
+              'i recognized this as an informational question',
+              'temporarily operating in verified recovery mode',
+              'live model execution is currently unavailable'
+          )
+
+          def valid_answer(status, data):
+              answer=data.get('answer','') if isinstance(data,dict) else ''
+              low=answer.lower() if isinstance(answer,str) else ''
+              return (
+                  status == '200'
+                  and data.get('ok') is True
+                  and isinstance(answer,str)
+                  and len(answer.strip()) >= 120
+                  and not any(marker in low for marker in legacy_markers)
+              )
+
+          valid_fixture={'ok':True,'answer':'Prioritized Remediation Plan: ' + ('verified customer guidance ' * 8)}
+          legacy_fixture={'ok':True,'answer':'Classification: BUSINESS_OBJECTIVE\n\nPlan:\n' + ('internal routing output ' * 8)}
+          if not valid_answer('200',valid_fixture) or valid_answer('200',legacy_fixture):
+              raise SystemExit('customer answer contract regression')
+
           def ask(q):
               payload=json.dumps({'message':q})
               t=time.time()
@@ -76,9 +102,7 @@ jobs:
               try: d=json.loads(body)
               except Exception: return False, elapsed, 'invalid-json'
               ans=d.get('answer','') if isinstance(d,dict) else ''
-              low=ans.lower()
-              forbidden=('classification:','plan:','i recognized this as an informational question','temporarily operating in verified recovery mode','live model execution is currently unavailable')
-              ok=status=='200' and d.get('ok') is True and isinstance(ans,str) and len(ans.strip())>=120 and not any(x in low for x in forbidden)
+              ok=valid_answer(status,d)
               return ok, elapsed, (len(ans) if isinstance(ans,str) else 0)
 
           failures=[]
