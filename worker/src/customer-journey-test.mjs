@@ -12,7 +12,7 @@ assert.ok(seen.max_tokens>=2048);assert.equal(seenOptions.rejectIfBusy,undefined
 let hardCalls=[];
 const hardEnv={AI:{run:async(model,input)=>{
   hardCalls.push({model,input});
-  if(input.messages?.[0]?.content?.includes("independent verifier"))return {response:'PASS'};
+  if(input.messages?.[0]?.content?.includes("independent reviewer and corrector"))return {response:'PASS'};
   return {response:'Posterior = 67.37%. Calculation shown and constraints checked.'};
 }}};
 const hardResponse=await worker.fetch(request({message:'Calculate a Bayesian posterior probability with two independent positive tests and show enough calculations to audit the answer.'}),hardEnv);
@@ -24,15 +24,34 @@ assert.notEqual(hardCalls[0].model,hardCalls[1].model);
 assert.match(hardCalls[0].input.messages[0].content,/net burn/i);
 assert.match(hardCalls[0].input.messages[0].content,/source of truth/i);
 assert.match(hardCalls[1].input.messages[0].content,/clearly labeled illustrative assumption/i);
+
+let correctionCalls=[];
+const correctionEnv={AI:{run:async(model,input)=>{
+  correctionCalls.push({model,input});
+  const system=input.messages?.[0]?.content||'';
+  if(system.includes("independent reviewer and corrector"))return {response:'CORRECT\nPosterior = 67.37%. The corrected calculation uses only the stated facts and shows the arithmetic.'};
+  if(system.includes("final independent verifier"))return {response:'PASS'};
+  return {response:'Posterior = 99%. This is a deliberately wrong draft.'};
+}}};
+const corrected=await worker.fetch(request({message:'Calculate a Bayesian posterior probability and show enough calculations to audit the answer.'}),correctionEnv);
+const correctedBody=await corrected.json();
+assert.equal(corrected.status,200);assert.equal(correctedBody.truth,'verified-model-response');assert.equal(correctedBody.verification,'independent-pass');
+assert.match(correctedBody.answer,/67\.37%/);assert.equal(correctionCalls.length,3);
+assert.equal(correctionCalls[0].model,'@cf/openai/gpt-oss-120b');
+assert.equal(correctionCalls[1].model,'@cf/zai-org/glm-4.7-flash');
+assert.notEqual(correctionCalls[2].model,correctionCalls[0].model);assert.notEqual(correctionCalls[2].model,correctionCalls[1].model);
+
 let rejectCalls=0;
 const rejectEnv={AI:{run:async(_model,input)=>{
   rejectCalls+=1;
-  if(input.messages?.[0]?.content?.includes("independent verifier"))return {response:'REVISE arithmetic is wrong'};
+  const system=input.messages?.[0]?.content||'';
+  if(system.includes("independent reviewer and corrector"))return {response:'CORRECT\nStill materially wrong.'};
+  if(system.includes("final independent verifier"))return {response:'REVISE arithmetic remains wrong'};
   return {response:'A confident but wrong answer'};
 }}};
 const rejected=await worker.fetch(request({message:'Calculate a Bayesian posterior probability and show enough calculations to audit the answer.'}),rejectEnv);
 const rejectedBody=await rejected.json();
-assert.equal(rejected.status,503);assert.equal(rejectedBody.error,'hard_reasoning_not_verified');assert.equal(rejectedBody.truth,'unknown');assert.ok(rejectCalls>=4);
+assert.equal(rejected.status,503);assert.equal(rejectedBody.error,'hard_reasoning_not_verified');assert.equal(rejectedBody.truth,'unknown');assert.equal(rejectCalls,3);
 const technicalResponse=await worker.fetch(request({message:'Explain quantum computing to a software engineer. Compare it with classical computing, give one concrete example where it could matter, and clearly separate what is practical today from what is still experimental.'}),env);
 const technicalBody=await technicalResponse.json();
 assert.equal(technicalResponse.status,200);assert.equal(technicalBody.ok,true);assert.ok(technicalBody.answer);
