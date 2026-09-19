@@ -14,7 +14,7 @@ const PROVIDER_TIMEOUT_MS = 20000;
 const EDGE_TIMEOUT_MS = 4000;
 const CHAT_REQUEST_BUDGET_MS = 20000;
 const HARD_REASONING_BUDGET_MS = 17500;
-const HARD_CANDIDATE_STAGE_MS = 8500;
+const HARD_CANDIDATE_STAGE_MS = 9500;
 const HARD_REVIEW_STAGE_MS = 4500;
 const HARD_FINAL_STAGE_MS = 3500;
 const DEFAULT_EDGE_MODEL = '@cf/zai-org/glm-4.7-flash';
@@ -113,12 +113,15 @@ async function callWorkersAI(env,message,history,{preferStrong=false,instruction
     }catch(error){console.error(`Workers AI fast-capacity attempt failed: ${model}`,error instanceof Error?error.message:String(error));}
     await new Promise(resolve=>setTimeout(resolve,25));
   }
-  const queuedModels=preferStrong?models.slice(0,1):models.slice(0,2);
+  const queuedModels=models.slice(0,2);
   for(let index=0;index<queuedModels.length;index++){
     const queuedModel=queuedModels[index];
     const queuedTimeLeft=deadline?remainingBudget(deadline):EDGE_TIMEOUT_MS;
     if(queuedTimeLeft<1200)break;
-    const queuedTimeout=preferStrong?queuedTimeLeft:Math.min(7000,Math.max(1200,Math.floor(queuedTimeLeft/(queuedModels.length-index))));
+    const remainingAttempts=queuedModels.length-index;
+    const queuedTimeout=preferStrong
+      ? (index===0?Math.min(5000,Math.max(2500,queuedTimeLeft-3000)):queuedTimeLeft)
+      : Math.min(7000,Math.max(1200,Math.floor(queuedTimeLeft/remainingAttempts)));
     try{
       const result=await tryResult(queuedModel,false,queuedTimeout);
       if(result)return {...result,recoveredFrom:result.recoveredFrom||'capacity-queue'};
