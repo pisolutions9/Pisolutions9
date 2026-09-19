@@ -8,7 +8,7 @@ const env = { AI:{run:async(model,input,options)=>{seen=input;seenModel=model;se
 const history=[{role:'user',content:'My budget is 73000 rupees.'},{role:'assistant',content:'Understood.'}];
 let result=await (await worker.fetch(request({message:'What was my budget?',history}),env)).json();
 assert.equal(result.truth,'model-response');assert.deepEqual(seen.messages.slice(1,-1),history);
-assert.equal(seen.max_tokens,1200);assert.equal(seenOptions.rejectIfBusy,undefined);assert.equal(seenOptions.gateway.id,'default');
+assert.equal(seen.max_tokens,1200);assert.equal(seenOptions.rejectIfBusy,true);assert.equal(seenOptions.gateway.id,'default');
 let hardCalls=[];
 const hardEnv={AI:{run:async(model,input)=>{
   hardCalls.push({model,input});
