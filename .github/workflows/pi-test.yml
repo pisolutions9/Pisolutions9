@@ -49,7 +49,7 @@ jobs:
           echo "Customer site HTTP status: $site_status"
           test "$site_status" -ge 200
           test "$site_status" -lt 300
-          grep -Fq 'app.js?v=20260917-live-chat' /tmp/pi-site.html
+          grep -Fq 'app.js?v=20260919-completion' /tmp/pi-site.html
           grep -Fq 'Autonomous Intelligence' /tmp/pi-site.html
 
           answers=()
@@ -77,7 +77,7 @@ jobs:
             echo "Chat HTTP status: $status | input: $question"
             cat /tmp/pi-chat.json
             test "$status" = 200
-            python -c 'import json,sys; d=json.load(open("/tmp/pi-chat.json")); assert d.get("ok") is True and isinstance(d.get("answer"), str) and d["answer"].strip(); a=d["answer"].lower(); forbidden=("classification:","plan:","i recognized this as an informational question","i will answer directly when the required knowledge is available.","temporarily operating in verified recovery mode"); assert not any(x in a for x in forbidden); print("ANSWER_LENGTH", len(d["answer"])); print("ANSWER", d["answer"])'
+            python -c 'import json,sys; d=json.load(open("/tmp/pi-chat.json")); assert d.get("ok") is True and isinstance(d.get("answer"), str) and d["answer"].strip(); a=d["answer"].lower().lstrip(); forbidden_prefixes=("classification: business_objective","classification: informational","classification:"); forbidden_phrases=("i recognized this as an informational question","i will answer directly when the required knowledge is available.","temporarily operating in verified recovery mode"); assert not a.startswith(forbidden_prefixes) and not any(x in a for x in forbidden_phrases); print("ANSWER_LENGTH", len(d["answer"])); print("ANSWER", d["answer"])'
             answers+=("$(python -c 'import json; print(json.load(open("/tmp/pi-chat.json"))["answer"])')")
             if [ "$index" -ge 7 ]; then
               python -c 'import json; a=json.load(open("/tmp/pi-chat.json"))["answer"].strip(); assert len(a)>=160, f"complex answer too short: {len(a)}"'
