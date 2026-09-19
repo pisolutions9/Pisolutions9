@@ -17,7 +17,7 @@ concurrency:
 jobs:
   v102:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -30,3 +30,11 @@ jobs:
         run: npm run test:v1.02
       - name: Full regression suite
         run: npm test
+      - name: Install live browser harness
+        if: github.event_name != 'pull_request'
+        run: |
+          npm install --no-save --package-lock=false @playwright/test@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Live browser end-to-end customer test
+        if: github.event_name != 'pull_request'
+        run: npx playwright test pi/live-browser-e2e.spec.mjs --reporter=line --workers=1
