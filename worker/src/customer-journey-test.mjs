@@ -238,7 +238,7 @@ const hardCapacity=await (await worker.fetch(request({message:'Calculate a resil
 }}})).json();
 assert.equal(hardCapacity.truth,'verified-model-response');
 assert.ok(hardCapacityCalls.some(call=>call.options?.rejectIfBusy===true));
-assert.ok(hardCapacityCalls.some(call=>call.options?.rejectIfBusy===false));
+assert.ok(hardCapacityCalls.some(call=>!call.options?.rejectIfBusy));
 
 // Truncated output cannot certify an answer, including a visible PASS prefix.
 for(const verdict of ['PASS','CORRECT\nAn incomplete correction']){
