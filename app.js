@@ -43,7 +43,30 @@ function setStatus(label, state = 'idle') {
 }
 const DRAFT_KEY = 'pi-v1-draft';
 const PENDING_KEY = 'pi-v1-pending-question';
-function saveDraft() { try { sessionStorage.setItem(DRAFT_KEY, command.value); } catch {} }
+const HISTORY_KEY = 'pi-v1-conversation';
+function storageGet(key) {
+  try {
+    const persistent = localStorage.getItem(key);
+    if (persistent !== null) return persistent;
+  } catch {}
+  try {
+    const legacy = sessionStorage.getItem(key);
+    if (legacy !== null) {
+      try { localStorage.setItem(key, legacy); sessionStorage.removeItem(key); } catch {}
+      return legacy;
+    }
+  } catch {}
+  return null;
+}
+function storageSet(key, value) {
+  try { localStorage.setItem(key, value); try { sessionStorage.removeItem(key); } catch {} return; } catch {}
+  try { sessionStorage.setItem(key, value); } catch {}
+}
+function storageRemove(key) {
+  try { localStorage.removeItem(key); } catch {}
+  try { sessionStorage.removeItem(key); } catch {}
+}
+function saveDraft() { storageSet(DRAFT_KEY, command.value); }
 function restoreDraft(text) {
   // Preserve any new text the owner typed while the previous request was running.
   if (!command.value.trim()) command.value = text;
@@ -51,16 +74,15 @@ function restoreDraft(text) {
   command.style.height = 'auto';
   command.style.height = Math.min(command.scrollHeight, 140) + 'px';
 }
-try { command.value = sessionStorage.getItem(DRAFT_KEY) || sessionStorage.getItem(PENDING_KEY) || ''; } catch {}
+command.value = storageGet(DRAFT_KEY) || storageGet(PENDING_KEY) || '';
 setStatus(navigator.onLine ? 'Ready to ask' : 'Offline', navigator.onLine ? 'idle' : 'blocked');
 window.addEventListener('offline', () => setStatus('Offline', 'blocked'));
 window.addEventListener('online', () => { if (!run.disabled) setStatus('Connection restored'); });
 
 
-const HISTORY_KEY = 'pi-v1-conversation';
 let conversation = [];
 const artifactUrls = [];
-try { const saved = JSON.parse(sessionStorage.getItem(HISTORY_KEY) || '[]'); if (Array.isArray(saved)) conversation = saved.filter(t => t && ['user','assistant'].includes(t.role) && typeof t.content === 'string').slice(-20); } catch {}
+try { const saved = JSON.parse(storageGet(HISTORY_KEY) || '[]'); if (Array.isArray(saved)) conversation = saved.filter(t => t && ['user','assistant'].includes(t.role) && typeof t.content === 'string').slice(-20); } catch {}
 function historyWindow() {
   const result = []; let size = 0;
   for (const turn of [...conversation].reverse()) { if (turn.content.length > 12000 || size + turn.content.length > 30000) break; result.unshift(turn); size += turn.content.length; }
@@ -69,7 +91,7 @@ function historyWindow() {
 function rememberTurn(role, content, artifacts = []) {
   const savedArtifacts = artifacts.filter(isDownloadableArtifact).slice(0, 1).map(({ filename, mimeType, content }) => ({ filename, mimeType, content }));
   conversation.push({ role, content, ...(savedArtifacts.length ? { artifacts: savedArtifacts } : {}) }); conversation = historyWindow();
-  try { sessionStorage.setItem(HISTORY_KEY, JSON.stringify(conversation)); } catch {}
+  storageSet(HISTORY_KEY, JSON.stringify(conversation));
 }
 function syncWelcome() { const welcome = document.querySelector('#welcome'); if (welcome) welcome.classList.toggle('hidden', conversation.length > 0 || document.querySelector('#transcript').children.length > 0); }
 function addTranscript(role, text) {
@@ -100,7 +122,7 @@ for (const turn of conversation) {
   const card = addTranscript(turn.role, turn.content);
   if (turn.role === 'assistant' && Array.isArray(turn.artifacts)) for (const artifact of turn.artifacts.slice(0, 1)) downloadArtifact(artifact, card);
 }
-document.querySelector('#clearChat').addEventListener('click', () => { conversation = []; try { sessionStorage.removeItem(HISTORY_KEY); sessionStorage.removeItem(PENDING_KEY); } catch {} document.querySelector('#transcript').replaceChildren(); for (const url of artifactUrls) URL.revokeObjectURL(url); artifactUrls.length = 0; mission.classList.add('hidden'); syncWelcome(); setStatus(navigator.onLine ? 'Ready to ask' : 'Offline', navigator.onLine ? 'idle' : 'blocked'); });
+document.querySelector('#clearChat').addEventListener('click', () => { conversation = []; storageRemove(HISTORY_KEY); storageRemove(PENDING_KEY); document.querySelector('#transcript').replaceChildren(); for (const url of artifactUrls) URL.revokeObjectURL(url); artifactUrls.length = 0; mission.classList.add('hidden'); syncWelcome(); setStatus(navigator.onLine ? 'Ready to ask' : 'Offline', navigator.onLine ? 'idle' : 'blocked'); });
 
 const DOMAIN_RULES = [
   { name: 'business', pattern: /business|market|sales|customer|revenue|export|import|price|profit|investment/i, tasks: ['define_business_goal', 'identify_constraints', 'build_decision_matrix'] },
@@ -229,7 +251,7 @@ function chatApiUrl() {
 }
 
 async function runCustomerChat(text, attachment = null) {
-  try { sessionStorage.setItem(PENDING_KEY, text); } catch {}
+  storageSet(PENDING_KEY, text);
   run.disabled = true;
   document.querySelector('#clearChat').disabled = true;
   setStatus('PI working…', 'working');
@@ -263,7 +285,7 @@ async function runCustomerChat(text, attachment = null) {
     restoreDraft(text);
     setStatus(outcome.label, outcome.state);
     return false;
-  } finally { clearTimeout(timer); pending.remove(); try { sessionStorage.removeItem(PENDING_KEY); } catch {} document.querySelector('#clearChat').disabled = false; run.disabled = false; }
+  } finally { clearTimeout(timer); pending.remove(); storageRemove(PENDING_KEY); document.querySelector('#clearChat').disabled = false; run.disabled = false; }
 }
 
 async function runCloudMission(text, attachment = null) {
