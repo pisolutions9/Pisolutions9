@@ -136,13 +136,18 @@ async function callWorkersAI(env,message,history,{preferStrong=false,instruction
 async function reviewHardAnswer(env,message,history,candidate,candidateModel,deadline=Date.now()+HARD_REVIEW_STAGE_MS){
   if(!env.AI||typeof env.AI.run!=='function')return {ok:false,reason:'reviewer_unavailable'};
   const reviewPrompt=`QUESTION:\n${message}\n\nCANDIDATE ANSWER:\n${candidate}\n\nReview independently. If materially wrong, return CORRECT followed by the full corrected answer.`;
-  const reviewerModels=['@cf/zai-org/glm-4.7-flash','@cf/qwen/qwen3-30b-a3b-fp8','@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it'].filter(model=>model!==candidateModel);
-  for(const model of reviewerModels){
+  const reviewerModels=['@cf/qwen/qwen3-30b-a3b-fp8','@cf/zai-org/glm-4.7-flash','@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it'].filter(model=>model!==candidateModel);
+  for(let index=0;index<reviewerModels.length;index++){
+    const model=reviewerModels[index];
     try{
       const timeLeft=remainingBudget(deadline);if(timeLeft<=0)return {ok:false,reason:'review_deadline_exceeded'};
+      // Bound each reviewer so one congested model cannot consume the whole verification window.
+      // This preserves independent verification while allowing a second model to take over.
+      const attemptCap=index===0?3500:index===1?4500:timeLeft;
+      const attemptTimeout=Math.max(1200,Math.min(timeLeft,attemptCap));
       // Reasoning tokens share the output budget. Never accept a truncated verdict
       // or correction, even when its visible text begins with PASS or CORRECT.
-      const result=await runEdgeWithTimeout(env,model,reviewPrompt,history,{instructions:REVIEW_INSTRUCTIONS,maxTokens:HARD_REVIEW_TOKENS,timeoutMs:timeLeft});
+      const result=await runEdgeWithTimeout(env,model,reviewPrompt,history,{instructions:REVIEW_INSTRUCTIONS,maxTokens:HARD_REVIEW_TOKENS,timeoutMs:attemptTimeout});
       if(edgeResultIncomplete(result,HARD_REVIEW_TOKENS))continue;
       const verdict=extractEdgeAnswer(result);
       if(!verdict)continue;
