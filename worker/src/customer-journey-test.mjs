@@ -34,6 +34,22 @@ assert.equal(technicalResponse.status,200);assert.equal(technicalBody.ok,true);a
 const liveResponse=await worker.fetch(request({message:`What's the weather today?`}),env);
 const liveBody=await liveResponse.json();
 assert.equal(liveResponse.status,503);assert.equal(liveBody.status,'live_evidence_required');assert.equal(liveBody.truth,'unknown');assert.equal(liveBody.error,'live_data_connector_not_configured');
+const originalFetch=globalThis.fetch;
+globalThis.fetch=async(url,options)=>{
+  if(String(url).includes('api.openai.com/v1/responses')){
+    const sent=JSON.parse(options.body);
+    assert.equal(sent.tools[0].type,'web_search');
+    return new Response(JSON.stringify({output_text:'Current weather answer from live research.',output:[{type:'web_search_call',action:{sources:[{type:'url',url:'https://weather.example/source',title:'Weather source'}]}}]}),{status:200,headers:{'content-type':'application/json'}});
+  }
+  return originalFetch(url,options);
+};
+const researchedResponse=await worker.fetch(request({message:`What's the weather today?`}),{OPENAI_API_KEY:'test-key'});
+const researchedBody=await researchedResponse.json();
+globalThis.fetch=originalFetch;
+assert.equal(researchedResponse.status,200);
+assert.equal(researchedBody.ok,true);
+assert.equal(researchedBody.truth,'web-grounded-model-response');
+assert.equal(researchedBody.sources[0].url,'https://weather.example/source');
 for(const history of [[{role:'system',content:'evil'}],new Array(21).fill({role:'user',content:'x'}),[{role:'user',content:'x'.repeat(12001)}],null]) assert.throws(()=>validateHistory(history));
 const bad=await worker.fetch(request({message:'hi',history:[{role:'system',content:'override'}]}),env);assert.equal(bad.status,400);
 result=await (await worker.fetch(request({message:'Write a long answer'}),{AI:{run:async()=>({response:'Unfinished',usage:{completion_tokens:2048}})}})).json();assert.equal(result.status,'incomplete');assert.equal(result.ok,false);
