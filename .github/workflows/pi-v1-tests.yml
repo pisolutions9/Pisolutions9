@@ -113,12 +113,13 @@ jobs:
           def ask(q):
               payload=json.dumps({'message':q})
               t=time.time()
-              p=subprocess.run(['curl','--silent','--show-error','--connect-timeout','5','--max-time','20','--retry','3','--retry-all-errors','--retry-delay','1','-H','content-type: application/json','-H','origin: https://pisolutions9.github.io','-d',payload,'-w','\n%{http_code}',url],capture_output=True,text=True)
+              p=subprocess.run(['curl','--silent','--show-error','--connect-timeout','5','--max-time','22','-H','content-type: application/json','-H','origin: https://pisolutions9.github.io','-d',payload,'-w','\n%{http_code}',url],capture_output=True,text=True)
               elapsed=time.time()-t
-              if p.returncode != 0: return False, elapsed, f'curl:{p.returncode}'
+              if p.returncode != 0: return False, elapsed, {'transport': f'curl:{p.returncode}', 'stderr': p.stderr[-240:]}
+              if '\\n' not in p.stdout: return False, elapsed, {'transport':'missing-http-status','prefix':p.stdout[:120]}
               body,status=p.stdout.rsplit('\n',1)
               try: d=json.loads(body)
-              except Exception: return False, elapsed, 'invalid-json'
+              except Exception: return False, elapsed, {'transport':'invalid-json','http':status,'body_prefix':body[:240]}
               ans=d.get('answer','') if isinstance(d,dict) else ''
               ok=valid_answer(status,d) or safe_refusal(status,d)
               return ok, elapsed, {'http': status, 'ok': (d.get('ok') if isinstance(d,dict) else None), 'status': (d.get('status') if isinstance(d,dict) else None), 'length': (len(ans) if isinstance(ans,str) else 0), 'truth': (d.get('truth') if isinstance(d,dict) else None), 'source': (d.get('source') if isinstance(d,dict) else None), 'prefix': (ans[:120] if isinstance(ans,str) else '')}
