@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: pi-v2-release-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   v2-release-gate:
     runs-on: ubuntu-latest
@@ -19,9 +23,58 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Verify V2 release contract
+        run: |
+          test -f PI_V2_RELEASE_REPORT.md
+          grep -q 'PI V2' PI_V2_RELEASE_REPORT.md
       - name: Run full V1 + V2 release suite
         run: npm test
       - name: Confirm V2 release gate
         run: node pi/v2-release-gate-test.mjs
+      - name: Deploy exact V2 chat worker candidate
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npm install --no-save --no-package-lock wrangler@4
+          node src/deterministic-fallback-test.mjs
+          node src/customer-journey-test.mjs
+          npx wrangler deploy
+      - name: Verify live model-backed V2 customer path
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint='https://pi-chat.premchandyadlapati.workers.dev/api/chat'
+          status="$(curl --silent --show-error --location --max-time 30 --retry 3 --retry-all-errors \
+            -H 'content-type: application/json' \
+            -H 'origin: https://pisolutions9.github.io' \
+            -d '{"message":"Explain opportunity cost with one clear example."}' \
+            --output /tmp/pi-v2-chat.json --write-out '%{http_code}' "$endpoint")"
+          test "$status" = 200
+          node -e "const d=require('/tmp/pi-v2-chat.json'); if(d.ok!==true||d.truth!=='model-response'||!String(d.source).startsWith('pi-chat-')||!d.answer) process.exit(1)"
+      - name: Verify exact V2 console reached GitHub Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://pisolutions9.github.io/Pisolutions9'
+          for attempt in {1..18}; do
+            matched=1
+            for file in index.html app.js styles.css; do
+              curl --silent --show-error --location --max-time 20 "$base/$file?candidate=$GITHUB_SHA" --output "/tmp/live-$file" || matched=0
+              if [[ "$matched" = 1 ]] && ! cmp --silent "$file" "/tmp/live-$file"; then matched=0; fi
+            done
+            if [[ "$matched" = 1 ]]; then
+              echo "Exact V2 console assets are live for $GITHUB_SHA."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'GitHub Pages did not publish the exact candidate assets in time.' >&2
+          exit 1
+      - name: Record exact candidate evidence
+        run: |
+          echo "PI V2 candidate $GITHUB_SHA passed the full V1+V2 suite and a genuine live model-backed production smoke." >> "$GITHUB_STEP_SUMMARY"
+          echo "Deterministic recovery was not counted as live-model success." >> "$GITHUB_STEP_SUMMARY"

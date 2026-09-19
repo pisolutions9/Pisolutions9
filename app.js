@@ -214,7 +214,13 @@ async function runCloudMission(text) {
 }
 
 document.querySelectorAll('[data-command]').forEach(button => button.addEventListener('click', () => { command.value = button.dataset.command; command.focus(); }));
-run.addEventListener('click', () => { runCloudMission(command.value.trim() || 'Build the next PI capability'); });
+run.addEventListener('click', () => {
+  const text = command.value.trim();
+  if (!text || run.disabled) { command.focus(); return; }
+  command.value = '';
+  command.style.height = 'auto';
+  runCloudMission(text);
+});
 
 command.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); run.click(); } });
 command.addEventListener('input', () => { command.style.height = 'auto'; command.style.height = Math.min(command.scrollHeight, 140) + 'px'; });

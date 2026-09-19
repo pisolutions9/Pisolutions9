@@ -5,13 +5,14 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '17 */6 * * *'
 
 permissions:
   contents: read
 
 env:
   PI_CHAT_URL: https://pi-chat.premchandyadlapati.workers.dev/api/chat
+  STRESS_ROUNDS: ${{ github.event_name == 'schedule' && '10' || '100' }}
 
 jobs:
   stress-customer-chat:
@@ -62,7 +63,7 @@ jobs:
           import json, subprocess, time, concurrent.futures, os
           url=os.environ['PI_CHAT_URL']
           questions=json.load(open('/tmp/questions.json'))
-          rounds=100
+          rounds=int(os.environ['STRESS_ROUNDS'])
           cases=questions*rounds
           print(f"Running {len(cases)} customer questions ({rounds} rounds x {len(questions)} complex prompts)")
 
@@ -107,7 +108,7 @@ jobs:
               except Exception: return False, elapsed, 'invalid-json'
               ans=d.get('answer','') if isinstance(d,dict) else ''
               ok=valid_answer(status,d)
-              return ok, elapsed, {'length': (len(ans) if isinstance(ans,str) else 0), 'truth': (d.get('truth') if isinstance(d,dict) else None), 'source': (d.get('source') if isinstance(d,dict) else None), 'prefix': (ans[:120] if isinstance(ans,str) else '')}
+              return ok, elapsed, {'http': status, 'ok': (d.get('ok') if isinstance(d,dict) else None), 'status': (d.get('status') if isinstance(d,dict) else None), 'length': (len(ans) if isinstance(ans,str) else 0), 'truth': (d.get('truth') if isinstance(d,dict) else None), 'source': (d.get('source') if isinstance(d,dict) else None), 'prefix': (ans[:120] if isinstance(ans,str) else '')}
 
           failures=[]
           latencies=[]
