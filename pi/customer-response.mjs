@@ -6,6 +6,10 @@ const BLOCKERS = {
     answer: 'PI needs a connected live data source for this request. Live research is not connected yet, so PI will not guess. Your question is kept below; you can edit it or ask a question that does not need current data.',
     label: 'Live data needed',
   },
+  live_research_unverified: {
+    answer: 'PI reached live research, but the response did not include source evidence for the current facts. PI will not present that as verified. Your question is kept below so you can try again.',
+    label: 'Live evidence missing',
+  },
   hard_reasoning_not_verified: {
     answer: 'PI could not independently verify this answer, so no reliable result was produced. Your question is kept below. You can add the missing facts or narrow the question and try again.',
     label: 'Verification blocked',
