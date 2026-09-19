@@ -14,6 +14,11 @@ const BLOCKERS = {
     answer: 'PI’s answer provider is busy or has reached its usage limit. Your question is kept below. Please wait before trying again; no task completion is being claimed.',
     label: 'Provider busy',
   },
+  attachment_invalid: { answer: 'PI could not read that attachment. Choose a supported file and try again.', label: 'Attachment invalid' },
+  attachment_unsupported: { answer: 'That attachment type is not supported yet. Try PDF, Word, Excel, CSV, HTML/XML, ODT/ODS, Numbers, or a common image format.', label: 'File type unsupported' },
+  attachment_too_large: { answer: 'That attachment is too large for this PI V1.02 path. Use a file of 4 MB or smaller.', label: 'File too large' },
+  attachment_conversion_failed: { answer: 'PI could not safely extract usable content from that attachment, so it will not guess about the file.', label: 'File conversion failed' },
+  attachment_conversion_unavailable: { answer: 'PI’s file-understanding service is temporarily unavailable. The file was not stored by PI.', label: 'File service unavailable' },
   message_too_large: {
     answer: 'This question is too long. Shorten it to 8,000 characters or fewer and try again. Your question is kept below.',
     label: 'Shorter question needed',
@@ -35,6 +40,7 @@ export function chatOutcome(response, body) {
     'verified-calculation': 'CSV checked: rows and totals independently recomputed.',
     'verified-model-response': 'Reviewed by another model · facts not independently established.',
     'web-grounded-model-response': 'Current answer grounded with live web research sources.',
+    'file-grounded-model-response': 'Answer grounded in the attached file or image.',
     deterministic: 'Limited offline recovery; live model unavailable.',
     'needs-input': 'Waiting for valid inventory rows.',
   };
