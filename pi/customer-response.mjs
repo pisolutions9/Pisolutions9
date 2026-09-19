@@ -38,14 +38,15 @@ export function chatOutcome(response, body) {
   }
   const notes = {
     'verified-calculation': 'CSV checked: rows and totals independently recomputed.',
-    'verified-model-response': 'Reviewed by another model · facts not independently established.',
+    'verified-model-response': 'Independent verification passed for this reasoning path.',
+    'provisional-model-response': 'Useful reasoning provided, but independent verification did not complete. Treat assumptions and estimates cautiously.',
     'web-grounded-model-response': 'Current answer grounded with live web research sources.',
     'file-grounded-model-response': 'Answer grounded in the attached file or image.',
     deterministic: 'Limited offline recovery; live model unavailable.',
     'needs-input': 'Waiting for valid inventory rows.',
   };
   const completedArtifact = body.truth === 'verified-calculation' && body.status === 'completed';
-  const limited = ['deterministic', 'needs-input'].includes(body.truth);
+  const limited = ['deterministic', 'needs-input', 'provisional-model-response'].includes(body.truth);
   return {
     answer: body.answer, note: notes[body.truth] || 'Model answer · facts not independently checked',
     label: completedArtifact ? 'File verified' : body.truth === 'needs-input' ? 'More detail needed' : limited ? 'Limited reply' : 'Reply received',
