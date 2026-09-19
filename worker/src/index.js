@@ -95,7 +95,7 @@ async function verifyHardAnswer(env,message,history,candidate,deadline=Date.now(
   return {ok:false,reason:'verification_inconclusive'};
 }
 function remainingBudget(deadline){return Math.max(0,deadline-Date.now());}
-async function produceVerifiedHardAnswer(env,effectiveMessage,history){
+async function produceVerifiedHardAnswer(env,message,history){
   const deadline=Date.now()+HARD_REQUEST_BUDGET_MS;
   const first=await callWorkersAI(env,message,history,{preferStrong:true,instructions:HARD_REASONING_INSTRUCTIONS,deadline});
   if(!first||first.incomplete||remainingBudget(deadline)<EDGE_TIMEOUT_MS)return null;
