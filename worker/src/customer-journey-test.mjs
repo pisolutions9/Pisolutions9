@@ -43,6 +43,9 @@ assert.equal(calls,2);assert.equal(result.status,'answered');assert.equal(result
 const text='Create inventory CSV:\npens,12,15.00\nnotebooks,8,45.00';
 result=await (await worker.fetch(request({message:text}),{AI:{run:()=>{throw Error('Inventory must not use a model');}}})).json();
 assert.equal(result.status,'completed');assert.equal(result.evidence.total,'540.00');assert.ok(result.artifacts[0].content.includes('notebooks,8,45.00,360.00'));
+assert.equal(inventoryMission('What was the total in that CSV?'),null);
+assert.equal(inventoryMission('Can you explain the CSV you made?'),null);
+assert.equal(inventoryMission('Download the CSV again?').status,'needs-input');
 const rows=[{item:'a',quantity:3,unitCents:10},{item:'b',quantity:7,unitCents:29}];
 const artifact=executeInventory(rows);assert.equal(verifyInventory(artifact,rows),true);
 for(const content of [artifact.content.replace('0.30','0.31'),artifact.content.replace('a,3','a,4'),artifact.content.replace('b,7,0.29,2.03\r\n',''),artifact.content.replace('2.33','2.34')])assert.equal(verifyInventory({...artifact,content},rows),false);
