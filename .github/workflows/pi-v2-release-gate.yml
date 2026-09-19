@@ -34,7 +34,9 @@ jobs:
       - name: Run full V1 + V2 release suite
         run: npm test
       - name: Confirm V2 release gate
-        run: node pi/v2-release-gate-test.mjs
+        run: |
+          node pi/v2-release-gate-test.mjs
+          node pi/live-evidence-gate-test.mjs
       - name: Deploy exact V2 chat worker candidate
         if: github.event_name != 'pull_request'
         working-directory: worker
