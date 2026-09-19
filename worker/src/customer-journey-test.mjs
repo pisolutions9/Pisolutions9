@@ -145,3 +145,9 @@ const clarificationBody=await clarification.json();
 globalThis.fetch=originalFetchForFollowup;
 assert.equal(clarificationBody.truth,'model-response');
 assert.deepEqual(clarificationBody.sources,[]);
+
+let normalModels=[];
+const distributedEnv={AI:{run:async(model)=>{normalModels.push(model);return {response:'A complete customer answer that is comfortably longer than the minimum response threshold for this routing contract.'};}}};
+await worker.fetch(request({message:'Design a marketplace architecture for ten million users.'}),distributedEnv);
+await worker.fetch(request({message:'Explain how macroeconomic policy transmission works in a hypothetical economy.'}),distributedEnv);
+assert.ok(normalModels.length>=2);
