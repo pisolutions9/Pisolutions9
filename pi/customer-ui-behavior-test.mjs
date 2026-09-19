@@ -32,7 +32,7 @@ class Element {
 }
 
 function harness({ fetcher, store = new Map(), online = true, failStorage = false } = {}) {
-  const nodes = Object.fromEntries(['command', 'mission', 'missionTitle', 'steps', 'confidence', 'run', 'ownerToken', 'systemStatus', 'clearChat', 'welcome', 'transcript'].map(id => [id, new Element()]));
+  const nodes = Object.fromEntries(['command', 'mission', 'missionTitle', 'steps', 'confidence', 'run', 'ownerToken', 'systemStatus', 'clearChat', 'attachFile', 'fileInput', 'attachmentStatus', 'welcome', 'transcript'].map(id => [id, new Element()]));
   const status = new Element(); status.append(nodes.systemStatus);
   const events = {};
   const context = vm.createContext({
