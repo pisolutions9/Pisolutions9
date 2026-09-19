@@ -23,13 +23,13 @@ const BLOCKERS = {
 export function chatOutcome(response, body) {
   if (!response.ok || !body || typeof body.answer !== 'string' || !body.answer.trim()) {
     const blocker = BLOCKERS[body?.error];
-    return { answer: blocker?.answer || UNAVAILABLE, label: blocker?.label || 'Request failed', state: 'blocked', remember: false, complete: false, restoreDraft: true, note: 'No completed result.', artifacts: [] };
+    return { answer: blocker?.answer || UNAVAILABLE, label: blocker?.label || 'Request failed', state: 'blocked', remember: false, complete: false, restoreDraft: true, note: 'No completed result.', artifacts: [], sources: [] };
   }
   if (body.status === 'incomplete') {
-    return { answer: body.answer + '\n\nThis answer reached its output limit and is incomplete. Ask for a shorter response or the next section.', label: 'Answer incomplete', state: 'limited', remember: true, complete: false, restoreDraft: false, note: 'Partial answer — not a completed result.', artifacts: [] };
+    return { answer: body.answer + '\n\nThis answer reached its output limit and is incomplete. Ask for a shorter response or the next section.', label: 'Answer incomplete', state: 'limited', remember: true, complete: false, restoreDraft: false, note: 'Partial answer — not a completed result.', artifacts: [], sources: [] };
   }
   if (body.ok !== true) {
-    return { answer: UNAVAILABLE, label: 'Request failed', state: 'blocked', remember: false, complete: false, restoreDraft: true, note: 'No completed result.', artifacts: [] };
+    return { answer: UNAVAILABLE, label: 'Request failed', state: 'blocked', remember: false, complete: false, restoreDraft: true, note: 'No completed result.', artifacts: [], sources: [] };
   }
   const notes = {
     'verified-calculation': 'CSV checked: rows and totals independently recomputed.',
@@ -45,6 +45,7 @@ export function chatOutcome(response, body) {
     label: completedArtifact ? 'File verified' : body.truth === 'needs-input' ? 'More detail needed' : limited ? 'Limited reply' : 'Reply received',
     state: limited ? 'limited' : 'answered', remember: true, complete: !limited, restoreDraft: false,
     artifacts: completedArtifact && Array.isArray(body.artifacts) ? body.artifacts : [],
+    sources: body.truth === 'web-grounded-model-response' && Array.isArray(body.sources) ? body.sources.filter(source => source && typeof source.url === 'string' && /^https:\/\//.test(source.url)).slice(0, 8) : [],
   };
 }
 
@@ -54,5 +55,5 @@ export function transportOutcome(error, online = true) {
     : error?.name === 'AbortError'
       ? 'PI did not return an answer before the time limit. Completion is not confirmed. Your question is kept below so you can try again.'
       : UNAVAILABLE + ' Your question is kept below.';
-  return { answer, label: online ? 'Request failed' : 'Offline', state: 'blocked', remember: false, complete: false, restoreDraft: true, note: 'No completed result.', artifacts: [] };
+  return { answer, label: online ? 'Request failed' : 'Offline', state: 'blocked', remember: false, complete: false, restoreDraft: true, note: 'No completed result.', artifacts: [], sources: [] };
 }
