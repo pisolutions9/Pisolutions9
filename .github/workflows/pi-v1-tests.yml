@@ -81,14 +81,17 @@ jobs:
               low=answer.lower() if isinstance(answer,str) else ''
               return (
                   status == '200'
+                  and isinstance(data,dict)
                   and data.get('ok') is True
+                  and data.get('truth') == 'model-response'
+                  and data.get('source','').startswith(('pi-chat-cloudflare-ai:', 'pi-chat-openai:', 'pi-chat-fallback'))
                   and isinstance(answer,str)
                   and len(answer.strip()) >= 120
                   and not any(marker in low for marker in legacy_markers)
               )
 
-          valid_fixture={'ok':True,'answer':'Prioritized Remediation Plan: ' + ('verified customer guidance ' * 8)}
-          legacy_fixture={'ok':True,'answer':'Classification: BUSINESS_OBJECTIVE\n\nPlan:\n' + ('internal routing output ' * 8)}
+          valid_fixture={'ok':True,'truth':'model-response','source':'pi-chat-cloudflare-ai:test','answer':'Prioritized Remediation Plan: ' + ('verified customer guidance ' * 8)}
+          legacy_fixture={'ok':True,'truth':'model-response','source':'pi-chat-cloudflare-ai:test','answer':'Classification: BUSINESS_OBJECTIVE\n\nPlan:\n' + ('internal routing output ' * 8)}
           if not valid_answer('200',valid_fixture) or valid_answer('200',legacy_fixture):
               raise SystemExit('customer answer contract regression')
 

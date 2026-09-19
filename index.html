@@ -3,46 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="PI — an autonomous intelligence workspace." />
-  <title>PI — Autonomous Intelligence</title>
+  <meta name="description" content="PI V1 — conversational assistance and verified inventory CSV exports." />
+  <title>PI V1 — Assistant</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
-      <div class="brand"><span class="mark">π</span><div><strong>PI</strong><small>Autonomous Intelligence</small></div></div>
+      <div class="brand"><span class="mark">π</span><div><strong>PI</strong><small>Assistant workspace</small></div></div>
       <div class="status"><span class="dot"></span> <span id="systemStatus">System ready</span></div>
     </header>
 
     <section class="hero">
-      <p class="eyebrow">OWNER CONSOLE</p>
-      <h1>Give PI the objective.<br /><span>Not the instructions.</span></h1>
-      <p class="lede">Krishna coordinates research, specialist agents, verification and execution toward one outcome.</p>
+      <p class="eyebrow">PI V1</p>
+      <h1>Ask. Calculate.<br /><span>Get a usable file.</span></h1>
+      <p class="lede">Ask follow-up questions or create an inventory CSV with independently checked totals. Recent messages are saved in this tab and sent with follow-up requests.</p>
       <div class="command-card">
-        <textarea id="command" placeholder="Tell Krishna what you want accomplished…" rows="3"></textarea>
+        <textarea aria-label="Message to PI" maxlength="8000" id="command" placeholder="Ask a question, or provide inventory rows…" rows="3"></textarea>
         <div class="command-footer">
-          <div class="chips"><button data-command="Research the best business opportunity for my budget">Business</button><button data-command="Analyze this land using maps and satellite evidence">Earth Intelligence</button><button data-command="Build and test the next PI capability">Build</button></div>
-          <button id="run" class="run">Run mission <span>→</span></button>
+          <div class="chips"><button data-command="Create an inventory CSV from these rows:&#10;pens,12,15.00&#10;notebooks,8,45.00">Create inventory CSV</button><button data-command="Explain opportunity cost with a simple example.">Ask a question</button></div>
+          <button id="run" class="run">Send <span>→</span></button>
         </div>
       </div>
-      <details class="owner-access">
-        <summary>Owner access</summary>
-        <label for="ownerToken">Owner runtime token</label>
-        <input id="ownerToken" type="password" autocomplete="off" placeholder="Enter provisioned owner token" />
-        <small>The token stays in this browser and is sent only as a Bearer authorization header. Do not paste secrets into chat.</small>
-      </details>
+      <input id="ownerToken" type="hidden" value="" />
     </section>
 
     <section class="grid">
-      <article class="panel"><div class="panel-head"><span>01</span><h2>Krishna</h2><b>ORCHESTRATOR</b></div><p>Turns an owner objective into a plan, assigns the right specialists, combines evidence and decides what needs verification.</p><div class="metric"><strong>Goal-first</strong><span>Natural commands</span></div></article>
-      <article class="panel"><div class="panel-head"><span>02</span><h2>Specialists</h2><b>ACTIVE</b></div><div class="agents"><span>Research</span><span>Engineering</span><span>Business</span><span>Data & Finance</span><span>Earth Intelligence</span></div></article>
-      <article class="panel"><div class="panel-head"><span>03</span><h2>Verifier</h2><b>TRUTH LAYER</b></div><p>Challenges assumptions, checks contradictions and separates verified facts from probabilities and unknowns.</p><div class="truth"><span>VERIFIED</span><span>PROBABLE</span><span>UNKNOWN</span></div></article>
+      <article class="panel"><h2>Conversation</h2><p>Follow-up questions include recent context. Reloading this tab restores recent messages; Clear conversation removes them. Older context is dropped when the limit is reached.</p></article>
+      <article class="panel"><h2>Inventory CSV</h2><p>Provide item,quantity,unit_price rows. PI exports a file and separately checks its rows and totals. Downloads are created in your browser; download them before reloading.</p></article>
+      <article class="panel"><h2>Clear limits</h2><p>Chat answers are model-generated and are not independently fact-checked. V1 does not browse live sources, deploy software, or run a business autonomously.</p></article>
     </section>
+    <section aria-label="Conversation"><button id="clearChat" type="button" class="clear">Clear conversation</button><div id="transcript" role="log" aria-live="polite"></div></section>
 
     <section id="mission" class="mission hidden"><div class="mission-head"><div><p class="eyebrow">MISSION PLAN</p><h2 id="missionTitle"></h2></div><span id="confidence">Awaiting verification</span></div><div id="steps" class="steps"></div></section>
 
-    <footer><span>PI / v0.2 cloud owner runtime</span><span>Truth over agreement · Evidence over confidence</span></footer>
+    <footer><span>PI / V1 · Chat and inventory CSV</span><span>Truth over agreement · Evidence over confidence</span></footer>
   </main>
-  <script src="app.js?v=20260917-live-chat"></script>
+  <script src="app.js?v=20260919-completion"></script>
 </body>
 </html>

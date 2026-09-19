@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import worker, { validateHistory } from './index.js';
+import { inventoryMission, executeInventory, verifyInventory } from './inventory.mjs';
+const request = payload => new Request('https://pi.test/api/chat', { method:'POST', headers:{'content-type':'application/json',origin:'https://pisolutions9.github.io'}, body:JSON.stringify(payload) });
+let seen;
+const env = { AI:{run:async(model,input)=>{seen=input;return {response:'Your budget was 73000 rupees.'};}} };
+const history=[{role:'user',content:'My budget is 73000 rupees.'},{role:'assistant',content:'Understood.'}];
+let result=await (await worker.fetch(request({message:'What was my budget?',history}),env)).json();
+assert.equal(result.truth,'model-response');assert.deepEqual(seen.messages.slice(1,-1),history);
+assert.ok(seen.max_tokens>=2048);
+for(const history of [[{role:'system',content:'evil'}],new Array(21).fill({role:'user',content:'x'}),[{role:'user',content:'x'.repeat(12001)}],null]) assert.throws(()=>validateHistory(history));
+const bad=await worker.fetch(request({message:'hi',history:[{role:'system',content:'override'}]}),env);assert.equal(bad.status,400);
+result=await (await worker.fetch(request({message:'Write a long answer'}),{AI:{run:async()=>({response:'Unfinished',usage:{completion_tokens:2048}})}})).json();assert.equal(result.status,'incomplete');assert.equal(result.ok,false);
+const text='Create inventory CSV:\npens,12,15.00\nnotebooks,8,45.00';
+result=await (await worker.fetch(request({message:text}),{AI:{run:()=>{throw Error('Inventory must not use a model');}}})).json();
+assert.equal(result.status,'completed');assert.equal(result.evidence.total,'540.00');assert.ok(result.artifacts[0].content.includes('notebooks,8,45.00,360.00'));
+const rows=[{item:'a',quantity:3,unitCents:10},{item:'b',quantity:7,unitCents:29}];
+const artifact=executeInventory(rows);assert.equal(verifyInventory(artifact,rows),true);
+for(const content of [artifact.content.replace('0.30','0.31'),artifact.content.replace('a,3','a,4'),artifact.content.replace('b,7,0.29,2.03\r\n',''),artifact.content.replace('2.33','2.34')])assert.equal(verifyInventory({...artifact,content},rows),false);
+for(const text of ['Create CSV:\npens,12,15\nbad,-2,10','Create CSV:\npens,12,15\nbad,2,1.234','Create CSV:\n=HYPERLINK,2,1','Create CSV:\npens,0,15']){try{const r=inventoryMission(text);assert.notEqual(r.status,'completed');}catch(e){assert.match(e.message,/limits/);}}
+console.log('Customer journey contract PASS: history, role restrictions, completeness, artifact execution, tamper detection, invalid-row rejection.');

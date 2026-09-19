@@ -7,6 +7,34 @@ const run = document.querySelector('#run');
 const ownerToken = document.querySelector('#ownerToken');
 const systemStatus = document.querySelector('#systemStatus');
 
+
+const HISTORY_KEY = 'pi-v1-conversation';
+let conversation = [];
+const artifactUrls = [];
+try { const saved = JSON.parse(sessionStorage.getItem(HISTORY_KEY) || '[]'); if (Array.isArray(saved)) conversation = saved.filter(t => t && ['user','assistant'].includes(t.role) && typeof t.content === 'string').slice(-20); } catch {}
+function historyWindow() {
+  const result = []; let size = 0;
+  for (const turn of [...conversation].reverse()) { if (turn.content.length > 12000 || size + turn.content.length > 30000) break; result.unshift(turn); size += turn.content.length; }
+  return result.slice(-20);
+}
+function rememberTurn(role, content) {
+  conversation.push({ role, content }); conversation = historyWindow();
+  try { sessionStorage.setItem(HISTORY_KEY, JSON.stringify(conversation)); } catch {}
+}
+function addTranscript(role, text) {
+  const card = document.createElement('article'); card.className = 'chat-turn ' + role;
+  const label = document.createElement('strong'); label.textContent = role === 'user' ? 'You' : 'PI';
+  const content = document.createElement('div'); content.className = 'chat-content'; content.textContent = text;
+  card.append(label, content); document.querySelector('#transcript').append(card); return card;
+}
+function downloadArtifact(artifact, card) {
+  if (artifact.filename !== 'inventory.csv' || artifact.mimeType !== 'text/csv;charset=utf-8' || typeof artifact.content !== 'string' || artifact.content.length > 100000) return;
+  const url = URL.createObjectURL(new Blob([artifact.content], { type: artifact.mimeType })); artifactUrls.push(url);
+  const link = document.createElement('a'); link.href = url; link.download = artifact.filename; link.textContent = 'Download ' + artifact.filename; link.className = 'download'; card.append(link);
+}
+for (const turn of conversation) addTranscript(turn.role, turn.content);
+document.querySelector('#clearChat').addEventListener('click', () => { conversation = []; try { sessionStorage.removeItem(HISTORY_KEY); } catch {} document.querySelector('#transcript').replaceChildren(); for (const url of artifactUrls) URL.revokeObjectURL(url); artifactUrls.length = 0; mission.classList.add('hidden'); });
+
 const DOMAIN_RULES = [
   { name: 'business', pattern: /business|market|sales|customer|revenue|export|import|price|profit|investment/i, tasks: ['define_business_goal', 'identify_constraints', 'build_decision_matrix'] },
   { name: 'earth', pattern: /earth|satellite|land|crop|agriculture|map|geospatial|location|farm/i, tasks: ['define_area_of_interest', 'identify_data_sources', 'build_evidence_checklist'] },
@@ -135,18 +163,33 @@ function chatApiUrl() {
 
 async function runCustomerChat(text) {
   run.disabled = true;
-  systemStatus.textContent = 'Krishna thinking…';
+  document.querySelector('#clearChat').disabled = true;
+  systemStatus.textContent = 'PI working…';
+  const history = historyWindow();
+  addTranscript('user', text);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 65000);
   try {
-    const response = await fetch(chatApiUrl(), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: text }) });
+    const response = await fetch(chatApiUrl(), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: text, history }), signal: controller.signal });
     const body = await response.json();
     if (!response.ok || !body.answer) throw new Error(body.error || 'chat_unavailable');
-    showCustomerResponse(text, { title: 'PI', message: body.answer }, { intent: 'direct-answer' }, 'PI');
-    systemStatus.textContent = 'PI ready';
-    return true;
-  } catch {
-    runLocalMission(text);
+    const incomplete = body.status === 'incomplete';
+    const message = incomplete ? body.answer + '\n\nThis answer reached its output limit and is incomplete. Ask for a shorter response or the next section.' : body.answer;
+    const card = addTranscript('assistant', message);
+    const note = document.createElement('small');
+    note.textContent = body.truth === 'verified-calculation' ? 'CSV checked: rows and totals independently recomputed.' : body.truth === 'deterministic' ? 'Limited offline recovery; live model unavailable.' : body.truth === 'needs-input' ? 'Waiting for valid inventory rows.' : 'Model answer · facts not independently checked';
+    card.append(note);
+    if (body.truth === 'verified-calculation' && body.status === 'completed') for (const artifact of body.artifacts || []) downloadArtifact(artifact, card);
+    rememberTurn('user', text); rememberTurn('assistant', message);
+    mission.classList.add('hidden');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    systemStatus.textContent = incomplete ? 'Answer incomplete' : 'PI ready';
+    return !incomplete && body.ok === true;
+  } catch (error) {
+    addTranscript('assistant', error.name === 'AbortError' ? 'The answer service took too long. Please try again.' : 'PI’s live answer service is temporarily unavailable. Please try again in a moment.');
+    systemStatus.textContent = 'Request failed';
     return false;
-  } finally { run.disabled = false; }
+  } finally { clearTimeout(timer); document.querySelector('#clearChat').disabled = false; run.disabled = false; }
 }
 
 async function runCloudMission(text) {

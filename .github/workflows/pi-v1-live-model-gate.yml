@@ -59,5 +59,8 @@ jobs:
           print(f'LIVE_MODEL_PASS sha={sha} source={source} answer_chars={len(answer)}')
           PY
 
+      - name: Verify live conversation and executed deliverable
+        run: node pi/live-customer-journey-test.mjs
+
       - name: Verify V1 regression and V2 release gates
         run: npm test
