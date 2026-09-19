@@ -17,7 +17,7 @@ const HARD_REASONING_BUDGET_MS = CHAT_REQUEST_BUDGET_MS;
 const HARD_CANDIDATE_STAGE_MS = 6500;
 const HARD_CANDIDATE_TOKENS = 1100;
 // A cold inference needs time to finish; a sub-second race only warms the cache.
-const HARD_FAST_PROBE_MS = 4500;
+const HARD_FAST_PROBE_MS = 3000;
 const HARD_REVIEW_STAGE_MS = 12000;
 const HARD_REVIEW_TOKENS = 1400;
 const HARD_FINAL_STAGE_MS = 4500;
@@ -92,7 +92,7 @@ async function edgeCacheKey(model,input){const source=JSON.stringify({v:1,model,
 async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INSTRUCTIONS,maxTokens=MAX_OUTPUT_TOKENS,timeoutMs=EDGE_TIMEOUT_MS,rejectIfBusy=true}={}){const input={messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:maxTokens};const cacheKey=await edgeCacheKey(model,input);const options={gateway:{id:'default',skipCache:false,cacheTtl:300,cacheKey},...(rejectIfBusy?{rejectIfBusy:true}:{})};const work=env.AI.run(model,input,options);let timer;const boundedTimeout=Math.max(1,timeoutMs);const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`edge model timeout: ${model}`)),boundedTimeout);});try{return await Promise.race([work,timeout]);}finally{clearTimeout(timer);}}
 function edgeResultIncomplete(result,maxTokens){const finishReasons=[result?.finish_reason,result?.choices?.[0]?.finish_reason,result?.result?.finish_reason,result?.result?.choices?.[0]?.finish_reason];if(finishReasons.some(reason=>['length','max_tokens','max_output_tokens'].includes(reason)))return true;const usages=[result?.usage,result?.result?.usage].filter(Boolean);return usages.some(usage=>[usage.completion_tokens,usage.output_tokens,usage.tokens_generated].some(value=>Number.isFinite(value)&&value>=maxTokens));}
 async function callWorkersAI(env,message,history,{preferStrong=false,instructions=PI_INSTRUCTIONS,deadline=null,maxTokens=MAX_OUTPUT_TOKENS,fastProbeMs=EDGE_TIMEOUT_MS}={}){if(!env.AI||typeof env.AI.run!=='function')return null;const configured=env.PI_EDGE_MODEL||DEFAULT_EDGE_MODEL;const models=preferStrong
-  ? [...new Set([configured,'@cf/openai/gpt-oss-20b','@cf/zai-org/glm-4.7-flash','@cf/google/gemma-4-26b-a4b-it','@cf/qwen/qwen3-30b-a3b-fp8'].filter(Boolean))]
+  ? [...new Set([DEFAULT_EDGE_MODEL,configured,'@cf/openai/gpt-oss-20b','@cf/qwen/qwen3-30b-a3b-fp8','@cf/google/gemma-4-26b-a4b-it'].filter(Boolean))]
   : [...new Set([configured,...EDGE_MODEL_FALLBACKS].filter(Boolean))];
   const tryResult=async(model,rejectIfBusy,timeoutMs)=>{
     const result=await runEdgeWithTimeout(env,model,message,history,{instructions,maxTokens,timeoutMs,rejectIfBusy});
@@ -136,7 +136,8 @@ async function callWorkersAI(env,message,history,{preferStrong=false,instruction
 async function reviewHardAnswer(env,message,history,candidate,candidateModel,deadline=Date.now()+HARD_REVIEW_STAGE_MS){
   if(!env.AI||typeof env.AI.run!=='function')return {ok:false,reason:'reviewer_unavailable'};
   const reviewPrompt=`QUESTION:\n${message}\n\nCANDIDATE ANSWER:\n${candidate}\n\nReview independently. If materially wrong, return CORRECT followed by the full corrected answer.`;
-  const reviewerModels=['@cf/qwen/qwen3-30b-a3b-fp8','@cf/zai-org/glm-4.7-flash','@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it'].filter(model=>model!==candidateModel);
+  const fastReviewer=env.PI_EDGE_MODEL||'@cf/meta/llama-3.1-8b-instruct-fast';
+  const reviewerModels=[...new Set([fastReviewer,'@cf/qwen/qwen3-30b-a3b-fp8','@cf/openai/gpt-oss-20b','@cf/zai-org/glm-4.7-flash','@cf/google/gemma-4-26b-a4b-it'])].filter(model=>model!==candidateModel);
   for(let index=0;index<reviewerModels.length;index++){
     const model=reviewerModels[index];
     try{
