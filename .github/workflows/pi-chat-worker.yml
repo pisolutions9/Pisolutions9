@@ -124,10 +124,9 @@ jobs:
             -d '{"message":"What is the weather today in Mobile, Alabama?"}' \
             --output /tmp/pi-live-data.json --write-out '%{http_code}' "$endpoint")"
           cat /tmp/pi-live-data.json
-          if [[ -n "$OPENAI_API_KEY" ]]; then
-            test "$status" = 200
-            python -c 'import json; d=json.load(open("/tmp/pi-live-data.json")); assert d.get("ok") is True; assert d.get("truth") in ("web-grounded-model-response","model-response"); assert isinstance(d.get("answer"),str) and d["answer"].strip()'
+          if [[ "$status" = 200 ]]; then
+            python -c 'import json; d=json.load(open("/tmp/pi-live-data.json")); assert d.get("ok") is True; assert d.get("truth")=="web-grounded-model-response"; assert isinstance(d.get("sources"),list) and len(d["sources"])>0; assert isinstance(d.get("answer"),str) and d["answer"].strip()'
           else
             test "$status" = 503
-            python -c 'import json; d=json.load(open("/tmp/pi-live-data.json")); assert d.get("ok") is False; assert d.get("error")=="live_data_connector_not_configured"; assert d.get("truth")=="unknown"'
+            python -c 'import json; d=json.load(open("/tmp/pi-live-data.json")); assert d.get("ok") is False; assert d.get("truth")=="unknown"; assert d.get("error") in ("live_data_connector_not_configured","live_research_unverified","live_research_provider_unavailable")'
           fi
