@@ -17,6 +17,31 @@ const HARD_REASONING_BUDGET_MS = 17500;
 const HARD_CANDIDATE_STAGE_MS = 4500;
 const HARD_REVIEW_STAGE_MS = 4500;
 const HARD_FINAL_STAGE_MS = 4000;
+const MAX_LOCAL_AI_CONCURRENCY = 4;
+let activeAiCalls = 0;
+const aiWaiters = [];
+function releaseAiPermit(){
+  activeAiCalls=Math.max(0,activeAiCalls-1);
+  while(aiWaiters.length && activeAiCalls<MAX_LOCAL_AI_CONCURRENCY){
+    const next=aiWaiters.shift();
+    if(next.cancelled)continue;
+    activeAiCalls+=1;
+    next.resolve(()=>releaseAiPermit());
+    break;
+  }
+}
+async function acquireAiPermit(timeoutMs){
+  if(activeAiCalls<MAX_LOCAL_AI_CONCURRENCY){
+    activeAiCalls+=1;
+    return ()=>releaseAiPermit();
+  }
+  return await new Promise((resolve,reject)=>{
+    const waiter={cancelled:false,resolve:null};
+    const timer=setTimeout(()=>{waiter.cancelled=true;reject(new Error('ai_queue_timeout'));},Math.max(1,timeoutMs));
+    waiter.resolve=(release)=>{clearTimeout(timer);resolve(release);};
+    aiWaiters.push(waiter);
+  });
+}
 const DEFAULT_EDGE_MODEL = '@cf/zai-org/glm-4.7-flash';
 const EDGE_MODEL_FALLBACKS = [
   '@cf/openai/gpt-oss-20b',
@@ -83,7 +108,22 @@ async function callProvider({apiKey,model,baseUrl,message,history=[],timeoutMs=P
 function extractAnswer(body){return body?.output_text?.trim()||body?.output?.flatMap(item=>item?.content||[]).find(part=>part?.type==='output_text')?.text?.trim();}
 function extractSources(body){const found=new Map();for(const item of body?.output||[]){if(item?.type==='web_search_call'){for(const source of item?.action?.sources||[]){if(source?.url)found.set(source.url,{url:source.url,title:source.title||source.url});}}for(const part of item?.content||[]){for(const annotation of part?.annotations||[]){const value=annotation?.url_citation||annotation;if(value?.url)found.set(value.url,{url:value.url,title:value.title||value.url});}}}return [...found.values()].slice(0,8);}
 function extractEdgeAnswer(result){if(typeof result==='string')return result.trim()||null;const candidates=[result?.response,result?.output_text,result?.result?.response,result?.result?.output_text,result?.choices?.[0]?.message?.content];for(const value of candidates){if(typeof value==='string'&&value.trim())return value.trim();if(Array.isArray(value)){const text=value.map(part=>typeof part==='string'?part:(part?.text||part?.content||'')).join('').trim();if(text)return text;}}return null;}
-async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INSTRUCTIONS,maxTokens=MAX_OUTPUT_TOKENS,timeoutMs=EDGE_TIMEOUT_MS}={}){const input={messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:maxTokens};const work=env.AI.run(model,input,{gateway:{id:'default',skipCache:false}});let timer;const boundedTimeout=Math.max(1,Math.min(EDGE_TIMEOUT_MS,timeoutMs));const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`edge model timeout: ${model}`)),boundedTimeout);});try{return await Promise.race([work,timeout]);}finally{clearTimeout(timer);}}
+async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INSTRUCTIONS,maxTokens=MAX_OUTPUT_TOKENS,timeoutMs=EDGE_TIMEOUT_MS}={}){
+  const input={messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:maxTokens};
+  const boundedTimeout=Math.max(1,Math.min(EDGE_TIMEOUT_MS,timeoutMs));
+  const started=Date.now();
+  let release;
+  try{
+    release=await acquireAiPermit(boundedTimeout);
+    const remaining=Math.max(1,boundedTimeout-(Date.now()-started));
+    const work=env.AI.run(model,input,{gateway:{id:'default',skipCache:false}});
+    let timer;
+    const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`edge model timeout: ${model}`)),remaining);});
+    try{return await Promise.race([work,timeout]);}finally{clearTimeout(timer);}
+  }finally{
+    if(release)release();
+  }
+}
 function edgeResultIncomplete(result,maxTokens){const finishReasons=[result?.finish_reason,result?.choices?.[0]?.finish_reason,result?.result?.finish_reason,result?.result?.choices?.[0]?.finish_reason];if(finishReasons.some(reason=>['length','max_tokens','max_output_tokens'].includes(reason)))return true;const usages=[result?.usage,result?.result?.usage].filter(Boolean);return usages.some(usage=>[usage.completion_tokens,usage.output_tokens,usage.tokens_generated].some(value=>Number.isFinite(value)&&value>=maxTokens));}
 async function callWorkersAI(env,message,history,{preferStrong=false,instructions=PI_INSTRUCTIONS,deadline=null}={}){if(!env.AI||typeof env.AI.run!=='function')return null;const configured=env.PI_EDGE_MODEL||DEFAULT_EDGE_MODEL;const models=preferStrong
   ? [...new Set(['@cf/zai-org/glm-4.7-flash','@cf/openai/gpt-oss-120b','@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it',configured].filter(Boolean))]
