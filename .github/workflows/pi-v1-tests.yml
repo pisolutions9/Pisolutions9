@@ -57,7 +57,7 @@ jobs:
 
           python - <<'PY'
           import json, subprocess, time, concurrent.futures, os
-          url=os.environ['PI_CHAT_URL']; questions=json.load(open('/tmp/questions.json')); rounds=int(os.environ['STRESS_ROUNDS']); cases=questions*rounds
+          url=os.environ['PI_CHAT_URL']; questions=json.load(open('/tmp/questions.json')); rounds=int(os.environ['STRESS_ROUNDS']); cases=[(round_i,q_i,q) for round_i in range(rounds) for q_i,q in enumerate(questions,1)]
           print(f"Running {len(cases)} customer questions ({rounds} rounds x {len(questions)} complex prompts; {'deep soak' if rounds >= 100 else 'release sample'})")
           legacy_markers=('classification:','i recognized this as an informational question','temporarily operating in verified recovery mode','live model execution is currently unavailable')
           readiness_truth={'model-response','verified-model-response'}
@@ -77,16 +77,17 @@ jobs:
           recovery_fixture={'ok':True,'truth':'deterministic','source':'pi-chat-deterministic-recovery','answer':'Live model unavailable; no facts or actions are being invented.'}
           legacy_fixture={'ok':True,'truth':'model-response','source':'pi-chat-cloudflare-ai:test','answer':'Classification: BUSINESS_OBJECTIVE\n\nPlan:\n'+('internal routing output '*8)}
           if not valid_answer('200',valid_fixture) or not provisional_answer('200',provisional_fixture) or not safe_refusal('503',refusal_fixture) or not safe_recovery('200',recovery_fixture) or valid_answer('200',legacy_fixture): raise SystemExit('customer answer contract regression')
-          def ask(q):
+          def ask(case):
+              round_i,q_i,q=case
               payload=json.dumps({'message':q}); t=time.time(); p=subprocess.run(['curl','--silent','--show-error','--connect-timeout','5','--max-time','22','-H','content-type: application/json','-H','origin: https://pisolutions9.github.io','-d',payload,'-w','\n%{http_code}',url],capture_output=True,text=True); elapsed=time.time()-t
-              if p.returncode!=0:return False,elapsed,{'transport':f'curl:{p.returncode}','stderr':p.stderr[-240:]}
-              if '\n' not in p.stdout:return False,elapsed,{'transport':'missing-http-status','prefix':p.stdout[:120]}
+              if p.returncode!=0:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':f'curl:{p.returncode}','stderr':p.stderr[-240:]}
+              if '\n' not in p.stdout:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'missing-http-status','prefix':p.stdout[:120]}
               body,status=p.stdout.rsplit('\n',1)
               try:d=json.loads(body)
-              except Exception:return False,elapsed,{'transport':'invalid-json','http':status,'body_prefix':body[:240]}
+              except Exception:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'invalid-json','http':status,'body_prefix':body[:240]}
               ans=d.get('answer','') if isinstance(d,dict) else ''; ready=valid_answer(status,d)
               safe=ready or provisional_answer(status,d) or safe_refusal(status,d) or safe_recovery(status,d)
-              return ready,elapsed,{'http':status,'ok':d.get('ok') if isinstance(d,dict) else None,'status':d.get('status') if isinstance(d,dict) else None,'length':len(ans) if isinstance(ans,str) else 0,'truth':d.get('truth') if isinstance(d,dict) else None,'source':d.get('source') if isinstance(d,dict) else None,'safe':safe,'prefix':ans[:120] if isinstance(ans,str) else ''}
+              return ready,elapsed,{'round':round_i+1,'question':q_i,'http':status,'ok':d.get('ok') if isinstance(d,dict) else None,'status':d.get('status') if isinstance(d,dict) else None,'length':len(ans) if isinstance(ans,str) else 0,'truth':d.get('truth') if isinstance(d,dict) else None,'source':d.get('source') if isinstance(d,dict) else None,'safe':safe,'prefix':ans[:120] if isinstance(ans,str) else ''}
           failures=[]; latencies=[]; truth_counts={}
           with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
               futs=[ex.submit(ask,q) for q in cases]
