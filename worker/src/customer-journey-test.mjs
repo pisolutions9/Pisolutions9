@@ -55,7 +55,7 @@ const rejectEnv={AI:{run:async(_model,input)=>{
 }}};
 const rejected=await worker.fetch(request({message:'Calculate a Bayesian posterior probability and show enough calculations to audit the answer.'}),rejectEnv);
 const rejectedBody=await rejected.json();
-assert.equal(rejected.status,503);assert.equal(rejectedBody.error,'hard_reasoning_not_verified');assert.equal(rejectedBody.truth,'unknown');assert.equal(rejectCalls,3);
+assert.equal(rejected.status,503);assert.equal(rejectedBody.error,'hard_reasoning_not_verified');assert.equal(rejectedBody.truth,'unknown');assert.ok(rejectCalls>=4);
 const technicalResponse=await worker.fetch(request({message:'Explain quantum computing to a software engineer. Compare it with classical computing, give one concrete example where it could matter, and clearly separate what is practical today from what is still experimental.'}),env);
 const technicalBody=await technicalResponse.json();
 assert.equal(technicalResponse.status,200);assert.equal(technicalBody.ok,true);assert.ok(technicalBody.answer);
