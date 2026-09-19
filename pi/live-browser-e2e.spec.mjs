@@ -21,9 +21,19 @@ test.describe('PI V1.02 live customer browser journey', () => {
 
     const firstAssistant = transcript.locator('.chat-turn.assistant').last();
     await expect(firstAssistant).toBeVisible({ timeout: 70000 });
-    await expect(firstAssistant.locator('.chat-content')).not.toHaveText('');
-    await expect(firstAssistant.locator('.chat-content')).not.toContainText('Classification:');
-    await expect(firstAssistant.locator('.chat-content')).not.toContainText('BUSINESS_OBJECTIVE');
+    const firstAnswer = (await firstAssistant.locator('.chat-content').innerText()).trim();
+    expect(firstAnswer.length).toBeGreaterThan(10);
+    expect(firstAnswer).not.toMatch(/Classification:|BUSINESS_OBJECTIVE/i);
+
+    await input.fill('Explain photosynthesis to a 10-year-old in two short sentences.');
+    await send.click();
+
+    const secondAssistant = transcript.locator('.chat-turn.assistant').last();
+    await expect(secondAssistant).toBeVisible({ timeout: 70000 });
+    const secondAnswer = (await secondAssistant.locator('.chat-content').innerText()).trim();
+    expect(secondAnswer.length).toBeGreaterThan(10);
+    expect(secondAnswer).not.toBe(firstAnswer);
+    expect(secondAnswer).not.toMatch(/Classification:|BUSINESS_OBJECTIVE/i);
 
     await input.fill('Create an inventory CSV:\npens,12,15.00\nnotebooks,8,45.00');
     await send.click();
@@ -33,6 +43,6 @@ test.describe('PI V1.02 live customer browser journey', () => {
     await expect(artifactLink).toHaveText(/Download inventory\.csv/);
 
     const assistantTurns = transcript.locator('.chat-turn.assistant');
-    await expect(assistantTurns).toHaveCount(2);
+    await expect(assistantTurns).toHaveCount(3);
   });
 });
