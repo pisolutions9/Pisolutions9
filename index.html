@@ -3,41 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="PI V1 — conversational assistance and verified inventory CSV exports." />
-  <title>PI V1 — Assistant</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="description" content="PI — Think. Plan. Execute. With You." />
+  <title>PI — Assistant</title>
+  <link rel="stylesheet" href="styles.css?v=20260919-console" />
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
-      <div class="brand"><span class="mark">π</span><div><strong>PI</strong><small>Assistant workspace</small></div></div>
-      <div class="status"><span class="dot"></span> <span id="systemStatus">System ready</span></div>
+      <a class="brand" href="#" aria-label="PI home"><span class="mark">π</span><span><strong>PI</strong><small>Think. Plan. Execute. With You.</small></span></a>
+      <div class="status"><span class="dot"></span><span id="systemStatus">Online</span></div>
     </header>
 
-    <section class="hero">
-      <p class="eyebrow">PI V1</p>
-      <h1>Ask. Calculate.<br /><span>Get a usable file.</span></h1>
-      <p class="lede">Ask follow-up questions or create an inventory CSV with independently checked totals. Recent messages are saved in this tab and sent with follow-up requests.</p>
-      <div class="command-card">
-        <textarea aria-label="Message to PI" maxlength="8000" id="command" placeholder="Ask a question, or provide inventory rows…" rows="3"></textarea>
-        <div class="command-footer">
-          <div class="chips"><button data-command="Create an inventory CSV from these rows:&#10;pens,12,15.00&#10;notebooks,8,45.00">Create inventory CSV</button><button data-command="Explain opportunity cost with a simple example.">Ask a question</button></div>
-          <button id="run" class="run">Send <span>→</span></button>
-        </div>
+    <section class="workspace" aria-label="PI conversation">
+      <div id="welcome" class="welcome">
+        <div class="hero-mark">π</div>
+        <h1>How can I help?</h1>
+        <p>Ask anything. PI keeps the work focused and the answer clear.</p>
       </div>
-      <input id="ownerToken" type="hidden" value="" />
+
+      <div class="conversation">
+        <div id="transcript" role="log" aria-live="polite"></div>
+        <section id="mission" class="mission hidden" aria-live="polite">
+          <div class="mission-head"><div><p class="eyebrow">PI</p><h2 id="missionTitle"></h2></div><span id="confidence">Ready</span></div>
+          <div id="steps" class="steps"></div>
+        </section>
+      </div>
     </section>
 
-    <section class="grid">
-      <article class="panel"><h2>Conversation</h2><p>Follow-up questions include recent context. Reloading this tab restores recent messages; Clear conversation removes them. Older context is dropped when the limit is reached.</p></article>
-      <article class="panel"><h2>Inventory CSV</h2><p>Provide item,quantity,unit_price rows. PI exports a file and separately checks its rows and totals. Downloads are created in your browser; download them before reloading.</p></article>
-      <article class="panel"><h2>Clear limits</h2><p>Chat answers are model-generated and are not independently fact-checked. V1 does not browse live sources, deploy software, or run a business autonomously.</p></article>
+    <section class="composer-wrap" aria-label="Ask PI">
+      <div class="composer">
+        <button id="clearChat" class="icon-button" type="button" title="New conversation" aria-label="New conversation">＋</button>
+        <textarea aria-label="Message to PI" maxlength="8000" id="command" placeholder="Ask me anything…" rows="1"></textarea>
+        <button id="run" class="run" aria-label="Send">➜</button>
+      </div>
+      <div class="suggestions">
+        <button data-command="Explain opportunity cost with a simple example.">Explain something</button>
+        <button data-command="Create an inventory CSV from these rows:&#10;pens,12,15.00&#10;notebooks,8,45.00">Create a file</button>
+        <button data-command="Help me build a clear business plan.">Build a plan</button>
+      </div>
+      <p class="motto">BIG IDEAS. REAL RESULTS.</p>
     </section>
-    <section aria-label="Conversation"><button id="clearChat" type="button" class="clear">Clear conversation</button><div id="transcript" role="log" aria-live="polite"></div></section>
-
-    <section id="mission" class="mission hidden"><div class="mission-head"><div><p class="eyebrow">MISSION PLAN</p><h2 id="missionTitle"></h2></div><span id="confidence">Awaiting verification</span></div><div id="steps" class="steps"></div></section>
-
-    <footer><span>PI / V1 · Chat and inventory CSV</span><span>Truth over agreement · Evidence over confidence</span></footer>
+    <input id="ownerToken" type="hidden" value="" />
   </main>
   <script src="app.js?v=20260919-completion"></script>
 </body>
