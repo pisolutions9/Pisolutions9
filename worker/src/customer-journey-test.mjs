@@ -17,8 +17,9 @@ const hardEnv={AI:{run:async(model,input)=>{
 const hardResponse=await worker.fetch(request({message:'Calculate a Bayesian posterior probability with two independent positive tests and show enough calculations to audit the answer.'}),hardEnv);
 const hardBody=await hardResponse.json();
 assert.equal(hardResponse.status,200);assert.equal(hardBody.truth,'verified-model-response');assert.equal(hardBody.verification,'independent-pass');
-assert.equal(hardCalls[0].model,'@cf/meta/llama-3.3-70b-instruct-fp8-fast');
-assert.equal(hardCalls[1].model,'@cf/zai-org/glm-4.7-flash');
+assert.equal(hardCalls[0].model,'@cf/zai-org/glm-4.7-flash');
+assert.equal(hardCalls[1].model,'@cf/openai/gpt-oss-20b');
+assert.notEqual(hardCalls[0].model,hardCalls[1].model);
 let rejectCalls=0;
 const rejectEnv={AI:{run:async(_model,input)=>{
   rejectCalls+=1;
