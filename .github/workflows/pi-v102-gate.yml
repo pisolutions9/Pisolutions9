@@ -34,7 +34,7 @@ jobs:
           PI_CHAT_URL: https://pi-chat.premchandyadlapati.workers.dev/api/chat
         run: |
           python - <<'PY'
-          import json, urllib.request
+          import json, subprocess, os
           questions=[
             "A SaaS company starts with $3.2M cash. Monthly fixed operating costs are $410k. It has 8,000 customers paying $42/month, gross margin 78%, monthly logo churn 3.2%, and acquires 900 new customers per month at CAC $310. Assume no expansion revenue and new customers contribute a full month of revenue immediately. Build a 12-month customer/cash model, identify whether cash hits zero, estimate the month in which monthly operating cash flow turns positive if it does, and identify the single assumption that most threatens the conclusion. Show enough calculations to audit the answer.",
             "You operate a distributed payments API. Region A receives 55% of writes, B 30%, C 15%. Network partition isolates A from B and C for 8 minutes. The business requires no double charges, idempotent retries, and p99 authorization latency below 250 ms, but also says every region must continue accepting writes during any partition. Determine whether these requirements can all be guaranteed simultaneously. Explain the distributed-systems conflict precisely, then design the safest degraded mode and give measurable recovery invariants.",
@@ -43,10 +43,9 @@ jobs:
             "Design a migration for a financial ledger from a single PostgreSQL database to a sharded architecture while processing 25,000 writes/sec. You may not lose or duplicate a committed transaction, balances must remain auditable, and rollback must be possible until final cutover. Give the state machine, write path during migration, reconciliation invariants, cutover criteria, rollback boundary, and name at least three failure modes that a naive dual-write design would miss."
           ]
           for i,q in enumerate(questions,1):
-              req=urllib.request.Request(__import__('os').environ['PI_CHAT_URL'],data=json.dumps({'message':q}).encode(),headers={'content-type':'application/json','origin':'https://pisolutions9.github.io'})
-              try:
-                  with urllib.request.urlopen(req,timeout=40) as r: body=json.loads(r.read())
-              except Exception as e:
-                  print(f"===== QUESTION {i} ERROR =====\n{e}",flush=True); continue
+              p=subprocess.run(['curl','--silent','--show-error','--connect-timeout','5','--max-time','40','-H','content-type: application/json','-H','origin: https://pisolutions9.github.io','-d',json.dumps({'message':q}),os.environ['PI_CHAT_URL']],capture_output=True,text=True)
+              try: body=json.loads(p.stdout)
+              except Exception:
+                  print(f"===== QUESTION {i} ERROR =====\\nreturn={p.returncode} stderr={p.stderr} body={p.stdout}",flush=True); continue
               print(f"===== QUESTION {i} =====\n{q}\n===== PI ANSWER {i} =====\n{body.get('answer')}\nMETA {json.dumps({k:body.get(k) for k in ('ok','status','source','truth')})}\n",flush=True)
           PY
