@@ -28,3 +28,25 @@ jobs:
         run: npm run test:v1.02
       - name: Full regression suite
         run: npm test
+
+      - name: Five hard live PI depth questions
+        env:
+          PI_CHAT_URL: https://pi-chat.premchandyadlapati.workers.dev/api/chat
+        run: |
+          python - <<'PY'
+          import json, urllib.request
+          questions=[
+            "A SaaS company starts with $3.2M cash. Monthly fixed operating costs are $410k. It has 8,000 customers paying $42/month, gross margin 78%, monthly logo churn 3.2%, and acquires 900 new customers per month at CAC $310. Assume no expansion revenue and new customers contribute a full month of revenue immediately. Build a 12-month customer/cash model, identify whether cash hits zero, estimate the month in which monthly operating cash flow turns positive if it does, and identify the single assumption that most threatens the conclusion. Show enough calculations to audit the answer.",
+            "You operate a distributed payments API. Region A receives 55% of writes, B 30%, C 15%. Network partition isolates A from B and C for 8 minutes. The business requires no double charges, idempotent retries, and p99 authorization latency below 250 ms, but also says every region must continue accepting writes during any partition. Determine whether these requirements can all be guaranteed simultaneously. Explain the distributed-systems conflict precisely, then design the safest degraded mode and give measurable recovery invariants.",
+            "A medical screening test has 96% sensitivity and 94% specificity. Disease prevalence in the screened population is 0.8%. A patient tests positive twice using independent test errors conditional on disease status. Calculate the posterior probability the patient has the disease after the two positives. Then explain exactly why the independence assumption may be dangerous in a real diagnostic workflow and how correlated false positives would change the result.",
+            "A factory can make products X and Y. Each X earns $70 contribution margin and uses 3 machine-hours plus 2 labor-hours. Each Y earns $55 and uses 2 machine-hours plus 4 labor-hours. Weekly capacity is 240 machine-hours and 300 labor-hours. Contract requires at least 20 X and at least 10 Y. Demand caps are X<=70 and Y<=80. Find the profit-maximizing mix, prove why it is optimal using the binding constraints or corner points, and show how the answer changes if one extra machine-hour costs $18.",
+            "Design a migration for a financial ledger from a single PostgreSQL database to a sharded architecture while processing 25,000 writes/sec. You may not lose or duplicate a committed transaction, balances must remain auditable, and rollback must be possible until final cutover. Give the state machine, write path during migration, reconciliation invariants, cutover criteria, rollback boundary, and name at least three failure modes that a naive dual-write design would miss."
+          ]
+          for i,q in enumerate(questions,1):
+              req=urllib.request.Request(__import__('os').environ['PI_CHAT_URL'],data=json.dumps({'message':q}).encode(),headers={'content-type':'application/json','origin':'https://pisolutions9.github.io'})
+              try:
+                  with urllib.request.urlopen(req,timeout=40) as r: body=json.loads(r.read())
+              except Exception as e:
+                  print(f"===== QUESTION {i} ERROR =====\n{e}",flush=True); continue
+              print(f"===== QUESTION {i} =====\n{q}\n===== PI ANSWER {i} =====\n{body.get('answer')}\nMETA {json.dumps({k:body.get(k) for k in ('ok','status','source','truth')})}\n",flush=True)
+          PY
