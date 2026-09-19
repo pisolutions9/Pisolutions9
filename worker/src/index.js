@@ -106,9 +106,9 @@ async function produceVerifiedHardAnswer(env,message,history){
   if(remainingBudget(deadline)<EDGE_TIMEOUT_MS)return {...first,verified:false,provisional:true,verificationReason:'verification_budget_exhausted'};
   const check=await verifyHardAnswer(env,message,history,first.answer,deadline);
   if(check.ok)return {...first,verified:true,verifier:check.model};
-  if(!String(check.reason||'').match(/^REVISE\b/i) && remainingBudget(deadline)<EDGE_TIMEOUT_MS)return {...first,verified:false,provisional:true,verificationReason:check.reason||'verification_inconclusive'};
+  if(!String(check.reason||'').match(/^REVISE\b/i))return {...first,verified:false,provisional:true,verificationReason:check.reason||'verification_inconclusive'};
   if(remainingBudget(deadline)<EDGE_TIMEOUT_MS)return null;
-  const correction=check.reason||'Independent verification found a material defect. Recompute and correct the answer.';
+  const correction=check.reason;
   const retryMessage=`${message}\n\nIndependent verification rejected the previous draft. Correction brief:\n${correction}\nProduce a corrected self-contained answer. Recalculate from the original facts and do not repeat the rejected error.`;
   const revised=await callWorkersAI(env,retryMessage,history,{preferStrong:true,instructions:HARD_REASONING_INSTRUCTIONS,deadline});
   if(!revised||revised.incomplete)return null;
