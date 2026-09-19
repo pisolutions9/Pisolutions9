@@ -1,6 +1,8 @@
 name: PI V2 Release Gate
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
   workflow_dispatch:
@@ -34,6 +36,7 @@ jobs:
       - name: Confirm V2 release gate
         run: node pi/v2-release-gate-test.mjs
       - name: Deploy exact V2 chat worker candidate
+        if: github.event_name != 'pull_request'
         working-directory: worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -44,6 +47,7 @@ jobs:
           node src/customer-journey-test.mjs
           npx wrangler deploy
       - name: Verify live model-backed V2 customer path
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
@@ -56,6 +60,7 @@ jobs:
           test "$status" = 200
           node -e "const d=require('/tmp/pi-v2-chat.json'); if(d.ok!==true||d.truth!=='model-response'||!String(d.source).startsWith('pi-chat-')||!d.answer) process.exit(1)"
       - name: Verify exact V2 console reached GitHub Pages
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
@@ -75,6 +80,7 @@ jobs:
           echo 'GitHub Pages did not publish the exact candidate assets in time.' >&2
           exit 1
       - name: Record exact candidate evidence
+        if: github.event_name != 'pull_request'
         run: |
           echo "PI V2 candidate $GITHUB_SHA passed the full V1+V2 suite and a genuine live model-backed production smoke." >> "$GITHUB_STEP_SUMMARY"
           echo "Deterministic recovery was not counted as live-model success." >> "$GITHUB_STEP_SUMMARY"
