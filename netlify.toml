@@ -5,24 +5,17 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# Customer chat is intentionally NOT routed through Netlify.
+# Cloudflare Worker is the authoritative customer AI runtime used by app.js
+# and live release gates. /api/pi remains the distinct owner/cloud runtime.
+
 [[redirects]]
   from = "/api/pi"
   to = "/.netlify/functions/pi"
   status = 200
 
-[[redirects]]
-  from = "/api/chat"
-  to = "/.netlify/functions/chat"
-  status = 200
-
 [[headers]]
   for = "/api/pi"
-  [headers.values]
-    X-Content-Type-Options = "nosniff"
-    Cache-Control = "no-store"
-
-[[headers]]
-  for = "/api/chat"
   [headers.values]
     X-Content-Type-Options = "nosniff"
     Cache-Control = "no-store"
