@@ -111,3 +111,23 @@ jobs:
           for ((i=0; i<${#answers[@]}; i++)); do test -n "${answers[$i]}"; done
           echo "Live model-backed answers: $live_model_answers"
           test "$live_model_answers" -ge 1
+      - name: Live-data truth boundary smoke test
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint='https://pi-chat.premchandyadlapati.workers.dev/api/chat'
+          status="$(curl --silent --show-error --location --max-time 25 --retry 1 --retry-all-errors \
+            -H 'content-type: application/json' \
+            -H 'origin: https://pisolutions9.github.io' \
+            -d '{"message":"What is the weather today in Mobile, Alabama?"}' \
+            --output /tmp/pi-live-data.json --write-out '%{http_code}' "$endpoint")"
+          cat /tmp/pi-live-data.json
+          if [[ -n "$OPENAI_API_KEY" ]]; then
+            test "$status" = 200
+            python -c 'import json; d=json.load(open("/tmp/pi-live-data.json")); assert d.get("ok") is True; assert d.get("truth") in ("web-grounded-model-response","model-response"); assert isinstance(d.get("answer"),str) and d["answer"].strip()'
+          else
+            test "$status" = 503
+            python -c 'import json; d=json.load(open("/tmp/pi-live-data.json")); assert d.get("ok") is False; assert d.get("error")=="live_data_connector_not_configured"; assert d.get("truth")=="unknown"'
+          fi
