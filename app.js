@@ -8,6 +8,34 @@ const confidence = document.querySelector('#confidence');
 const run = document.querySelector('#run');
 const ownerToken = document.querySelector('#ownerToken');
 const systemStatus = document.querySelector('#systemStatus');
+const attachFile = document.querySelector('#attachFile');
+const fileInput = document.querySelector('#fileInput');
+const attachmentStatus = document.querySelector('#attachmentStatus');
+let attachedFile = null;
+const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
+
+function clearAttachment() {
+  attachedFile = null;
+  fileInput.value = '';
+  attachmentStatus.replaceChildren();
+  attachmentStatus.classList.add('hidden');
+}
+function showAttachment(name) {
+  attachmentStatus.replaceChildren();
+  const text = document.createElement('span'); text.textContent = `Attached: ${name}`;
+  const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Remove'; remove.addEventListener('click', clearAttachment);
+  attachmentStatus.append(text, remove); attachmentStatus.classList.remove('hidden');
+}
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result || '').split(',')[1] || ''); reader.onerror = () => reject(reader.error || new Error('file_read_failed')); reader.readAsDataURL(file); });
+}
+attachFile.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', async () => {
+  const file = fileInput.files?.[0]; if (!file) return;
+  if (file.size > MAX_ATTACHMENT_BYTES) { clearAttachment(); setStatus('File must be 4 MB or smaller', 'blocked'); return; }
+  try { attachedFile = { name: file.name, type: file.type || 'application/octet-stream', data: await fileToBase64(file) }; showAttachment(file.name); setStatus('Attachment ready'); }
+  catch { clearAttachment(); setStatus('Could not read attachment', 'blocked'); }
+});
 
 function setStatus(label, state = 'idle') {
   systemStatus.textContent = label;
@@ -200,7 +228,7 @@ function chatApiUrl() {
   return `${base}/api/chat`;
 }
 
-async function runCustomerChat(text) {
+async function runCustomerChat(text, attachment = null) {
   try { sessionStorage.setItem(PENDING_KEY, text); } catch {}
   run.disabled = true;
   document.querySelector('#clearChat').disabled = true;
@@ -213,7 +241,7 @@ async function runCustomerChat(text) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 65000);
   try {
-    const response = await fetch(chatApiUrl(), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: text, history }), signal: controller.signal });
+    const response = await fetch(chatApiUrl(), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: text, history, ...(attachment ? { attachment } : {}) }), signal: controller.signal });
     const body = await response.json();
     const outcome = chatOutcome(response, body);
     const card = addTranscript('assistant', outcome.answer);
@@ -222,7 +250,8 @@ async function runCustomerChat(text) {
     card.append(note);
     for (const artifact of outcome.artifacts) downloadArtifact(artifact, card);
     renderSources(outcome.sources, card);
-    if (outcome.remember) { rememberTurn('user', text); rememberTurn('assistant', outcome.answer, outcome.artifacts); }
+    if (outcome.remember) { rememberTurn('user', attachment ? `${text}\n[Attached file: ${attachment.name}]` : text); rememberTurn('assistant', outcome.answer, outcome.artifacts); }
+    if (outcome.complete && attachment) clearAttachment();
     if (outcome.restoreDraft) restoreDraft(text);
     mission.classList.add('hidden');
     card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -237,10 +266,10 @@ async function runCustomerChat(text) {
   } finally { clearTimeout(timer); pending.remove(); try { sessionStorage.removeItem(PENDING_KEY); } catch {} document.querySelector('#clearChat').disabled = false; run.disabled = false; }
 }
 
-async function runCloudMission(text) {
+async function runCloudMission(text, attachment = null) {
   const token = ownerToken.value.trim();
   if (!token) {
-    await runCustomerChat(text);
+    await runCustomerChat(text, attachment);
     return;
   }
   run.disabled = true;
@@ -260,11 +289,13 @@ async function runCloudMission(text) {
 document.querySelectorAll('[data-command]').forEach(button => button.addEventListener('click', () => { command.value = button.dataset.command; saveDraft(); command.focus(); }));
 run.addEventListener('click', () => {
   const text = command.value.trim();
-  if (!text || run.disabled) { command.focus(); return; }
+  if ((!text && !attachedFile) || run.disabled) { command.focus(); return; }
+  const attachment = attachedFile;
+  const prompt = text || 'Describe and analyze this attachment.';
   command.value = '';
   saveDraft();
   command.style.height = 'auto';
-  runCloudMission(text);
+  runCloudMission(prompt, attachment);
 });
 
 command.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); run.click(); } });
