@@ -15,8 +15,12 @@ const EDGE_MODEL_FALLBACKS = [
   '@cf/zai-org/glm-4.7-flash'
 ];
 const OPENAI_MODEL_FALLBACKS = ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5'];
-const FRESHNESS_SENSITIVE = /(today|tonight|current|currently|latest|live|now|right now|this (?:morning|afternoon|evening|week|month|year)|weather|temperature|forecast|price|stock|market|score|standings|news|traffic|open now|available now)/i;
-function requiresLiveEvidence(text=''){return FRESHNESS_SENSITIVE.test(String(text));}
+const LIVE_SUBJECT = /\b(weather|temperature|forecast|price|prices|stock|stocks|market|markets|score|scores|standings|news|traffic|availability|available|open)\b/i;
+const LIVE_TIME = /\b(today|tonight|current|currently|latest|live|now|right now|this (?:morning|afternoon|evening|week|month|year))\b/i;
+function requiresLiveEvidence(text=''){
+  const value=String(text);
+  return LIVE_SUBJECT.test(value) && (LIVE_TIME.test(value) || /\b(weather|forecast|news|traffic)\b/i.test(value));
+}
 const PI_INSTRUCTIONS = "You are PI, an autonomous intelligence assistant coordinated by Krishna. Answer the user's actual question directly and naturally. Do not expose internal routing, classification, planning, tool, or verification language. If current facts or an external action cannot be verified, say what is missing instead of inventing it. Never claim an action was completed unless it actually was. You can discuss, explain, and draft text. Inventory CSV creation is handled by a separate tool; you cannot browse, deploy, or run other external actions. Model answers are not independently fact-checked. Give a complete response within 1000 tokens; prioritize the most useful points and avoid repetition. Use the provided conversation history for follow-up questions.";
 const COMPACT_RETRY_INSTRUCTIONS = `${PI_INSTRUCTIONS} The previous attempt reached its output limit. Rewrite the answer from the beginning as a complete, self-contained response under 700 words. Do not mention the retry or truncation.`;
 
