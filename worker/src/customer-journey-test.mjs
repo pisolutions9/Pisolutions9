@@ -67,3 +67,19 @@ const artifact=executeInventory(rows);assert.equal(verifyInventory(artifact,rows
 for(const content of [artifact.content.replace('0.30','0.31'),artifact.content.replace('a,3','a,4'),artifact.content.replace('b,7,0.29,2.03\r\n',''),artifact.content.replace('2.33','2.34')])assert.equal(verifyInventory({...artifact,content},rows),false);
 for(const text of ['Create CSV:\npens,12,15\nbad,-2,10','Create CSV:\npens,12,15\nbad,2,1.234','Create CSV:\n=HYPERLINK,2,1','Create CSV:\npens,0,15']){try{const r=inventoryMission(text);assert.notEqual(r.status,'completed');}catch(e){assert.match(e.message,/limits/);}}
 console.log('Customer journey contract PASS: history, role restrictions, completeness, artifact execution, tamper detection, invalid-row rejection.');
+
+let attachmentPrompt;
+const attachmentEnv={AI:{
+  toMarkdown:async(file)=>{assert.equal(file.name,'report.pdf');return {name:file.name,mimetype:'application/pdf',format:'text',tokens:8,data:'Quarterly revenue was $120,000 and gross margin was 42%.'};},
+  run:async(_model,input)=>{attachmentPrompt=input.messages.at(-1).content;return {response:'The attached report states quarterly revenue was $120,000 with a 42% gross margin.'};}
+}};
+const attachmentPayload={message:'Summarize the key financial figures.',attachment:{name:'report.pdf',type:'application/pdf',data:btoa('fake-pdf-bytes')}};
+const attachmentResponse=await worker.fetch(request(attachmentPayload),attachmentEnv);
+const attachmentBody=await attachmentResponse.json();
+assert.equal(attachmentResponse.status,200);
+assert.equal(attachmentBody.ok,true);
+assert.equal(attachmentBody.truth,'file-grounded-model-response');
+assert.match(attachmentPrompt,/Quarterly revenue was \$120,000/);
+assert.equal(attachmentBody.attachment.name,'report.pdf');
+const oversized=await worker.fetch(request({message:'Read this',attachment:{name:'report.pdf',type:'application/pdf',data:'A'.repeat(6000000)}}),attachmentEnv);
+assert.equal(oversized.status,400);
