@@ -37,3 +37,9 @@ assert.match(transportOutcome({ name: 'AbortError' }).answer, /Completion is not
 assert.match(transportOutcome(new Error('network'), false).answer, /offline/);
 assert.match(transportOutcome(new Error('secret')).answer, /kept below/);
 console.log('Customer outcome tests passed: blockers, partials, recovery, evidence labels, artifact gating, and prompt recovery.');
+
+const grounded = chatOutcome(ok, { ok: true, status: 'answered', answer: 'Current answer.', truth: 'web-grounded-model-response', sources: [{ url: 'https://example.com/source', title: 'Example source' }, { url: 'javascript:alert(1)', title: 'Unsafe' }] });
+assert.equal(grounded.complete, true);
+assert.match(grounded.note, /live web research/i);
+assert.equal(grounded.sources.length, 1);
+assert.equal(grounded.sources[0].url, 'https://example.com/source');
