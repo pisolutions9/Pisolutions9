@@ -21,11 +21,12 @@ function rememberTurn(role, content) {
   conversation.push({ role, content }); conversation = historyWindow();
   try { sessionStorage.setItem(HISTORY_KEY, JSON.stringify(conversation)); } catch {}
 }
+function syncWelcome() { const welcome = document.querySelector('#welcome'); if (welcome) welcome.classList.toggle('hidden', conversation.length > 0 || document.querySelector('#transcript').children.length > 0); }
 function addTranscript(role, text) {
   const card = document.createElement('article'); card.className = 'chat-turn ' + role;
   const label = document.createElement('strong'); label.textContent = role === 'user' ? 'You' : 'PI';
   const content = document.createElement('div'); content.className = 'chat-content'; content.textContent = text;
-  card.append(label, content); document.querySelector('#transcript').append(card); return card;
+  card.append(label, content); document.querySelector('#transcript').append(card); syncWelcome(); return card;
 }
 function downloadArtifact(artifact, card) {
   if (artifact.filename !== 'inventory.csv' || artifact.mimeType !== 'text/csv;charset=utf-8' || typeof artifact.content !== 'string' || artifact.content.length > 100000) return;
@@ -33,7 +34,7 @@ function downloadArtifact(artifact, card) {
   const link = document.createElement('a'); link.href = url; link.download = artifact.filename; link.textContent = 'Download ' + artifact.filename; link.className = 'download'; card.append(link);
 }
 for (const turn of conversation) addTranscript(turn.role, turn.content);
-document.querySelector('#clearChat').addEventListener('click', () => { conversation = []; try { sessionStorage.removeItem(HISTORY_KEY); } catch {} document.querySelector('#transcript').replaceChildren(); for (const url of artifactUrls) URL.revokeObjectURL(url); artifactUrls.length = 0; mission.classList.add('hidden'); });
+document.querySelector('#clearChat').addEventListener('click', () => { conversation = []; try { sessionStorage.removeItem(HISTORY_KEY); } catch {} document.querySelector('#transcript').replaceChildren(); for (const url of artifactUrls) URL.revokeObjectURL(url); artifactUrls.length = 0; mission.classList.add('hidden'); syncWelcome(); });
 
 const DOMAIN_RULES = [
   { name: 'business', pattern: /business|market|sales|customer|revenue|export|import|price|profit|investment/i, tasks: ['define_business_goal', 'identify_constraints', 'build_decision_matrix'] },
@@ -214,3 +215,7 @@ async function runCloudMission(text) {
 
 document.querySelectorAll('[data-command]').forEach(button => button.addEventListener('click', () => { command.value = button.dataset.command; command.focus(); }));
 run.addEventListener('click', () => { runCloudMission(command.value.trim() || 'Build the next PI capability'); });
+
+command.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); run.click(); } });
+command.addEventListener('input', () => { command.style.height = 'auto'; command.style.height = Math.min(command.scrollHeight, 140) + 'px'; });
+syncWelcome();
