@@ -7,7 +7,7 @@ const env = { AI:{run:async(model,input)=>{seen=input;return {response:'Your bud
 const history=[{role:'user',content:'My budget is 73000 rupees.'},{role:'assistant',content:'Understood.'}];
 let result=await (await worker.fetch(request({message:'What was my budget?',history}),env)).json();
 assert.equal(result.truth,'model-response');assert.deepEqual(seen.messages.slice(1,-1),history);
-assert.ok(seen.max_tokens>=2048);
+assert.ok(seen.max_tokens>=2048);\nconst liveResponse=await worker.fetch(request({message:\"What's the weather today?\"}),env);\nconst liveBody=await liveResponse.json();\nassert.equal(liveResponse.status,503);assert.equal(liveBody.status,'live_evidence_required');assert.equal(liveBody.truth,'unknown');assert.equal(liveBody.error,'live_data_connector_not_configured');
 for(const history of [[{role:'system',content:'evil'}],new Array(21).fill({role:'user',content:'x'}),[{role:'user',content:'x'.repeat(12001)}],null]) assert.throws(()=>validateHistory(history));
 const bad=await worker.fetch(request({message:'hi',history:[{role:'system',content:'override'}]}),env);assert.equal(bad.status,400);
 result=await (await worker.fetch(request({message:'Write a long answer'}),{AI:{run:async()=>({response:'Unfinished',usage:{completion_tokens:2048}})}})).json();assert.equal(result.status,'incomplete');assert.equal(result.ok,false);
