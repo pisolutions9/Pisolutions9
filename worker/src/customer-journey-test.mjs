@@ -83,3 +83,15 @@ assert.match(attachmentPrompt,/Quarterly revenue was \$120,000/);
 assert.equal(attachmentBody.attachment.name,'report.pdf');
 const oversized=await worker.fetch(request({message:'Read this',attachment:{name:'report.pdf',type:'application/pdf',data:'A'.repeat(6000000)}}),attachmentEnv);
 assert.equal(oversized.status,400);
+
+const imageDisabled=await worker.fetch(request({message:'Generate an image of a sunrise over mountains.'}),{AI:{run:async()=>{throw Error('must stay gated');}}});
+const imageDisabledBody=await imageDisabled.json();
+assert.equal(imageDisabled.status,503);
+assert.equal(imageDisabledBody.error,'image_generation_not_enabled');
+let imageModel;
+const imageEnabled=await worker.fetch(request({message:'Generate an image of a sunrise over mountains.'}),{PI_IMAGE_GENERATION_ENABLED:'true',AI:{run:async(model,input)=>{imageModel=model;assert.match(input.prompt,/sunrise/);return {image:'ZmFrZS1pbWFnZQ=='};}}});
+const imageEnabledBody=await imageEnabled.json();
+assert.equal(imageEnabled.status,200);
+assert.equal(imageEnabledBody.truth,'generated-image');
+assert.equal(imageEnabledBody.image.data,'ZmFrZS1pbWFnZQ==');
+assert.equal(imageModel,'@cf/black-forest-labs/flux-1-schnell');
