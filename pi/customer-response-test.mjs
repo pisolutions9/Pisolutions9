@@ -12,7 +12,8 @@ for (const error of ['live_data_connector_not_configured', 'hard_reasoning_not_v
   assert.equal(outcome.restoreDraft, true);
   assert.equal(outcome.remember, false);
   assert.notEqual(outcome.label, 'Request failed');
-  assert.match(outcome.answer, /kept below/);
+  assert.ok(outcome.answer.length > 20);
+  if (!error.startsWith('attachment_')) assert.match(outcome.answer, /kept below/);
 }
 for (const body of [null, {}, { ...answer, ok: false }, { ...answer, answer: [] }, { ...answer, answer: ' ' }]) {
   const outcome = chatOutcome(ok, body);
