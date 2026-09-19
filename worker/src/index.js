@@ -16,7 +16,7 @@ const HARD_REQUEST_BUDGET_MS = 20000;
 const DEFAULT_EDGE_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
 const EDGE_MODEL_FALLBACKS = [
   '@cf/zai-org/glm-4.7-flash',
-  '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+  '@cf/google/gemma-4-26b-a4b-it'
 ];
 const OPENAI_MODEL_FALLBACKS = ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5'];
 const HARD_REASONING = /\b(calculate|posterior|bayes|probability|optimi[sz]|linear programming|profit-maximi[sz]|cash model|cash flow|runway|break-even|constraint|corner points?|binding constraints?|distributed systems?|network partition|cap theorem|exactly.once|no double charges?|ledger|migration|reconciliation|invariants?|rollback|shard(?:ed|ing)?|25,?000 writes|prove why|show enough calculations|audit the answer)\b/i;
