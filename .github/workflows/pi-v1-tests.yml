@@ -1,6 +1,10 @@
 name: PI V1 Tests
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pi-v1-tests.yml'
   workflow_run:
     workflows: ["PI Chat Worker"]
     types: [completed]
