@@ -25,11 +25,13 @@ test.describe('PI V1.02 live customer browser journey', () => {
     expect(firstAnswer.length).toBeGreaterThan(10);
     expect(firstAnswer).not.toMatch(/Classification:|BUSINESS_OBJECTIVE/i);
 
+    const assistantTurns = transcript.locator('.chat-turn.assistant');
+    const beforeSecond = await assistantTurns.count();
     await input.fill('Explain photosynthesis to a 10-year-old in two short sentences.');
     await send.click();
 
-    const secondAssistant = transcript.locator('.chat-turn.assistant').last();
-    await expect(secondAssistant).toBeVisible({ timeout: 70000 });
+    await expect(assistantTurns).toHaveCount(beforeSecond + 1, { timeout: 70000 });
+    const secondAssistant = assistantTurns.nth(beforeSecond);
     const secondAnswer = (await secondAssistant.locator('.chat-content').innerText()).trim();
     expect(secondAnswer.length).toBeGreaterThan(10);
     expect(secondAnswer).not.toBe(firstAnswer);
@@ -42,7 +44,6 @@ test.describe('PI V1.02 live customer browser journey', () => {
     await expect(artifactLink).toBeVisible({ timeout: 70000 });
     await expect(artifactLink).toHaveText(/Download inventory\.csv/);
 
-    const assistantTurns = transcript.locator('.chat-turn.assistant');
     await expect(assistantTurns).toHaveCount(3);
   });
 });
