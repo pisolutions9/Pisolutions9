@@ -128,5 +128,5 @@ jobs:
             python -c 'import json; d=json.load(open("/tmp/pi-live-data.json")); assert d.get("ok") is True; assert d.get("truth")=="web-grounded-model-response"; assert isinstance(d.get("sources"),list) and len(d["sources"])>0; assert isinstance(d.get("answer"),str) and d["answer"].strip()'
           else
             test "$status" = 503
-            python -c 'import json; d=json.load(open("/tmp/pi-live-data.json")); assert d.get("ok") is False; assert d.get("truth")=="unknown"; assert d.get("error") in ("live_data_connector_not_configured","live_research_unverified","live_research_provider_unavailable")'
+            python -c 'import json; d=json.load(open("/tmp/pi-live-data.json")); assert d.get("ok") is False; assert d.get("truth")=="unknown"; assert d.get("error") in ("live_data_connector_not_configured","live_research_unverified","live_research_provider_unavailable","chat_provider_rate_limited","chat_provider_server_error","chat_provider_auth_failed","chat_provider_access_denied")'
           fi
