@@ -9,7 +9,7 @@ const MAX_OUTPUT_TOKENS = 2048;
 const COMPACT_OUTPUT_TOKENS = 1536;
 const PROVIDER_TIMEOUT_MS = 20000;
 const EDGE_TIMEOUT_MS = 7000;
-const HARD_REQUEST_BUDGET_MS = 18000;
+const HARD_REQUEST_BUDGET_MS = 20000;
 const DEFAULT_EDGE_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
 const EDGE_MODEL_FALLBACKS = [
   '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
