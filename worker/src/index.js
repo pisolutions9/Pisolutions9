@@ -91,12 +91,15 @@ async function edgeAttempt(env,model,message,history,{instructions,deadline}){
   const result=await runEdgeWithTimeout(env,model,message,history,{instructions,timeoutMs:timeLeft});
   const answer=extractEdgeAnswer(result);
   if(!answer)throw new Error(`edge_empty_response:${model}`);
-  if(edgeResultIncomplete(result,MAX_OUTPUT_TOKENS))throw new Error(`edge_incomplete_response:${model}`);
-  return {answer,model,incomplete:false};
+  return {answer,model,incomplete:edgeResultIncomplete(result,MAX_OUTPUT_TOKENS)};
 }
-async function firstCompleteEdge(env,models,message,history,{instructions,deadline}){
-  const attempts=models.map(model=>edgeAttempt(env,model,message,history,{instructions,deadline}).catch(error=>{console.error(`Workers AI hedged model failed: ${model}`,error instanceof Error?error.message:String(error));throw error;}));
-  try{return await Promise.any(attempts);}catch{return null;}
+async function hedgedEdgeResults(env,models,message,history,{instructions,deadline}){
+  const settled=await Promise.allSettled(models.map(model=>edgeAttempt(env,model,message,history,{instructions,deadline})));
+  for(let index=0;index<settled.length;index++){
+    const item=settled[index];
+    if(item.status==='rejected')console.error(`Workers AI hedged model failed: ${models[index]}`,item.reason instanceof Error?item.reason.message:String(item.reason));
+  }
+  return settled.filter(item=>item.status==='fulfilled').map(item=>item.value);
 }
 async function callWorkersAI(env,message,history,{preferStrong=false,instructions=PI_INSTRUCTIONS,deadline=null}={}){
   if(!env.AI||typeof env.AI.run!=='function')return null;
@@ -104,21 +107,25 @@ async function callWorkersAI(env,message,history,{preferStrong=false,instruction
   const models=preferStrong
     ? [...new Set(['@cf/zai-org/glm-4.7-flash','@cf/openai/gpt-oss-20b','@cf/google/gemma-4-26b-a4b-it','@cf/openai/gpt-oss-120b',configured].filter(Boolean))]
     : [...new Set([configured,...EDGE_MODEL_FALLBACKS].filter(Boolean))];
+  let firstIncomplete=null;
   const hedge=models.slice(0,2);
   if(hedge.length){
-    const hedged=await firstCompleteEdge(env,hedge,message,history,{instructions,deadline});
-    if(hedged)return hedged;
+    const results=await hedgedEdgeResults(env,hedge,message,history,{instructions,deadline});
+    const complete=results.find(result=>!result.incomplete);
+    if(complete)return complete;
+    firstIncomplete=results.find(result=>result.incomplete)||null;
   }
   for(const model of models.slice(2)){
     try{
       const result=await edgeAttempt(env,model,message,history,{instructions,deadline});
-      if(result)return result;
+      if(!result.incomplete)return result;
+      firstIncomplete ||= result;
     }catch(error){
       console.error(`Workers AI fallback model failed: ${model}`,error instanceof Error?error.message:String(error));
     }
     await new Promise(resolve=>setTimeout(resolve,25));
   }
-  return null;
+  return firstIncomplete;
 }
 async function reviewHardAnswer(env,message,history,candidate,candidateModel,deadline=Date.now()+HARD_REVIEW_STAGE_MS){
   if(!env.AI||typeof env.AI.run!=='function')return {ok:false,reason:'reviewer_unavailable'};
