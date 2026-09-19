@@ -1,6 +1,8 @@
 name: PI V1.02 Gate
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -9,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: pi-v102-${{ github.event.pull_request.number || github.ref }}
+  group: pi-v102-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 jobs:
