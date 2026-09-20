@@ -13,6 +13,11 @@ const fileInput = document.querySelector('#fileInput');
 const attachmentStatus = document.querySelector('#attachmentStatus');
 const syncDevice = document.querySelector('#syncDevice');
 const syncNotice = document.querySelector('#syncNotice');
+const ownerAccess = document.querySelector('#ownerAccess');
+const ownerDialog = document.querySelector('#ownerDialog');
+const ownerLoginForm = document.querySelector('#ownerLoginForm');
+const ownerSecret = document.querySelector('#ownerSecret');
+const ownerLoginError = document.querySelector('#ownerLoginError');
 let attachedFile = null;
 const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
 
@@ -47,6 +52,14 @@ const DRAFT_KEY = 'pi-v1-draft';
 const PENDING_KEY = 'pi-v1-pending-question';
 const HISTORY_KEY = 'pi-v1-conversation';
 const SYNC_KEY = 'pi-v1-sync-token';
+const OWNER_SESSION_KEY = 'pi-v1-owner-session';
+const OWNER_HISTORY_KEY = 'pi-v1-owner-conversation';
+const OWNER_DRAFT_KEY = 'pi-v1-owner-draft';
+let ownerSession = '';
+try { ownerSession = sessionStorage.getItem(OWNER_SESSION_KEY) || ''; } catch {}
+let ownerMode = false;
+let ownerRevision = 0;
+let ownerSyncTimer = null;
 function storageGet(key) {
   try {
     const persistent = localStorage.getItem(key);
@@ -87,19 +100,68 @@ function syncApiUrl() {
   const configuredBase = window.PI_CHAT_API_BASE || document.documentElement.dataset.piChatApiBase || 'https://pi-chat.premchandyadlapati.workers.dev';
   return configuredBase.replace(/\/$/, '') + '/api/session';
 }
-function syncConversationPayload() { return historyWindow().map(({ role, content, sources }) => ({ role, content, ...(Array.isArray(sources) && sources.length ? { sources } : {}) })); }
+function syncConversationPayload() { return historyWindow().map(({ role, content, sources, artifacts }) => ({ role, content, ...(Array.isArray(sources) && sources.length ? { sources } : {}), ...(Array.isArray(artifacts) && artifacts.length ? { artifacts } : {}) })); }
 async function syncRequest(action, extra = {}) {
   if (!syncToken) return null;
   const response = await fetch(syncApiUrl(), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, token: syncToken, ...extra }) });
   if (!response.ok) throw new Error('session_sync_failed');
   return await response.json();
 }
+function ownerApiUrl(path) {
+  const configuredBase = window.PI_CHAT_API_BASE || document.documentElement.dataset.piChatApiBase || 'https://pi-chat.premchandyadlapati.workers.dev';
+  return configuredBase.replace(/\/$/, '') + path;
+}
+async function ownerRequest(path, { method='POST', body } = {}) {
+  if (!ownerSession) throw new Error('owner_session_missing');
+  const response = await fetch(ownerApiUrl(path), {
+    method,
+    headers: { 'content-type':'application/json', authorization:`Bearer ${ownerSession}` },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) })
+  });
+  let payload = {};
+  try { payload = await response.json(); } catch {}
+  if (response.status === 401) {
+    try { sessionStorage.removeItem(OWNER_SESSION_KEY); } catch {}
+    ownerSession = ''; ownerMode = false;
+  }
+  if (!response.ok) {
+    const error = new Error(payload.error || 'owner_request_failed');
+    error.code = payload.error || 'owner_request_failed';
+    error.payload = payload;
+    throw error;
+  }
+  return payload;
+}
+async function saveOwnerWorkspace() {
+  if (!ownerMode || !ownerSession) return;
+  const payload = await ownerRequest('/api/owner/workspace', {
+    body: { action:'save', expectedRevision:ownerRevision, conversation:syncConversationPayload(), draft:command.value.slice(0,8000), preferences:{}, tasks:[], artifacts:[] }
+  });
+  ownerRevision = Number(payload?.workspace?.revision || ownerRevision);
+  storageSet(OWNER_HISTORY_KEY, JSON.stringify(conversation));
+  storageSet(OWNER_DRAFT_KEY, command.value);
+}
+function scheduleOwnerWorkspaceSync() {
+  if (!ownerMode || applyingRemoteSession) return;
+  clearTimeout(ownerSyncTimer);
+  ownerSyncTimer = setTimeout(() => {
+    saveOwnerWorkspace().catch(async error => {
+      if (error?.code === 'workspace_revision_conflict') {
+        try { await loadOwnerWorkspace(); updateSyncUi('Owner workspace refreshed after a device conflict.'); } catch {}
+      }
+    });
+  }, 350);
+}
 function scheduleSessionSync() {
+  if (ownerMode) { scheduleOwnerWorkspaceSync(); return; }
   if (!syncToken || applyingRemoteSession) return;
   clearTimeout(syncTimer);
   syncTimer = setTimeout(() => { syncRequest('save', { conversation: syncConversationPayload(), draft: command.value.slice(0, 8000) }).catch(() => {}); }, 350);
 }
-function saveDraft() { storageSet(DRAFT_KEY, command.value); scheduleSessionSync(); }
+function saveDraft() {
+  storageSet(ownerMode ? OWNER_DRAFT_KEY : DRAFT_KEY, command.value);
+  scheduleSessionSync();
+}
 function restoreDraft(text) {
   // Preserve any new text the owner typed while the previous request was running.
   if (!command.value.trim()) command.value = text;
@@ -128,7 +190,7 @@ function rememberTurn(role, content, artifacts = [], sources = []) {
   const savedArtifacts = artifacts.filter(isDownloadableArtifact).slice(0, 1).map(({ filename, mimeType, content }) => ({ filename, mimeType, content }));
   const savedSources = role === 'assistant' ? sanitizeSavedSources(sources) : [];
   conversation.push({ role, content, ...(savedArtifacts.length ? { artifacts: savedArtifacts } : {}), ...(savedSources.length ? { sources: savedSources } : {}) }); conversation = historyWindow();
-  storageSet(HISTORY_KEY, JSON.stringify(conversation));
+  storageSet(ownerMode ? OWNER_HISTORY_KEY : HISTORY_KEY, JSON.stringify(conversation));
   scheduleSessionSync();
 }
 function syncWelcome() { const welcome = document.querySelector('#welcome'); if (welcome) welcome.classList.toggle('hidden', conversation.length > 0 || document.querySelector('#transcript').children.length > 0); }
@@ -212,7 +274,105 @@ async function loadSyncedSession() {
   finally { applyingRemoteSession = false; }
 }
 syncDevice?.addEventListener('click', () => { copySyncLink().catch(() => updateSyncUi('Could not create the sync link. Please try again.')); });
-document.querySelector('#clearChat').addEventListener('click', () => { conversation = []; storageRemove(HISTORY_KEY); storageRemove(PENDING_KEY); document.querySelector('#transcript').replaceChildren(); for (const url of artifactUrls) URL.revokeObjectURL(url); artifactUrls.length = 0; mission.classList.add('hidden'); syncWelcome(); if (syncToken) syncRequest('clear').catch(() => {}); setStatus(navigator.onLine ? 'Ready to ask' : 'Offline', navigator.onLine ? 'idle' : 'blocked'); });
+document.querySelector('#clearChat').addEventListener('click', () => {
+  conversation = [];
+  storageRemove(ownerMode ? OWNER_HISTORY_KEY : HISTORY_KEY);
+  storageRemove(PENDING_KEY);
+  document.querySelector('#transcript').replaceChildren();
+  for (const url of artifactUrls) URL.revokeObjectURL(url);
+  artifactUrls.length = 0;
+  mission.classList.add('hidden');
+  syncWelcome();
+  if (ownerMode) {
+    ownerRequest('/api/owner/workspace', { body:{action:'clear'} }).then(() => { ownerRevision = 0; }).catch(() => {});
+  } else if (syncToken) syncRequest('clear').catch(() => {});
+  setStatus(navigator.onLine ? (ownerMode ? 'Owner workspace ready' : 'Ready to ask') : 'Offline', navigator.onLine ? 'idle' : 'blocked');
+});
+
+async function loadOwnerWorkspace() {
+  const body = await ownerRequest('/api/owner/workspace', { body:{action:'load'} });
+  const workspace = body?.workspace;
+  applyingRemoteSession = true;
+  try {
+    ownerMode = true;
+    ownerRevision = Number(workspace?.revision || 0);
+    conversation = Array.isArray(workspace?.conversation) ? workspace.conversation.filter(t => t && ['user','assistant'].includes(t.role) && typeof t.content === 'string').slice(-20) : [];
+    command.value = typeof workspace?.draft === 'string' ? workspace.draft.slice(0,8000) : '';
+    storageSet(OWNER_HISTORY_KEY, JSON.stringify(conversation));
+    storageSet(OWNER_DRAFT_KEY, command.value);
+    renderConversation();
+    command.style.height = 'auto';
+    command.style.height = Math.min(command.scrollHeight, 140) + 'px';
+    ownerAccess.textContent = 'Owner signed in';
+    syncDevice.disabled = true;
+    syncDevice.title = 'Owner workspace sync is automatic';
+    updateSyncUi('Authenticated owner workspace is active. Changes sync automatically across signed-in devices.');
+    setStatus('Owner workspace ready');
+  } finally { applyingRemoteSession = false; }
+}
+async function restoreOwnerSession() {
+  if (!/^[A-Za-z0-9_-]{43}$/.test(ownerSession)) return false;
+  try {
+    await ownerRequest('/api/owner/status', { method:'GET' });
+    await loadOwnerWorkspace();
+    return true;
+  } catch {
+    ownerSession = '';
+    try { sessionStorage.removeItem(OWNER_SESSION_KEY); } catch {}
+    return false;
+  }
+}
+async function signInOwner(secret) {
+  const response = await fetch(ownerApiUrl('/api/owner/login'), {
+    method:'POST',
+    headers:{'content-type':'application/json'},
+    body:JSON.stringify({secret})
+  });
+  let body={}; try { body=await response.json(); } catch {}
+  if (!response.ok || !body.sessionToken) throw new Error(body.error || 'owner_login_failed');
+  ownerSession = body.sessionToken;
+  try { sessionStorage.setItem(OWNER_SESSION_KEY, ownerSession); } catch {}
+  await loadOwnerWorkspace();
+}
+async function signOutOwner() {
+  try { await ownerRequest('/api/owner/logout', { body:{} }); } catch {}
+  ownerSession = ''; ownerMode = false; ownerRevision = 0;
+  try { sessionStorage.removeItem(OWNER_SESSION_KEY); } catch {}
+  ownerAccess.textContent = 'Owner sign in';
+  syncDevice.disabled = false;
+  syncDevice.title = '';
+  try {
+    const saved = JSON.parse(storageGet(HISTORY_KEY) || '[]');
+    conversation = Array.isArray(saved) ? saved.filter(t => t && ['user','assistant'].includes(t.role) && typeof t.content === 'string').slice(-20) : [];
+  } catch { conversation = []; }
+  command.value = storageGet(DRAFT_KEY) || '';
+  renderConversation();
+  updateSyncUi(syncToken ? 'Private device sync is active.' : '');
+  setStatus('Signed out');
+}
+ownerAccess?.addEventListener('click', async () => {
+  if (ownerMode) {
+    if (window.confirm('Sign out of the owner workspace on this device?')) await signOutOwner();
+    return;
+  }
+  ownerLoginError.classList.add('hidden');
+  ownerSecret.value = '';
+  ownerDialog.showModal();
+  ownerSecret.focus();
+});
+document.querySelector('#ownerCancel')?.addEventListener('click', () => ownerDialog.close());
+ownerLoginForm?.addEventListener('submit', async event => {
+  event.preventDefault();
+  ownerLoginError.classList.add('hidden');
+  try {
+    await signInOwner(ownerSecret.value);
+    ownerSecret.value = '';
+    ownerDialog.close();
+  } catch (error) {
+    ownerLoginError.textContent = error?.message === 'owner_auth_not_configured' ? 'Owner sign-in is not configured on this deployment yet.' : 'Owner sign-in failed.';
+    ownerLoginError.classList.remove('hidden');
+  }
+});
 
 const DOMAIN_RULES = [
   { name: 'business', pattern: /business|market|sales|customer|revenue|export|import|price|profit|investment/i, tasks: ['define_business_goal', 'identify_constraints', 'build_decision_matrix'] },
@@ -420,4 +580,7 @@ run.addEventListener('click', () => {
 command.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); run.click(); } });
 command.addEventListener('input', () => { saveDraft(); command.style.height = 'auto'; command.style.height = Math.min(command.scrollHeight, 140) + 'px'; });
 syncWelcome();
-loadSyncedSession();
+(async () => {
+  const restored = await restoreOwnerSession();
+  if (!restored) loadSyncedSession();
+})();
