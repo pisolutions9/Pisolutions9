@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { PISessionStore, handleSessionRequest } from './session-store.mjs';
 
-globalThis.crypto = webcrypto;
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
 const origin = 'https://pisolutions9.github.io';
 const token = 'A'.repeat(43);
 
