@@ -15,7 +15,7 @@ function reply(body, status = 200, origin = '', allowedOrigin = '') {
     vary: 'Origin'
   };
   if (origin && origin === allowedOrigin) headers['access-control-allow-origin'] = allowedOrigin;
-  return new Response(JSON.stringify(body), { status, headers });
+  return new Response(status === 204 ? null : JSON.stringify(body), { status, headers });
 }
 
 function sanitizeConversation(value) {
@@ -80,10 +80,7 @@ export class PISessionStore {
 export async function handleSessionRequest(request, env, allowedOrigin) {
   const origin = request.headers.get('Origin') || '';
   if (origin && origin !== allowedOrigin) return reply({ ok: false, error: 'origin_not_allowed' }, 403, origin, allowedOrigin);
-  if (request.method === 'OPTIONS') {
-    const response = reply({}, 204, origin, allowedOrigin);
-    return new Response(null, { status: 204, headers: response.headers });
-  }
+  if (request.method === 'OPTIONS') return reply({}, 204, origin, allowedOrigin);
   if (request.method !== 'POST') return reply({ ok: false, error: 'method_not_allowed' }, 405, origin, allowedOrigin);
   if (!env.PI_SESSION || typeof env.PI_SESSION.idFromName !== 'function') return reply({ ok: false, error: 'session_sync_unavailable' }, 503, origin, allowedOrigin);
 
