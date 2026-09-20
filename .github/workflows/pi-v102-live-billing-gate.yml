@@ -1,0 +1,56 @@
+name: PI V1.02 Live Billing Gate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PI_CHAT_URL: https://pi-chat.premchandyadlapati.workers.dev
+
+jobs:
+  live-billing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require explicitly live Stripe deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          config="$(curl --silent --show-error --max-time 20 \
+            -H 'origin: https://pisolutions9.github.io' \
+            "$PI_CHAT_URL/api/billing/config")"
+          python - <<'PY' "$config"
+          import json,sys
+          d=json.loads(sys.argv[1])
+          assert d.get('billingReady') is True
+          assert d.get('billingMode') == 'live', f"expected live Stripe mode, got {d.get('billingMode')}"
+          assert d.get('liveBillingReady') is True
+          assert d.get('testBillingReady') is False
+          assert d.get('checkoutConfigured') is True
+          assert d.get('webhookConfigured') is True
+          PY
+
+      - name: Create live checkout session without charging
+        shell: bash
+        run: |
+          set -euo pipefail
+          checkout="$(curl --silent --show-error --max-time 25 \
+            -H 'content-type: application/json' \
+            -H 'origin: https://pisolutions9.github.io' \
+            -d '{}' "$PI_CHAT_URL/api/billing/start")"
+          python - <<'PY' "$checkout"
+          import json,sys
+          d=json.loads(sys.argv[1])
+          assert d.get('ok') is True
+          assert isinstance(d.get('checkoutUrl'),str) and d['checkoutUrl'].startswith('https://checkout.stripe.com/')
+          assert isinstance(d.get('sessionId'),str) and d['sessionId'].startswith('cs_live_')
+          assert isinstance(d.get('customerToken'),str) and len(d['customerToken'])==43
+          PY
+
+      - name: Live charging boundary
+        run: |
+          echo 'Live Stripe credentials and checkout creation are verified.'
+          echo 'No charge was made by this gate.'
+          echo 'A real customer charge still requires explicit owner confirmation and an end-to-end live webhook -> entitlement proof.'
