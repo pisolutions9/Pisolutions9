@@ -10,22 +10,17 @@ The canonical customer URL remains https://pisolutions9.github.io/Pisolutions9/.
 Do not retire another deployment until its exact URL, repository and access have
 been verified. Absence from the connected GitHub account does not prove absence.
 
-## Current evidence (2026-09-19)
+## Current evidence (2026-09-20)
 
-- Audited main: ff63254032aafa6d4a17b88951fdfd0d54794c0f.
-- The browser loads the current console. Its original `Online` label was static,
-  not a provider-health check. Its initial history was browser sessionStorage only.
-- No authenticated, durable owner conversation store exists in the live chat path.
-- The Worker supports conversation replies and a bounded inventory CSV tool.
-  It explicitly cannot browse, deploy websites, or execute other external actions.
-- Current-data questions and rejected hard-reasoning answers fail closed in the
-  Worker, but the original UI hid the specific reason behind a generic outage.
-- Several workflows can deploy the same Worker. Passing a local or PR suite is
-  not proof that the exact frontend and backend candidate is live together.
-- Payment PR #33 is separate and unmerged; live charging remains out of scope here.
-- Both connected Netlify PI project Identity settings endpoints returned 404.
-  The checked @netlify/identity 2.0.0 SDK discovers the browser's own origin; it
-  cannot simply be installed on GitHub Pages and pointed at a separate project.
+- Verified current release train includes runtime-grounded PI self-awareness, provider routing/fallback, hard-reasoning review, current-data research, weather, bounded inventory CSV execution, and private cross-device session sync.
+- The canonical customer path uses the Cloudflare Worker. Live-model, launch, verification, Worker deploy, Pages, and live-browser V1.02 gates have passed on the current release train.
+- Private cross-device continuity is token/link based. It is not an authenticated owner-account workspace; anyone with the private sync link/token must be treated as possessing access to that synced session.
+- No authenticated owner identity, role-based workspace, or durable account-level owner store is claimed complete yet.
+- Live web research is available only through configured live-research providers and must fail closed rather than present model memory as current evidence when those providers are unavailable.
+- The Worker can execute only explicitly supported capabilities; it must not claim arbitrary website deployment, account actions, purchases, or other external side effects without an actual connected execution path and evidence.
+- Hard-reasoning answers use an independent review path when available; model review is not treated as proof of external factual correctness.
+- V1.02 release gating is independent from V2; V2 failures do not block V1.02.
+- Live charging remains a separate fail-closed boundary until provider configuration, signed webhooks, entitlement behavior, and deployed end-to-end billing evidence are verified.
 
 ## Delivery order and completion evidence
 
@@ -63,13 +58,9 @@ Store artifacts, evidence, settings and task states alongside messages, not just
 the last 20 model-context turns. The model context can be bounded independently
 of retained history. A refresh or device switch must not erase a completed file.
 
-## Architecture/setup decision that blocks stage 2
+## Architecture/setup decision that blocks authenticated stage 2
 
-Recommended path with the available authentication integration: use one existing
-PI Netlify project as the eventual same-origin app and invite-only Identity host,
-with shared server storage; retain the existing Cloudflare model Worker only as
-a controlled server-to-server dependency. This is a hosting decision, not a new
-PI business or repository. Do not move the canonical URL before verification.
+The current private sync link/token provides cross-device continuity but not authenticated ownership. The remaining stage-2 blocker is a supported owner-authentication architecture with server-controlled identity/roles and durable account-level storage. Keep the existing Cloudflare Worker as the verified model/runtime path unless a migration is separately tested. Do not move the canonical URL before verification.
 
 Owner must approve the exact existing project, enable invite-only Identity, and
 complete the owner invite/sign-in through the provider's secure flow. Confirm
