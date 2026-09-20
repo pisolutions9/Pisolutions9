@@ -19,7 +19,7 @@ const request=(path,{method='GET',body,headers={}}={})=>new Request('https://wor
 
 let response=await handleBillingRequest(request('/api/billing/config'),env);
 let body=await response.json();
-assert.equal(response.status,200);assert.equal(body.liveBillingReady,true);
+assert.equal(response.status,200);assert.equal(body.billingReady,true);assert.equal(body.billingMode,'test');assert.equal(body.testBillingReady,true);assert.equal(body.liveBillingReady,false);
 
 const originalFetch=globalThis.fetch;
 let checkoutRequest;
@@ -68,6 +68,12 @@ body=await response.json();assert.equal(body.entitlement.entitled,false);
 response=await handleBillingRequest(request('/api/billing/webhook',{method:'POST',body:raw,headers:{'Stripe-Signature':'t=1,v1=bad'}}),env);
 assert.equal(response.status,400);
 
+const liveEnv={...env,PI_STRIPE_SECRET_KEY:'sk_live_example'};
+response=await handleBillingRequest(request('/api/billing/config'),liveEnv);
+body=await response.json();assert.equal(body.billingMode,'live');assert.equal(body.liveBillingReady,true);assert.equal(body.testBillingReady,false);
+const invalidEnv={...env,PI_STRIPE_SECRET_KEY:'rk_test_example'};
+response=await handleBillingRequest(request('/api/billing/config'),invalidEnv);
+body=await response.json();assert.equal(body.billingMode,'unknown');assert.equal(body.billingReady,false);
 const disabled={...env,PI_STRIPE_SECRET_KEY:''};
 response=await handleBillingRequest(request('/api/billing/start',{method:'POST',body:'{}'}),disabled);
 assert.equal(response.status,503);
