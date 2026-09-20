@@ -3,7 +3,11 @@ function normalize(message) {
 }
 
 export function deterministicArithmetic(message) {
-  const expression = message
+  const original=String(message);
+  const hasMathCue=/\b(calculate|compute|solve|plus|add|minus|subtract|times|multiplied by|divided by|over|to the power of|power)\b/i.test(original);
+  const hasOperator=/[+\-*/()%]/.test(original);
+  if(!hasMathCue&&!hasOperator)return null;
+  const expression = original
     .replace(/\b(what is|calculate|compute|solve)\b/gi, '')
     .replace(/\b(plus|add)\b/gi, '+')
     .replace(/\b(minus|subtract)\b/gi, '-')
