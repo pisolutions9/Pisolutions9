@@ -20,6 +20,7 @@ jobs:
       CI: true
       PI_AUTONOMOUS_ENABLED: 'true'
       PI_MAX_CYCLES: '3'
+      PI_STATE_FILE_PATH: '.pi/state.json'
       PI_OBJECTIVE: 'Run a safe PI Team autonomous cycle: inspect current state, execute the highest-value safe improvement, verify evidence, recover from safe blockers, and leave the system ready for the next cycle. Never spend money or perform irreversible production actions.'
     steps:
       - name: Checkout PI
@@ -28,7 +29,20 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+      - name: Restore durable PI mission state
+        uses: actions/cache/restore@v4
+        with:
+          path: .pi
+          key: pi-team-state-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            pi-team-state-
       - name: Verify PI before autonomous cycle
         run: npm test
       - name: Run bounded PI Team cycle loop
         run: node pi/runner.mjs
+      - name: Persist PI mission state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .pi
+          key: pi-team-state-${{ github.run_id }}-${{ github.run_attempt }}
