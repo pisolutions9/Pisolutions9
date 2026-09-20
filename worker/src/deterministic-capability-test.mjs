@@ -21,6 +21,21 @@ async function ask(message, env = {}) {
 try {
   resetProviderHealthForTest();
 
+  const capabilityResponse = await ask('What can you do and what providers do you have?', { OPENAI_API_KEY:'test-openai', GROQ_API_KEY:'test-groq' });
+  const capability = await capabilityResponse.json();
+  assert.equal(capabilityResponse.status, 200);
+  assert.equal(capability.ok, true);
+  assert.equal(capability.source, 'pi-runtime-capabilities');
+  assert.equal(capability.truth, 'runtime-derived');
+  assert.equal(capability.capabilities.version, 'PI V1.02');
+  assert.equal(capability.capabilities.providers.cloudflareWorkersAI, true);
+  assert.equal(capability.capabilities.providers.openai, true);
+  assert.equal(capability.capabilities.providers.groq, true);
+  assert.equal(capability.capabilities.providers.openrouter, false);
+  assert.equal(capability.capabilities.capabilities.liveWebResearch, true);
+  assert.equal(capability.capabilities.capabilities.crossDeviceSessionSync, false);
+  assert.doesNotMatch(capability.answer, /test-openai|test-groq/);
+
   const clockResponse = await ask('What is the current UTC date right now?');
   const clock = await clockResponse.json();
   assert.equal(clockResponse.status, 200);
