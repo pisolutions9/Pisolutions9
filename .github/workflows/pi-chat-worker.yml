@@ -29,6 +29,9 @@ jobs:
       PI_FALLBACK_MODEL: ${{ secrets.PI_FALLBACK_MODEL }}
       PI_FALLBACK_API_STYLE: ${{ secrets.PI_FALLBACK_API_STYLE }}
       PI_OWNER_TOKEN: ${{ secrets.PI_OWNER_TOKEN }}
+      PI_STRIPE_SECRET_KEY: ${{ secrets.PI_STRIPE_SECRET_KEY }}
+      PI_STRIPE_WEBHOOK_SECRET: ${{ secrets.PI_STRIPE_WEBHOOK_SECRET }}
+      PI_STRIPE_PRICE_ID: ${{ secrets.PI_STRIPE_PRICE_ID }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -133,6 +136,30 @@ jobs:
           set -euo pipefail
           printf '%s' "$PI_OWNER_TOKEN" | npx wrangler secret put PI_OWNER_TOKEN
           echo 'Owner authentication secret configured on the production Worker.'
+
+      - name: Configure optional Stripe billing
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          present=0
+          [[ -n "${PI_STRIPE_SECRET_KEY:-}" ]] && present=$((present + 1))
+          [[ -n "${PI_STRIPE_WEBHOOK_SECRET:-}" ]] && present=$((present + 1))
+          [[ -n "${PI_STRIPE_PRICE_ID:-}" ]] && present=$((present + 1))
+          if [[ "$present" = 0 ]]; then
+            echo 'Stripe billing remains disabled.'
+          elif [[ "$present" != 3 ]]; then
+            echo 'Partial Stripe billing configuration detected; refusing unsafe deployment.'
+            exit 1
+          else
+            printf '%s' "$PI_STRIPE_SECRET_KEY" | npx wrangler secret put PI_STRIPE_SECRET_KEY
+            printf '%s' "$PI_STRIPE_WEBHOOK_SECRET" | npx wrangler secret put PI_STRIPE_WEBHOOK_SECRET
+            printf '%s' "$PI_STRIPE_PRICE_ID" | npx wrangler secret put PI_STRIPE_PRICE_ID
+            echo 'Stripe billing secrets configured on the production Worker.'
+          fi
 
       - name: Verify release provider configuration
         working-directory: worker
