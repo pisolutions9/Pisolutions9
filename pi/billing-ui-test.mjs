@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const app=fs.readFileSync(new URL('../app.js',import.meta.url),'utf8');
+assert.match(html,/id="billingAction"[^>]*hidden/);
+assert.match(app,/\/api\/billing\/config/);
+assert.match(app,/config\.liveBillingReady !== true/);
+assert.match(app,/\/api\/billing\/start/);
+assert.match(app,/\/api\/billing\/status/);
+assert.match(app,/localStorage\.setItem\(BILLING_TOKEN_KEY/);
+assert.match(app,/billingAction\.hidden = true/);
+assert.match(app,/Payment received; access verification is still processing/);
+console.log('PI fail-closed billing UI contract tests passed.');
