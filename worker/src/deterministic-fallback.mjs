@@ -2,7 +2,7 @@ function normalize(message) {
   return message.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
-function arithmetic(message) {
+export function deterministicArithmetic(message) {
   const expression = message
     .replace(/\b(what is|calculate|compute|solve)\b/gi, '')
     .replace(/\b(plus|add)\b/gi, '+')
@@ -40,7 +40,7 @@ function complexRecovery(text) {
 
 export function deterministicFallback(message) {
   const text = normalize(message);
-  const math = arithmetic(message);
+  const math = deterministicArithmetic(message);
   if (math !== null) return `The answer is ${math}.`;
 
   if (/^(hi|hello|hey|good morning|good afternoon|good evening)[!. ]*$/.test(text) || text.includes('say hello')) {
