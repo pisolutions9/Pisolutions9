@@ -6,6 +6,10 @@ on:
     branches: [main]
     paths:
       - 'worker/**'
+      - 'index.html'
+      - 'app.js'
+      - 'styles.css'
+      - 'pi/customer-response.mjs'
       - '.github/workflows/pi-chat-worker.yml'
 
 permissions:
@@ -259,15 +263,18 @@ jobs:
         run: |
           set -euo pipefail
           page='https://pisolutions9.github.io/Pisolutions9/'
+          expected="$(grep -o 'data-pi-release="[^"]*"' ../index.html | head -1)"
+          test -n "$expected"
+          echo "Expected release marker: $expected"
           for attempt in {1..18}; do
             body="$(curl --silent --show-error --location --max-time 15 "$page" || true)"
-            if grep -q 'data-pi-release="v1.02-live-research-resilience"' <<<"$body"; then
-              echo 'Canonical customer page is serving the V1.02 release surface.'
+            if grep -Fq "$expected" <<<"$body"; then
+              echo 'Canonical customer page is serving the exact checked-out V1.02 release marker.'
               exit 0
             fi
             sleep 10
           done
-          echo 'Canonical customer page did not expose the expected V1.02 release marker.'
+          echo "Canonical customer page did not expose $expected." >&2
           exit 1
 
       - name: Live-data truth boundary smoke test
