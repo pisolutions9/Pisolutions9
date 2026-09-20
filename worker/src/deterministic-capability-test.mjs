@@ -36,6 +36,25 @@ try {
   assert.equal(capability.capabilities.capabilities.crossDeviceSessionSync, false);
   assert.doesNotMatch(capability.answer, /test-openai|test-groq/);
 
+  for (const prompt of [
+    'How do you verify answers?',
+    'Can you browse the web?',
+    'Can you access the internet?',
+    'Do you have live web research access?'
+  ]) {
+    const selfResponse = await ask(prompt, { OPENAI_API_KEY:'test-openai' });
+    const self = await selfResponse.json();
+    assert.equal(selfResponse.status, 200);
+    assert.equal(self.ok, true);
+    assert.equal(self.source, 'pi-runtime-capabilities');
+    assert.equal(self.truth, 'runtime-derived');
+    assert.match(self.answer, /PI V1\.02/i);
+    assert.match(self.answer, /verification|verified|review/i);
+    assert.match(self.answer, /live web research|live-research/i);
+    assert.doesNotMatch(self.answer, /does not have a direct verification process/i);
+    assert.doesNotMatch(self.answer, /large database of knowledge/i);
+  }
+
   const clockResponse = await ask('What is the current UTC date right now?');
   const clock = await clockResponse.json();
   assert.equal(clockResponse.status, 200);
