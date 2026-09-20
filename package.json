@@ -13,6 +13,6 @@
     "test:customer-reliability": "node pi/customer-response-test.mjs && node pi/customer-ui-behavior-test.mjs",
     "test:payments": "node pi/payments-test.mjs",
     "test:release:v1.02": "npm run test:v1 && npm run test:v1.02 && npm run test:customer-reliability && npm run test:payments && npm run test:security",
-    "test:security": "node pi/security-static-test.mjs"
+    "test:security": "node pi/security-static-test.mjs && node pi/browser-security-policy-test.mjs"
   }
 }
