@@ -78,6 +78,53 @@ function deterministicArithmeticAnswer(message=''){
   };
 }
 
+function linearCostComparisonAnswer(message=''){
+  const value=String(message);
+  const relevant=/\b(?:equal|break[- ]?even|which is cheaper|compare)\b/i.test(value)
+    && /\bfixed\b/i.test(value)
+    && /\bper\b[^.]{0,40}\bcustomer/i.test(value);
+  if(!relevant)return null;
+
+  function parseChannel(label){
+    const pattern=new RegExp('(?:channel\\s+)?'+label+'\\s+costs?\\s+\\$?([0-9][0-9,]*(?:\\.[0-9]+)?)\\s+fixed\\s+plus\\s+\\$?([0-9][0-9,]*(?:\\.[0-9]+)?)\\s+per\\s+(?:[a-z-]+\\s+){0,3}customer','i');
+    const match=value.match(pattern);
+    if(!match)return null;
+    return {fixed:Number(match[1].replaceAll(',','')),variable:Number(match[2].replaceAll(',',''))};
+  }
+  const a=parseChannel('A');
+  const b=parseChannel('B');
+  if(!a||!b||![a.fixed,a.variable,b.fixed,b.variable].every(Number.isFinite))return null;
+  if(a.variable===b.variable){
+    const relation=a.fixed===b.fixed?'identical at every customer count':a.fixed<b.fixed?'Channel A is always cheaper':'Channel B is always cheaper';
+    return {ok:true,status:'answered',answer:`Channel A: C_A = ${formatMoney(a.fixed)} + ${formatMoney(a.variable)}n. Channel B: C_B = ${formatMoney(b.fixed)} + ${formatMoney(b.variable)}n. The variable costs are equal, so there is no finite break-even point; ${relation}.`,source:'pi-deterministic-linear-cost',truth:'deterministic-verified',verification:'local-calculation',sources:[]};
+  }
+  const equalCount=(b.fixed-a.fixed)/(a.variable-b.variable);
+  const equalCost=a.fixed+a.variable*equalCount;
+  const checkpointMatch=value.match(/\b(?:at|for)\s+([0-9][0-9,]*)\s+(?:and|,)\s+([0-9][0-9,]*)\s+customers?\b/i)
+    || value.match(/\bcheaper\s+at\s+([0-9][0-9,]*)\s+and\s+([0-9][0-9,]*)\s+customers?\b/i);
+  const checkpoints=checkpointMatch?[Number(checkpointMatch[1].replaceAll(',','')),Number(checkpointMatch[2].replaceAll(',',''))]:[];
+  const lines=[
+    `Channel A: C_A = ${formatMoney(a.fixed)} + ${formatMoney(a.variable)}n.`,
+    `Channel B: C_B = ${formatMoney(b.fixed)} + ${formatMoney(b.variable)}n.`,
+    `Set them equal: ${a.fixed} + ${a.variable}n = ${b.fixed} + ${b.variable}n, so n = ${(b.fixed-a.fixed)} / ${(a.variable-b.variable)} = ${Number(equalCount.toFixed(2))} customers.`,
+    `At the exact break-even point, both channels cost about ${formatMoney(equalCost)}.`
+  ];
+  if(!Number.isInteger(equalCount)&&equalCount>=0){
+    const lower=Math.floor(equalCount),upper=Math.ceil(equalCount);
+    const lowerA=a.fixed+a.variable*lower,lowerB=b.fixed+b.variable*lower;
+    const upperA=a.fixed+a.variable*upper,upperB=b.fixed+b.variable*upper;
+    lines.push(`Because customers are whole numbers, there is no exact integer equality: at ${lower}, ${lowerA<lowerB?'A':'B'} is cheaper (${formatMoney(Math.min(lowerA,lowerB))} vs ${formatMoney(Math.max(lowerA,lowerB))}); at ${upper}, ${upperA<upperB?'A':'B'} is cheaper (${formatMoney(Math.min(upperA,upperB))} vs ${formatMoney(Math.max(upperA,upperB))}).`);
+  }
+  for(const n of checkpoints){
+    if(!Number.isFinite(n))continue;
+    const costA=a.fixed+a.variable*n;
+    const costB=b.fixed+b.variable*n;
+    const cheaper=costA===costB?'equal':costA<costB?'Channel A':'Channel B';
+    lines.push(`At ${n} customers: A = ${formatMoney(costA)}; B = ${formatMoney(costB)}; ${cheaper==='equal'?'the costs are equal':cheaper+' is cheaper'}.`);
+  }
+  return {ok:true,status:'answered',answer:lines.join('\n'),source:'pi-deterministic-linear-cost',truth:'deterministic-verified',verification:'local-calculation',sources:[]};
+}
+
 function runtimeClockAnswer(message='',now=new Date()){
   const value=String(message);
   const asksUtc=/\butc\b/i.test(value)&&/\b(current|right now|now|today|date|time)\b/i.test(value);
@@ -714,7 +761,7 @@ async function produceVerifiedHardAnswer(env,message,history){
 }
 function recoveryResponse(message,request,failure){const answer=deterministicFallback(message);if(!answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return json({ok:true,answer,source:'pi-chat-deterministic-recovery',truth:'deterministic',providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);if(!attachmentInfo){const capability=runtimeCapabilityAnswer(env,message);if(capability)return json(capability,200,request);const arithmetic=deterministicArithmeticAnswer(message);if(arithmetic)return json(arithmetic,200,request);const clock=runtimeClockAnswer(message);if(clock)return json(clock,200,request);const paymentSafety=paymentRetrySafetyAnswer(message);if(paymentSafety)return json(paymentSafety,200,request);const runwayScenario=deterministicRunwayScenarioAnswer(message);if(runwayScenario)return json(runwayScenario,200,request);const weather=await directWeatherAnswer(message);if(weather)return json(weather,200,request);const shopping=await directShoppingAnswer(env,message);if(shopping)return json(shopping,200,request);}if(requiresLiveEvidenceForRequest(history,message)){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);if(!attachmentInfo){const capability=runtimeCapabilityAnswer(env,message);if(capability)return json(capability,200,request);const arithmetic=deterministicArithmeticAnswer(message);if(arithmetic)return json(arithmetic,200,request);const linearCost=linearCostComparisonAnswer(message);if(linearCost)return json(linearCost,200,request);const clock=runtimeClockAnswer(message);if(clock)return json(clock,200,request);const paymentSafety=paymentRetrySafetyAnswer(message);if(paymentSafety)return json(paymentSafety,200,request);const runwayScenario=deterministicRunwayScenarioAnswer(message);if(runwayScenario)return json(runwayScenario,200,request);const weather=await directWeatherAnswer(message);if(weather)return json(weather,200,request);const shopping=await directShoppingAnswer(env,message);if(shopping)return json(shopping,200,request);}if(requiresLiveEvidenceForRequest(history,message)){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
