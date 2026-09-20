@@ -159,10 +159,29 @@ jobs:
             echo 'Partial Stripe billing configuration detected; refusing unsafe deployment.'
             exit 1
           else
+            case "$PI_STRIPE_SECRET_KEY" in
+              sk_test_*) expected_livemode=false; billing_mode=test ;;
+              sk_live_*) expected_livemode=true; billing_mode=live ;;
+              *) echo 'Stripe secret key must be an sk_test_ or sk_live_ key.' >&2; exit 1 ;;
+            esac
+            [[ "$PI_STRIPE_WEBHOOK_SECRET" == whsec_* ]] || { echo 'Stripe webhook secret must start with whsec_.' >&2; exit 1; }
+            [[ "$PI_STRIPE_PRICE_ID" == price_* ]] || { echo 'Stripe price ID must start with price_.' >&2; exit 1; }
+
+            price_json="$(curl --silent --show-error --fail-with-body --max-time 20 \
+              -H "Authorization: Bearer $PI_STRIPE_SECRET_KEY" \
+              "https://api.stripe.com/v1/prices/$PI_STRIPE_PRICE_ID")"
+            python - <<'PY' "$price_json" "$expected_livemode"
+import json,sys
+d=json.loads(sys.argv[1]); expected=sys.argv[2]=='true'
+assert d.get('object')=='price', 'Stripe object is not a Price'
+assert d.get('active') is True, 'Stripe Price is not active'
+assert d.get('livemode') is expected, f"Stripe Price livemode={d.get('livemode')} does not match key mode"
+assert d.get('type')=='recurring', 'Stripe Price must be recurring for PI subscription billing'
+PY
             printf '%s' "$PI_STRIPE_SECRET_KEY" | npx wrangler secret put PI_STRIPE_SECRET_KEY
             printf '%s' "$PI_STRIPE_WEBHOOK_SECRET" | npx wrangler secret put PI_STRIPE_WEBHOOK_SECRET
             printf '%s' "$PI_STRIPE_PRICE_ID" | npx wrangler secret put PI_STRIPE_PRICE_ID
-            echo 'Stripe billing secrets configured on the production Worker.'
+            echo "Stripe $billing_mode billing secrets validated and configured on the production Worker."
           fi
 
       - name: Verify release provider configuration
