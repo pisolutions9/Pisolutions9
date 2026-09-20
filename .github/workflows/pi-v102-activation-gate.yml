@@ -47,7 +47,6 @@ jobs:
           assert d.get('ok') is True and d.get('authenticated') is True
           token=d.get('sessionToken')
           assert isinstance(token,str) and len(token)==43
-          print(token)
           PY
           token="$(python -c 'import json,sys; print(json.loads(sys.argv[1])["sessionToken"])' "$response")"
           status="$(curl --silent --show-error --max-time 20             -H "authorization: Bearer $token"             -H 'origin: https://pisolutions9.github.io'             "$PI_CHAT_URL/api/owner/status")"
