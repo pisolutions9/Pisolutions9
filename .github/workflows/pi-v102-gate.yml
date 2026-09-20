@@ -28,8 +28,8 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: V1.02 trust and governor tests
         run: npm run test:v1.02
-      - name: Full regression suite
-        run: npm test
+      - name: V1.02 release regression suite
+        run: npm run test:release:v1.02
       - name: Install live browser harness
         if: github.event_name != 'pull_request'
         run: |
