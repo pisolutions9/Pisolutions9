@@ -78,6 +78,17 @@ try {
   assert.equal(arithmetic.truth, 'deterministic-verified');
   assert.equal(arithmetic.answer, 'The answer is 3250.');
 
+  const linearResponse = await ask('A small online retailer has $10,000 to choose between Channel A and Channel B. A costs $4,000 fixed plus $20 per acquired customer. B costs $1,500 fixed plus $35 per acquired customer. At what customer count do their total costs become equal, and which is cheaper at 100 and 300 customers? Show the math clearly.');
+  const linear = await linearResponse.json();
+  assert.equal(linearResponse.status, 200);
+  assert.equal(linear.ok, true);
+  assert.equal(linear.source, 'pi-deterministic-linear-cost');
+  assert.equal(linear.truth, 'deterministic-verified');
+  assert.match(linear.answer, /166\.67/);
+  assert.match(linear.answer, /At 100 customers: A = \$6,000; B = \$5,000; Channel B is cheaper/);
+  assert.match(linear.answer, /At 300 customers: A = \$10,000; B = \$12,000; Channel A is cheaper/);
+  assert.doesNotMatch(linear.answer, /167 customers[^\n.]{0,80}(?:equal|same)/i);
+
   const clockResponse = await ask('What is the current UTC date right now?');
   const clock = await clockResponse.json();
   assert.equal(clockResponse.status, 200);
