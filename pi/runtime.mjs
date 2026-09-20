@@ -143,7 +143,18 @@ export function createRuntime({ execute = async () => ({ completed: [], evidence
       outcomes.push(outcome);
       if (outcome.status === 'idle') break;
     }
-    return { status: outcomes.some(outcome => outcome.status === 'blocked') ? 'blocked' : 'completed', cycles: outcomes, executedCycles: outcomes.filter(outcome => outcome.status !== 'idle').length };
+    const executed = outcomes.filter(outcome => outcome.status !== 'idle');
+    const hasBlocked = executed.some(outcome => outcome.status === 'blocked');
+    const hasUnfinished = executed.some(outcome => !['completed'].includes(outcome.status));
+    const exhausted = executed.length >= limit && hasUnfinished;
+    const status = hasBlocked ? 'blocked' : (hasUnfinished ? 'incomplete' : 'completed');
+    return {
+      status,
+      cycles: outcomes,
+      executedCycles: executed.length,
+      exhausted,
+      nextAction: status === 'incomplete' ? 'continue_or_escalate' : (status === 'blocked' ? 'owner_required' : null)
+    };
   }
 
   return { submit, cycle, runCycles, queue, cost: guard, guardrails: missionGuard, deadLetters, policy, state, netra, recovery };
