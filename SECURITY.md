@@ -26,3 +26,10 @@ Credentials, paid activation, legal commitments, financial transfers, protected 
 - Rate-limit keys are SHA-256 derived from the source address; raw source IPs are not persisted in the owner auth store.
 - Owner master secrets are never returned to the browser or stored in browser persistence.
 - Successful sign-in exchanges the master secret for a short-lived random bearer session.
+
+
+## Automated release security checks
+
+- V1.02 release regression scans the repository for high-confidence committed production secret patterns.
+- V1.02 CI fails on high-severity production dependency vulnerabilities reported by npm audit.
+- Test-only placeholder credentials must remain obviously non-production and must never reuse real provider values.
