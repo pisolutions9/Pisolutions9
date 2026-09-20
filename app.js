@@ -336,6 +336,7 @@ async function startBilling() {
   }
 }
 async function handleBillingReturn() {
+  if (typeof URLSearchParams !== 'function') { await refreshBillingUi(); return; }
   const params = new URLSearchParams(window.location.search || '');
   const state = params.get('billing');
   if (!state) { await refreshBillingUi(); return; }
