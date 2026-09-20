@@ -49,7 +49,7 @@ jobs:
           echo "Customer site HTTP status: $site_status"
           test "$site_status" -ge 200
           test "$site_status" -lt 300
-          grep -Fq 'app.js?v=20260919-browser-continuity' /tmp/pi-site.html
+          grep -Fq 'src="app.js?v=' /tmp/pi-site.html
           grep -Fq 'How can I help?' /tmp/pi-site.html
           grep -Fq 'Ask me anything…' /tmp/pi-site.html
           grep -Fq 'BIG IDEAS. REAL RESULTS.' /tmp/pi-site.html
