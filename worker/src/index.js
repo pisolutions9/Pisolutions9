@@ -114,7 +114,7 @@ function runtimeCapabilities(env={}){
 
 function runtimeCapabilityAnswer(env,message=''){
   const value=String(message).trim();
-  const asks=/\b(who are you|what are you|what can you do|what capabilities do you have|what (?:models?|providers?|tools?) (?:do you|can you) (?:use|have|access)|what is your runtime|are you an ai|how do you verify(?: answers?)?|do you verify(?: answers?)?|how are answers verified|can you browse(?: the (?:web|internet))?|can you search(?: the (?:web|internet))?|do you have live (?:web|internet|research) access|can you access (?:the )?internet)\b/i.test(value);
+  const asks=/\b(who are you|what are you|what can you do|what capabilities do you have|what (?:models?|providers?|tools?) (?:do you|can you) (?:use|have|access)|what is your runtime|are you an ai|how do you verify(?: answers?)?|do you verify(?: answers?)?|how are answers verified|can you browse(?: the (?:web|internet))?|can you search(?: the (?:web|internet))?|do you have live (?:web(?: research)?|internet|research) access|can you access (?:the )?internet)\b/i.test(value);
   if(!asks)return null;
   const state=runtimeCapabilities(env);
   const providerLabels=[];
