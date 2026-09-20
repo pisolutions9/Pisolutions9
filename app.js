@@ -161,7 +161,6 @@ function renderConversation() {
     if (turn.role === 'assistant' && Array.isArray(turn.artifacts)) for (const artifact of turn.artifacts.slice(0, 1)) downloadArtifact(artifact, card);
   }
   syncWelcome();
-loadSyncedSession();
 }
 renderConversation();
 function updateSyncUi(message = '') {
@@ -409,3 +408,4 @@ run.addEventListener('click', () => {
 command.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); run.click(); } });
 command.addEventListener('input', () => { saveDraft(); command.style.height = 'auto'; command.style.height = Math.min(command.scrollHeight, 140) + 'px'; });
 syncWelcome();
+loadSyncedSession();
