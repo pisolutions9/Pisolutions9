@@ -11,6 +11,7 @@
     "test:v2": "node pi/v2-foundation-test.mjs && node pi/v2-runtime-integration-test.mjs && node pi/v2-execution-test.mjs && node pi/v2-runtime-execution-test.mjs && node pi/v2-release-gate-test.mjs",
     "test:v1.02": "node pi/commerce-engine-test.mjs && node worker/src/customer-journey-test.mjs && node worker/src/session-store-test.mjs && node pi/customer-ui-regression-test.mjs && node pi/customer-ui-behavior-test.mjs && node netlify/functions/pi-v102-test.mjs && node worker/src/live-provider-fallback-test.mjs && node worker/src/provider-budget-test.mjs && node worker/scripts/verify-provider-configuration-test.mjs && node worker/src/provider-error-test.mjs && node worker/src/deterministic-capability-test.mjs",
     "test:customer-reliability": "node pi/customer-response-test.mjs && node pi/customer-ui-behavior-test.mjs",
-    "test:payments": "node pi/payments-test.mjs"
+    "test:payments": "node pi/payments-test.mjs",
+    "test:release:v1.02": "npm run test:v1 && npm run test:v1.02 && npm run test:customer-reliability && npm run test:payments"
   }
 }
