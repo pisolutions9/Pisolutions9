@@ -11,7 +11,8 @@ const script = app.replace(/^import \{ chatOutcome, transportOutcome \} from '\.
 assert.notEqual(app, script, 'test must load the actual UI with only its import bound by the test');
 assert.match(html, /type="module" src="app.js/);
 assert.match(html, /This browser remembers recent conversation/);
-assert.match(html, /Cross-device sync requires owner sign-in/);
+assert.match(html, /private sync link/);
+assert.match(html, /id="syncDevice"/);
 assert.doesNotMatch(html, /id="systemStatus">Online/);
 assert.match(html, /rel="canonical" href="https:\/\/pisolutions9.github.io\/Pisolutions9\/"/);
 
@@ -33,13 +34,13 @@ class Element {
 }
 
 function harness({ fetcher, store = new Map(), sessionStore = new Map(), online = true, failStorage = false } = {}) {
-  const nodes = Object.fromEntries(['command', 'mission', 'missionTitle', 'steps', 'confidence', 'run', 'ownerToken', 'systemStatus', 'clearChat', 'attachFile', 'fileInput', 'attachmentStatus', 'welcome', 'transcript'].map(id => [id, new Element()]));
+  const nodes = Object.fromEntries(['command', 'mission', 'missionTitle', 'steps', 'confidence', 'run', 'ownerToken', 'systemStatus', 'clearChat', 'attachFile', 'fileInput', 'attachmentStatus', 'syncDevice', 'syncNotice', 'welcome', 'transcript'].map(id => [id, new Element()]));
   const status = new Element(); status.append(nodes.systemStatus);
   const events = {};
   const context = vm.createContext({
     document: { querySelector: selector => nodes[selector.slice(1)], querySelectorAll: () => [], createElement: () => new Element(), documentElement: { dataset: {} } },
-    window: { addEventListener: (name, fn) => { events[name] = fn; } },
-    navigator: { onLine: online },
+    window: { addEventListener: (name, fn) => { events[name] = fn; }, location: { hash: '', origin: 'https://pisolutions9.github.io', pathname: '/Pisolutions9/', search: '' }, history: { replaceState() {} } },
+    navigator: { onLine: online, clipboard: { writeText: async () => {} } },
     localStorage: {
       getItem: key => { if (failStorage) throw new Error('storage disabled'); return store.has(key) ? store.get(key) : null; },
       setItem: (key, value) => { if (failStorage) throw new Error('storage disabled'); store.set(key, value); },
@@ -50,7 +51,7 @@ function harness({ fetcher, store = new Map(), sessionStore = new Map(), online 
       setItem: (key, value) => { if (failStorage) throw new Error('storage disabled'); sessionStore.set(key, value); },
       removeItem: key => { if (failStorage) throw new Error('storage disabled'); sessionStore.delete(key); },
     },
-    fetch: (...args) => fetcher(...args), AbortController, setTimeout, clearTimeout, URL, Blob, chatOutcome, transportOutcome,
+    fetch: (...args) => fetcher(...args), AbortController, setTimeout, clearTimeout, URL, Blob, crypto: globalThis.crypto, btoa: value => Buffer.from(value, 'binary').toString('base64'), chatOutcome, transportOutcome,
   });
   vm.runInContext(script, context);
   return { nodes, status, store, sessionStore, events, context, run: text => vm.runInContext(`runCustomerChat(${JSON.stringify(text)})`, context) };
@@ -107,6 +108,20 @@ assert.equal(otherTabSameBrowser.nodes.command.value, 'Draft from this device', 
 const otherDevice = harness({ fetcher: async () => response(success) });
 assert.equal(otherDevice.nodes.command.value, '', 'guest sessions must not pretend to sync');
 assert.equal(otherDevice.nodes.transcript.children.length, 0);
+const syncToken = 'B'.repeat(43);
+const syncedStore = new Map([['pi-v1-sync-token', syncToken]]);
+const synced = harness({ store: syncedStore, fetcher: async (url, init) => {
+  if (String(url).endsWith('/api/session')) {
+    const payload = JSON.parse(init.body);
+    if (payload.action === 'load') return response({ ok: true, session: { conversation: [{ role: 'user', content: 'From phone' }, { role: 'assistant', content: 'Synced reply' }], draft: 'Continue here' } });
+    return response({ ok: true });
+  }
+  return response(success);
+} });
+await vm.runInContext('loadSyncedSession()', synced.context);
+assert.equal(synced.nodes.command.value, 'Continue here');
+assert.equal(synced.nodes.transcript.children.length, 2, 'remote session renders on another device');
+assert.equal(JSON.parse(synced.store.get('pi-v1-conversation'))[0].content, 'From phone');
 h = harness({ failStorage: true, fetcher: async () => response(success) });
 assert.equal(await h.run('Still usable without storage'), true);
 h = harness({ online: false, fetcher: async () => { throw new Error('offline'); } });
@@ -125,4 +140,4 @@ assert.equal(requestHistory[1].artifacts, undefined, 'artifact metadata must not
 assert.equal(requestHistory[1].role, 'assistant');
 h.nodes.clearChat.listeners.click(); withSavedFile.nodes.clearChat.listeners.click();
 assert.equal(withSavedFile.nodes.transcript.children.length, 0);
-console.log('Actual UI handler tests passed: status, recovery, persistent browser continuity, migration, storage denial, partials, artifact restoration, and honest device isolation.');
+console.log('Actual UI handler tests passed: status, recovery, persistent browser continuity, private device sync, migration, storage denial, partials, artifact restoration, and honest device isolation.');
