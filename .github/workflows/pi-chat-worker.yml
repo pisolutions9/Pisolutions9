@@ -263,7 +263,7 @@ jobs:
         run: |
           set -euo pipefail
           page='https://pisolutions9.github.io/Pisolutions9/'
-          expected="$(grep -o 'data-pi-release="[^"]*"' ../index.html | head -1)"
+          expected="$(grep -o 'data-pi-release="[^"]*"' index.html | head -1)"
           test -n "$expected"
           echo "Expected release marker: $expected"
           for attempt in {1..18}; do
