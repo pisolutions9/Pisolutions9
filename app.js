@@ -11,6 +11,8 @@ const systemStatus = document.querySelector('#systemStatus');
 const attachFile = document.querySelector('#attachFile');
 const fileInput = document.querySelector('#fileInput');
 const attachmentStatus = document.querySelector('#attachmentStatus');
+const syncDevice = document.querySelector('#syncDevice');
+const syncNotice = document.querySelector('#syncNotice');
 let attachedFile = null;
 const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
 
@@ -44,6 +46,7 @@ function setStatus(label, state = 'idle') {
 const DRAFT_KEY = 'pi-v1-draft';
 const PENDING_KEY = 'pi-v1-pending-question';
 const HISTORY_KEY = 'pi-v1-conversation';
+const SYNC_KEY = 'pi-v1-sync-token';
 function storageGet(key) {
   try {
     const persistent = localStorage.getItem(key);
@@ -66,7 +69,37 @@ function storageRemove(key) {
   try { localStorage.removeItem(key); } catch {}
   try { sessionStorage.removeItem(key); } catch {}
 }
-function saveDraft() { storageSet(DRAFT_KEY, command.value); }
+function validSyncToken(value) { return /^[A-Za-z0-9_-]{43}$/.test(String(value || '')); }
+function importedSyncToken() {
+  try {
+    const match = String(window.location?.hash || '').match(/(?:^#|[&#])pi-sync=([A-Za-z0-9_-]{43})(?:&|$)/);
+    if (!match) return '';
+    storageSet(SYNC_KEY, match[1]);
+    if (window.history?.replaceState) window.history.replaceState(null, '', (window.location.pathname || '/') + (window.location.search || ''));
+    return match[1];
+  } catch { return ''; }
+}
+let syncToken = importedSyncToken() || storageGet(SYNC_KEY) || '';
+if (!validSyncToken(syncToken)) { syncToken = ''; storageRemove(SYNC_KEY); }
+let syncTimer = null;
+let applyingRemoteSession = false;
+function syncApiUrl() {
+  const configuredBase = window.PI_CHAT_API_BASE || document.documentElement.dataset.piChatApiBase || 'https://pi-chat.premchandyadlapati.workers.dev';
+  return configuredBase.replace(/\/$/, '') + '/api/session';
+}
+function syncConversationPayload() { return historyWindow().map(({ role, content }) => ({ role, content })); }
+async function syncRequest(action, extra = {}) {
+  if (!syncToken) return null;
+  const response = await fetch(syncApiUrl(), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, token: syncToken, ...extra }) });
+  if (!response.ok) throw new Error('session_sync_failed');
+  return await response.json();
+}
+function scheduleSessionSync() {
+  if (!syncToken || applyingRemoteSession) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => { syncRequest('save', { conversation: syncConversationPayload(), draft: command.value.slice(0, 8000) }).catch(() => {}); }, 350);
+}
+function saveDraft() { storageSet(DRAFT_KEY, command.value); scheduleSessionSync(); }
 function restoreDraft(text) {
   // Preserve any new text the owner typed while the previous request was running.
   if (!command.value.trim()) command.value = text;
@@ -92,6 +125,7 @@ function rememberTurn(role, content, artifacts = []) {
   const savedArtifacts = artifacts.filter(isDownloadableArtifact).slice(0, 1).map(({ filename, mimeType, content }) => ({ filename, mimeType, content }));
   conversation.push({ role, content, ...(savedArtifacts.length ? { artifacts: savedArtifacts } : {}) }); conversation = historyWindow();
   storageSet(HISTORY_KEY, JSON.stringify(conversation));
+  scheduleSessionSync();
 }
 function syncWelcome() { const welcome = document.querySelector('#welcome'); if (welcome) welcome.classList.toggle('hidden', conversation.length > 0 || document.querySelector('#transcript').children.length > 0); }
 function addTranscript(role, text) {
@@ -118,11 +152,63 @@ function renderSources(sources, card) {
   }
   if (wrap.children.length > 1) card.append(wrap);
 }
-for (const turn of conversation) {
-  const card = addTranscript(turn.role, turn.content);
-  if (turn.role === 'assistant' && Array.isArray(turn.artifacts)) for (const artifact of turn.artifacts.slice(0, 1)) downloadArtifact(artifact, card);
+function renderConversation() {
+  document.querySelector('#transcript').replaceChildren();
+  for (const url of artifactUrls) URL.revokeObjectURL(url);
+  artifactUrls.length = 0;
+  for (const turn of conversation) {
+    const card = addTranscript(turn.role, turn.content);
+    if (turn.role === 'assistant' && Array.isArray(turn.artifacts)) for (const artifact of turn.artifacts.slice(0, 1)) downloadArtifact(artifact, card);
+  }
+  syncWelcome();
+loadSyncedSession();
 }
-document.querySelector('#clearChat').addEventListener('click', () => { conversation = []; storageRemove(HISTORY_KEY); storageRemove(PENDING_KEY); document.querySelector('#transcript').replaceChildren(); for (const url of artifactUrls) URL.revokeObjectURL(url); artifactUrls.length = 0; mission.classList.add('hidden'); syncWelcome(); setStatus(navigator.onLine ? 'Ready to ask' : 'Offline', navigator.onLine ? 'idle' : 'blocked'); });
+renderConversation();
+function updateSyncUi(message = '') {
+  if (!syncDevice || !syncNotice) return;
+  syncDevice.textContent = syncToken ? 'Copy sync link' : 'Sync devices';
+  if (message) { syncNotice.textContent = message; syncNotice.classList.remove('hidden'); }
+  else syncNotice.classList.add('hidden');
+}
+function makeSyncToken() {
+  const bytes = new Uint8Array(32); crypto.getRandomValues(bytes);
+  let binary = ''; for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+function privateSyncLink() {
+  const origin = window.location?.origin || 'https://pisolutions9.github.io';
+  const path = window.location?.pathname || '/Pisolutions9/';
+  const search = window.location?.search || '';
+  return origin + path + search + '#pi-sync=' + syncToken;
+}
+async function copySyncLink() {
+  if (!syncToken) { syncToken = makeSyncToken(); storageSet(SYNC_KEY, syncToken); }
+  await syncRequest('save', { conversation: syncConversationPayload(), draft: command.value.slice(0, 8000) });
+  const link = privateSyncLink();
+  try { await navigator.clipboard.writeText(link); updateSyncUi('Private sync link copied. Open it on your other device. Anyone with this link can access the synced recent conversation.'); }
+  catch { updateSyncUi('Private sync link: ' + link); }
+}
+async function loadSyncedSession() {
+  if (!syncToken) { updateSyncUi(); return; }
+  const before = JSON.stringify({ conversation: syncConversationPayload(), draft: command.value });
+  try {
+    const body = await syncRequest('load');
+    const remote = body?.session;
+    if (!remote) { await syncRequest('save', { conversation: syncConversationPayload(), draft: command.value.slice(0, 8000) }); updateSyncUi('Private device sync is active.'); return; }
+    const current = JSON.stringify({ conversation: syncConversationPayload(), draft: command.value });
+    if (current !== before) { scheduleSessionSync(); return; }
+    applyingRemoteSession = true;
+    conversation = Array.isArray(remote.conversation) ? remote.conversation.filter(t => t && ['user','assistant'].includes(t.role) && typeof t.content === 'string').slice(-20) : [];
+    command.value = typeof remote.draft === 'string' ? remote.draft.slice(0, 8000) : '';
+    storageSet(HISTORY_KEY, JSON.stringify(conversation)); storageSet(DRAFT_KEY, command.value);
+    renderConversation();
+    command.style.height = 'auto'; command.style.height = Math.min(command.scrollHeight, 140) + 'px';
+    updateSyncUi('Private device sync is active.');
+  } catch { updateSyncUi('Device sync is temporarily unavailable; this browser still keeps your recent conversation.'); }
+  finally { applyingRemoteSession = false; }
+}
+syncDevice?.addEventListener('click', () => { copySyncLink().catch(() => updateSyncUi('Could not create the sync link. Please try again.')); });
+document.querySelector('#clearChat').addEventListener('click', () => { conversation = []; storageRemove(HISTORY_KEY); storageRemove(PENDING_KEY); document.querySelector('#transcript').replaceChildren(); for (const url of artifactUrls) URL.revokeObjectURL(url); artifactUrls.length = 0; mission.classList.add('hidden'); syncWelcome(); if (syncToken) syncRequest('clear').catch(() => {}); setStatus(navigator.onLine ? 'Ready to ask' : 'Offline', navigator.onLine ? 'idle' : 'blocked'); });
 
 const DOMAIN_RULES = [
   { name: 'business', pattern: /business|market|sales|customer|revenue|export|import|price|profit|investment/i, tasks: ['define_business_goal', 'identify_constraints', 'build_decision_matrix'] },
