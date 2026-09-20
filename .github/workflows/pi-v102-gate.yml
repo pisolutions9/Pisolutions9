@@ -26,6 +26,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
+      - name: High-severity dependency audit
+        run: npm audit --omit=dev --audit-level=high
       - name: V1.02 trust and governor tests
         run: npm run test:v1.02
       - name: V1.02 release regression suite
