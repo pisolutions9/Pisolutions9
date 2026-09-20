@@ -73,6 +73,33 @@ jobs:
             -H 'origin: https://pisolutions9.github.io' \
             -H 'access-control-request-method: POST' \
             -H 'access-control-request-headers: content-type' "$endpoint" | tr -d '\r' | grep -i '^access-control-allow-origin:' | sed 's/^[^:]*: //' | xargs)" = 'https://pisolutions9.github.io'
+      - name: Cross-device session sync smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint='https://pi-chat.premchandyadlapati.workers.dev/api/session'
+          token='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+          save_status="$(curl --silent --show-error --location --max-time 15 \
+            -H 'content-type: application/json' \
+            -H 'origin: https://pisolutions9.github.io' \
+            -d "{\"action\":\"save\",\"token\":\"$token\",\"conversation\":[{\"role\":\"user\",\"content\":\"sync-smoke\"}],\"draft\":\"next\"}" \
+            --output /tmp/pi-session-save.json --write-out '%{http_code}' "$endpoint")"
+          test "$save_status" = 200
+          python -c 'import json; d=json.load(open("/tmp/pi-session-save.json")); assert d.get("ok") is True'
+          load_status="$(curl --silent --show-error --location --max-time 15 \
+            -H 'content-type: application/json' \
+            -H 'origin: https://pisolutions9.github.io' \
+            -d "{\"action\":\"load\",\"token\":\"$token\"}" \
+            --output /tmp/pi-session-load.json --write-out '%{http_code}' "$endpoint")"
+          test "$load_status" = 200
+          python -c 'import json; d=json.load(open("/tmp/pi-session-load.json")); s=d.get("session") or {}; assert s.get("draft")=="next"; assert s.get("conversation")==[{"role":"user","content":"sync-smoke"}]'
+          clear_status="$(curl --silent --show-error --location --max-time 15 \
+            -H 'content-type: application/json' \
+            -H 'origin: https://pisolutions9.github.io' \
+            -d "{\"action\":\"clear\",\"token\":\"$token\"}" \
+            --output /tmp/pi-session-clear.json --write-out '%{http_code}' "$endpoint")"
+          test "$clear_status" = 200
+
       - name: Live customer chat smoke test
         shell: bash
         run: |
