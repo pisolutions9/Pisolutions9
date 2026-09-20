@@ -18,6 +18,7 @@ const ownerDialog = document.querySelector('#ownerDialog');
 const ownerLoginForm = document.querySelector('#ownerLoginForm');
 const ownerSecret = document.querySelector('#ownerSecret');
 const ownerLoginError = document.querySelector('#ownerLoginError');
+const billingAction = document.querySelector('#billingAction');
 let attachedFile = null;
 const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
 
@@ -55,6 +56,7 @@ const SYNC_KEY = 'pi-v1-sync-token';
 const OWNER_SESSION_KEY = 'pi-v1-owner-session';
 const OWNER_HISTORY_KEY = 'pi-v1-owner-conversation';
 const OWNER_DRAFT_KEY = 'pi-v1-owner-draft';
+const BILLING_TOKEN_KEY = 'pi-v1-billing-access';
 let ownerSession = '';
 try { ownerSession = sessionStorage.getItem(OWNER_SESSION_KEY) || ''; } catch {}
 let ownerMode = false;
@@ -288,6 +290,72 @@ document.querySelector('#clearChat').addEventListener('click', () => {
   } else if (syncToken) syncRequest('clear').catch(() => {});
   setStatus(navigator.onLine ? (ownerMode ? 'Owner workspace ready' : 'Ready to ask') : 'Offline', navigator.onLine ? 'idle' : 'blocked');
 });
+
+function billingApiUrl(path) {
+  const configuredBase = window.PI_CHAT_API_BASE || document.documentElement.dataset.piChatApiBase || 'https://pi-chat.premchandyadlapati.workers.dev';
+  return configuredBase.replace(/\/$/, '') + path;
+}
+function billingToken() {
+  try { return localStorage.getItem(BILLING_TOKEN_KEY) || ''; } catch { return ''; }
+}
+async function billingStatus() {
+  const token = billingToken();
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return { entitled:false, status:'none' };
+  const response = await fetch(billingApiUrl('/api/billing/status'), { headers:{authorization:`Bearer ${token}`} });
+  if (!response.ok) return { entitled:false, status:'unknown' };
+  const body = await response.json();
+  return body?.entitlement || { entitled:false, status:'none' };
+}
+async function refreshBillingUi() {
+  if (!billingAction) return;
+  try {
+    const configResponse = await fetch(billingApiUrl('/api/billing/config'));
+    const config = await configResponse.json();
+    if (!configResponse.ok || config.liveBillingReady !== true) { billingAction.hidden = true; return; }
+    const entitlement = await billingStatus();
+    billingAction.hidden = false;
+    billingAction.textContent = entitlement.entitled ? 'Plan active' : 'Upgrade';
+    billingAction.disabled = entitlement.entitled === true;
+    billingAction.title = entitlement.entitled ? 'Paid access is active for this browser identity.' : 'Open secure Stripe Checkout.';
+  } catch { billingAction.hidden = true; }
+}
+async function startBilling() {
+  billingAction.disabled = true;
+  const prior = billingAction.textContent;
+  billingAction.textContent = 'Opening…';
+  try {
+    const response = await fetch(billingApiUrl('/api/billing/start'), { method:'POST', headers:{'content-type':'application/json'}, body:'{}' });
+    const body = await response.json();
+    if (!response.ok || !body.checkoutUrl || !body.customerToken) throw new Error(body.error || 'billing_start_failed');
+    try { localStorage.setItem(BILLING_TOKEN_KEY, body.customerToken); } catch {}
+    window.location.assign(body.checkoutUrl);
+  } catch {
+    billingAction.textContent = prior;
+    billingAction.disabled = false;
+    setStatus('Billing is temporarily unavailable', 'blocked');
+  }
+}
+async function handleBillingReturn() {
+  const params = new URLSearchParams(window.location.search || '');
+  const state = params.get('billing');
+  if (!state) { await refreshBillingUi(); return; }
+  if (window.history?.replaceState) {
+    params.delete('billing'); params.delete('session_id');
+    const qs = params.toString();
+    window.history.replaceState(null,'',(window.location.pathname||'/')+(qs?'?'+qs:'')+(window.location.hash||''));
+  }
+  if (state === 'cancelled') { setStatus('Checkout cancelled'); await refreshBillingUi(); return; }
+  if (state === 'success') {
+    for (let attempt=0; attempt<6; attempt += 1) {
+      const entitlement = await billingStatus();
+      if (entitlement.entitled) { setStatus('Paid access active'); await refreshBillingUi(); return; }
+      await new Promise(resolve => setTimeout(resolve, 900));
+    }
+    setStatus('Payment received; access verification is still processing', 'working');
+    await refreshBillingUi();
+  }
+}
+billingAction?.addEventListener('click', () => { startBilling(); });
 
 async function loadOwnerWorkspace() {
   const body = await ownerRequest('/api/owner/workspace', { body:{action:'load'} });
@@ -583,4 +651,5 @@ syncWelcome();
 (async () => {
   const restored = await restoreOwnerSession();
   if (!restored) loadSyncedSession();
+  await handleBillingReturn();
 })();
