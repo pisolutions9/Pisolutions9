@@ -58,6 +58,20 @@ export function createRuntime({ execute = async () => ({ completed: [], evidence
     return enriched;
   }
 
+  async function resumeUnfinished() {
+    const missions = await state.list();
+    const resumable = missions.filter(mission =>
+      mission?.id &&
+      ['planned', 'retrying', 'running'].includes(mission.status) &&
+      mission.context?.humanApproved !== false
+    );
+    for (const mission of resumable) {
+      queue.enqueue(mission);
+      observer.emit({ missionId: mission.id, step: 'resume', status: 'queued', truth: 'verified', message: 'unfinished_mission_rehydrated' });
+    }
+    return { resumed: resumable.length, missionIds: resumable.map(mission => mission.id) };
+  }
+
   async function executeMission(mission) {
     try {
       missionGuard.action();
@@ -157,5 +171,5 @@ export function createRuntime({ execute = async () => ({ completed: [], evidence
     };
   }
 
-  return { submit, cycle, runCycles, queue, cost: guard, guardrails: missionGuard, deadLetters, policy, state, netra, recovery };
+  return { submit, resumeUnfinished, cycle, runCycles, queue, cost: guard, guardrails: missionGuard, deadLetters, policy, state, netra, recovery };
 }
