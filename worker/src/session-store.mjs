@@ -159,6 +159,29 @@ export class PISessionStore {
       await this.ctx.storage.delete('session');
       return reply({ ok: true });
     }
+    if (action === 'owner_login_rate_check') {
+      const key = String(payload.key || '').trim();
+      if (!key) return reply({ ok:false, error:'owner_rate_key_required' }, 400);
+      const now = Date.now();
+      const windowMs = 15 * 60 * 1000;
+      const limit = 5;
+      const rates = (await this.ctx.storage.get('owner_login_rates')) || {};
+      const current = rates[key] && now - Number(rates[key].startedAt || 0) < windowMs
+        ? rates[key]
+        : { startedAt: now, count: 0 };
+      current.count += 1;
+      rates[key] = current;
+      const active = Object.entries(rates)
+        .filter(([,value]) => now - Number(value.startedAt || 0) < windowMs)
+        .slice(-500);
+      await this.ctx.storage.put('owner_login_rates', Object.fromEntries(active));
+      return reply({
+        ok:true,
+        allowed: current.count <= limit,
+        remaining: Math.max(0, limit-current.count),
+        retryAfterMs: current.count <= limit ? 0 : Math.max(0, windowMs-(now-current.startedAt))
+      });
+    }
     if (action === 'owner_session_create') {
       const token = String(payload.token || '');
       if (!TOKEN_PATTERN.test(token)) return reply({ ok: false, error: 'owner_session_invalid' }, 400);
@@ -339,6 +362,12 @@ export async function handleOwnerRequest(request, env, allowedOrigin) {
   if (url.pathname === '/api/owner/login') {
     if (request.method !== 'POST') return reply({ ok: false, error: 'method_not_allowed' }, 405, origin, allowedOrigin);
     if (!String(env.PI_OWNER_TOKEN || '')) return reply({ ok: false, error: 'owner_auth_not_configured' }, 503, origin, allowedOrigin);
+    const sourceIp = String(request.headers.get('CF-Connecting-IP') || request.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim();
+    const rateKey = await tokenKey('owner-login:' + sourceIp);
+    const rate = await internal(authStore, { action:'owner_login_rate_check', key:rateKey });
+    if (rate.body?.allowed !== true) {
+      return reply({ ok:false, error:'owner_login_rate_limited', retryAfterMs:Number(rate.body?.retryAfterMs || 0) }, 429, origin, allowedOrigin);
+    }
     let payload;
     try { payload = await request.json(); } catch { return reply({ ok: false, error: 'invalid_json' }, 400, origin, allowedOrigin); }
     if (!(await secureEqual(payload?.secret, env.PI_OWNER_TOKEN))) return reply({ ok: false, error: 'unauthorized' }, 401, origin, allowedOrigin);
