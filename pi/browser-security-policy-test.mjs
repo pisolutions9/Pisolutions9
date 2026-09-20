@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+assert.match(html,/http-equiv="Content-Security-Policy"/);
+assert.match(html,/script-src 'self'/);
+assert.match(html,/connect-src 'self' https:\/\/pi-chat\.premchandyadlapati\.workers\.dev/);
+assert.match(html,/object-src 'none'/);
+assert.match(html,/frame-src 'none'/);
+assert.match(html,/name="referrer" content="no-referrer"/);
+assert.doesNotMatch(html,/script-src[^"]*'unsafe-inline'/);
+assert.doesNotMatch(html,/script-src[^"]*'unsafe-eval'/);
+console.log('PI browser security policy contract passed.');
