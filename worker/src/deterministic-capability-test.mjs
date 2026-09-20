@@ -70,6 +70,14 @@ try {
     assert.doesNotMatch(self.answer, /large database of knowledge/i);
   }
 
+  const arithmeticResponse = await ask('What is (125 * 32) - 750?');
+  const arithmetic = await arithmeticResponse.json();
+  assert.equal(arithmeticResponse.status, 200);
+  assert.equal(arithmetic.ok, true);
+  assert.equal(arithmetic.source, 'pi-deterministic-arithmetic');
+  assert.equal(arithmetic.truth, 'deterministic-verified');
+  assert.equal(arithmetic.answer, 'The answer is 3250.');
+
   const clockResponse = await ask('What is the current UTC date right now?');
   const clock = await clockResponse.json();
   assert.equal(clockResponse.status, 200);
