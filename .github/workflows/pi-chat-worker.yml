@@ -28,6 +28,7 @@ jobs:
       PI_FALLBACK_API_URL: ${{ secrets.PI_FALLBACK_API_URL }}
       PI_FALLBACK_MODEL: ${{ secrets.PI_FALLBACK_MODEL }}
       PI_FALLBACK_API_STYLE: ${{ secrets.PI_FALLBACK_API_STYLE }}
+      PI_OWNER_TOKEN: ${{ secrets.PI_OWNER_TOKEN }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -120,6 +121,18 @@ jobs:
             fi
             echo 'Independent fallback provider configured on the production Worker.'
           fi
+
+      - name: Configure optional owner authentication
+        if: ${{ env.PI_OWNER_TOKEN != '' }}
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$PI_OWNER_TOKEN" | npx wrangler secret put PI_OWNER_TOKEN
+          echo 'Owner authentication secret configured on the production Worker.'
 
       - name: Verify release provider configuration
         working-directory: worker
