@@ -311,7 +311,7 @@ async function refreshBillingUi() {
   try {
     const configResponse = await fetch(billingApiUrl('/api/billing/config'));
     const config = await configResponse.json();
-    if (!configResponse.ok || config.liveBillingReady !== true) { billingAction.hidden = true; return; }
+    if (!configResponse.ok || config.billingReady !== true || !['test','live'].includes(config.billingMode)) { billingAction.hidden = true; return; }
     const entitlement = await billingStatus();
     billingAction.hidden = false;
     billingAction.textContent = entitlement.entitled ? 'Plan active' : 'Upgrade';
