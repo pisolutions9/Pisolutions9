@@ -8,3 +8,11 @@ PI_EDGE_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
 
 [ai]
 binding = "AI"
+
+[[durable_objects.bindings]]
+name = "PI_SESSION"
+class_name = "PISessionStore"
+
+[exports.PISessionStore]
+type = "durable-object"
+storage = "sqlite"
