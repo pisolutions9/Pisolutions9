@@ -15,10 +15,6 @@ concurrency:
 env:
   PI_CHAT_URL: https://pi-chat.premchandyadlapati.workers.dev
   PI_PUBLIC_URL: https://pisolutions9.github.io/Pisolutions9
-  PI_OWNER_TOKEN: ${{ secrets.PI_OWNER_TOKEN }}
-  PI_STRIPE_SECRET_KEY: ${{ secrets.PI_STRIPE_SECRET_KEY }}
-  PI_STRIPE_WEBHOOK_SECRET: ${{ secrets.PI_STRIPE_WEBHOOK_SECRET }}
-  PI_STRIPE_PRICE_ID: ${{ secrets.PI_STRIPE_PRICE_ID }}
 
 jobs:
   activation:
@@ -35,6 +31,8 @@ jobs:
       - name: Verify V1.02 code release suite
         run: npm run test:release:v1.02
       - name: Require owner authentication configuration
+        env:
+          PI_OWNER_TOKEN: ${{ secrets.PI_OWNER_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -56,6 +54,10 @@ jobs:
           python -c 'import json,sys; d=json.loads(sys.argv[1]); assert d.get("authenticated") is True' "$status"
           curl --silent --show-error --max-time 20             -H "authorization: Bearer $token"             -H 'content-type: application/json'             -H 'origin: https://pisolutions9.github.io'             -d '{}' "$PI_CHAT_URL/api/owner/logout" >/dev/null
       - name: Require Stripe configuration and checkout creation
+        env:
+          PI_STRIPE_SECRET_KEY: ${{ secrets.PI_STRIPE_SECRET_KEY }}
+          PI_STRIPE_WEBHOOK_SECRET: ${{ secrets.PI_STRIPE_WEBHOOK_SECRET }}
+          PI_STRIPE_PRICE_ID: ${{ secrets.PI_STRIPE_PRICE_ID }}
         shell: bash
         run: |
           set -euo pipefail
