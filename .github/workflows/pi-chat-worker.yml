@@ -170,14 +170,7 @@ jobs:
             price_json="$(curl --silent --show-error --fail-with-body --max-time 20 \
               -H "Authorization: Bearer $PI_STRIPE_SECRET_KEY" \
               "https://api.stripe.com/v1/prices/$PI_STRIPE_PRICE_ID")"
-            python - <<'PY' "$price_json" "$expected_livemode"
-import json,sys
-d=json.loads(sys.argv[1]); expected=sys.argv[2]=='true'
-assert d.get('object')=='price', 'Stripe object is not a Price'
-assert d.get('active') is True, 'Stripe Price is not active'
-assert d.get('livemode') is expected, f"Stripe Price livemode={d.get('livemode')} does not match key mode"
-assert d.get('type')=='recurring', 'Stripe Price must be recurring for PI subscription billing'
-PY
+            python -c 'import json,sys; d=json.loads(sys.argv[1]); expected=sys.argv[2]=="true"; assert d.get("object")=="price", "Stripe object is not a Price"; assert d.get("active") is True, "Stripe Price is not active"; assert d.get("livemode") is expected, f"Stripe Price livemode={d.get(\"livemode\")} does not match key mode"; assert d.get("type")=="recurring", "Stripe Price must be recurring for PI subscription billing"' "$price_json" "$expected_livemode"
             printf '%s' "$PI_STRIPE_SECRET_KEY" | npx wrangler secret put PI_STRIPE_SECRET_KEY
             printf '%s' "$PI_STRIPE_WEBHOOK_SECRET" | npx wrangler secret put PI_STRIPE_WEBHOOK_SECRET
             printf '%s' "$PI_STRIPE_PRICE_ID" | npx wrangler secret put PI_STRIPE_PRICE_ID
