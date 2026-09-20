@@ -18,3 +18,11 @@ PI must not claim an external action, deployment, test, persistence, customer, r
 ## High-impact actions
 
 Credentials, paid activation, legal commitments, financial transfers, protected production changes, secret rotation, and irreversible production actions remain human-approval gates.
+
+
+## Owner sign-in hardening
+
+- Owner sign-in is rate-limited server-side before secret verification.
+- Rate-limit keys are SHA-256 derived from the source address; raw source IPs are not persisted in the owner auth store.
+- Owner master secrets are never returned to the browser or stored in browser persistence.
+- Successful sign-in exchanges the master secret for a short-lived random bearer session.
