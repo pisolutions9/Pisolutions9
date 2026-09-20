@@ -106,6 +106,7 @@ function runtimeCapabilities(env={}){
       liveShoppingSearch:Boolean(env.SERPAPI_API_KEY)||liveResearch,
       attachmentUnderstanding:Boolean(env.AI&&typeof env.AI.toMarkdown==='function'),
       crossDeviceSessionSync:Boolean(env.PI_SESSION&&typeof env.PI_SESSION.idFromName==='function'),
+      authenticatedOwnerWorkspace:false,
       deterministicVerifiedTools:true,
       providerFallback:true
     }
@@ -139,6 +140,10 @@ function runtimeCapabilityAnswer(env,message=''){
       state.capabilities.liveWebResearch
         ? 'Live web research is available through configured live-research providers when a request requires current external evidence.'
         : 'Live web research is not currently configured here; PI must not pretend model memory is current web evidence.',
+      state.capabilities.crossDeviceSessionSync
+        ? 'Cross-device continuity is available through a private sync link/token for recent conversation state. It is not an authenticated owner-account workspace; anyone who obtains that private link can access the synced session.'
+        : 'Cross-device session sync is not currently configured in this runtime.',
+      'PI does not currently claim an authenticated owner-account workspace from this runtime capability check.',
       'PI also uses deterministic verified tools for supported calculations/actions, and completed external work must include evidence before PI may claim completion.',
       'This report is generated from runtime configuration. It does not expose credentials and it does not claim integrations that are not actually configured.'
     ].filter(Boolean).join(' '),
