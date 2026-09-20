@@ -23,18 +23,28 @@ const env = {
     }
   }
 };
-function ownerRequest(path, { method='POST', body, bearer } = {}) {
-  const headers = { origin, 'content-type': 'application/json' };
+function ownerRequest(path, { method='POST', body, bearer, ip='127.0.0.1' } = {}) {
+  const headers = { origin, 'content-type': 'application/json', 'CF-Connecting-IP': ip };
   if (bearer) headers.authorization = `Bearer ${bearer}`;
   return handleOwnerRequest(new Request(`https://worker.example${path}`, {
     method, headers, ...(body === undefined ? {} : { body: JSON.stringify(body) })
   }), env, origin);
 }
 
-let response = await ownerRequest('/api/owner/login', { body: { secret: 'wrong' } });
+let response = await ownerRequest('/api/owner/login', { body: { secret: 'wrong' }, ip:'10.0.0.1' });
 assert.equal(response.status, 401);
 
-response = await ownerRequest('/api/owner/login', { body: { secret: env.PI_OWNER_TOKEN } });
+for (let attempt = 0; attempt < 4; attempt += 1) {
+  response = await ownerRequest('/api/owner/login', { body:{secret:'wrong'}, ip:'10.0.0.1' });
+  assert.equal(response.status, 401);
+}
+response = await ownerRequest('/api/owner/login', { body:{secret:'wrong'}, ip:'10.0.0.1' });
+let limited = await response.json();
+assert.equal(response.status, 429);
+assert.equal(limited.error, 'owner_login_rate_limited');
+assert.ok(Number(limited.retryAfterMs) > 0);
+
+response = await ownerRequest('/api/owner/login', { body: { secret: env.PI_OWNER_TOKEN }, ip:'10.0.0.2' });
 assert.equal(response.status, 200);
 let body = await response.json();
 assert.equal(body.ok, true);
