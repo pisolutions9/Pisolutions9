@@ -170,7 +170,7 @@ jobs:
             price_json="$(curl --silent --show-error --fail-with-body --max-time 20 \
               -H "Authorization: Bearer $PI_STRIPE_SECRET_KEY" \
               "https://api.stripe.com/v1/prices/$PI_STRIPE_PRICE_ID")"
-            python -c 'import json,sys; d=json.loads(sys.argv[1]); expected=sys.argv[2]=="true"; assert d.get("object")=="price", "Stripe object is not a Price"; assert d.get("active") is True, "Stripe Price is not active"; assert d.get("livemode") is expected, f"Stripe Price livemode={d.get(\"livemode\")} does not match key mode"; assert d.get("type")=="recurring", "Stripe Price must be recurring for PI subscription billing"' "$price_json" "$expected_livemode"
+            python -c 'import json,sys; d=json.loads(sys.argv[1]); expected=sys.argv[2]=="true"; assert d.get("object")=="price", "Stripe object is not a Price"; assert d.get("active") is True, "Stripe Price is not active"; assert d.get("livemode") is expected, "Stripe Price livemode mismatch"; assert d.get("type")=="recurring", "Stripe Price must be recurring for PI subscription billing"' "$price_json" "$expected_livemode"
             printf '%s' "$PI_STRIPE_SECRET_KEY" | npx wrangler secret put PI_STRIPE_SECRET_KEY
             printf '%s' "$PI_STRIPE_WEBHOOK_SECRET" | npx wrangler secret put PI_STRIPE_WEBHOOK_SECRET
             printf '%s' "$PI_STRIPE_PRICE_ID" | npx wrangler secret put PI_STRIPE_PRICE_ID
@@ -359,7 +359,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh issue comment 16 --repo "$GITHUB_REPOSITORY" --body "PI V1.02 PRODUCTION GATES GREEN — commit $GITHUB_SHA passed Worker deployment, provider configuration, CORS, cross-device sync, canonical frontend marker, >=9/11 model-backed customer smoke answers, web-grounded live-data research with sources and a result-first shopping link; verified live retailer availability is additionally certified when SERPAPI_API_KEY is configured."
+          gh issue comment 16 --repo "$GITHUB_REPOSITORY" --body "PI V1.02 PRODUCTION GATES GREEN — commit $GITHUB_SHA passed Worker deployment, provider configuration, CORS, cross-device sync, canonical frontend marker, >=9/11 model-backed customer smoke answers, web-grounded live-data research with sources and a result-first shopping link; verified live retailer availability is additionally certified when SERPAPI_API_KEY is configured." || echo 'Evidence comment skipped because repository issues are unavailable.'
 
       - name: Record production gate failure
         if: ${{ failure() }}
@@ -368,4 +368,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh issue comment 16 --repo "$GITHUB_REPOSITORY" --body "PI V1.02 PRODUCTION GATE FAILED — commit $GITHUB_SHA, run $GITHUB_RUN_ID. Inspect this exact run; diagnose and fix the failed gate without weakening the release standard."
+          gh issue comment 16 --repo "$GITHUB_REPOSITORY" --body "PI V1.02 PRODUCTION GATE FAILED — commit $GITHUB_SHA, run $GITHUB_RUN_ID. Inspect this exact run; diagnose and fix the failed gate without weakening the release standard." || echo 'Failure evidence comment skipped because repository issues are unavailable.'
