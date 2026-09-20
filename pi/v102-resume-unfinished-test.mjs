@@ -15,7 +15,14 @@ const state = {
   async list() { return structuredClone(stored); },
   async clear() {}
 };
-const runtime = createRuntime({ state, execute: async mission => ({ status:'completed', completed:[mission.objective], evidence:[{source:'resume-test',claim:'executed'}] }) });
+const runtime = createRuntime({
+  state,
+  execute: async mission => ({
+    status: 'completed',
+    completed: [{ item: mission.objective, verified: true }],
+    evidence: [{ source: 'resume-test', claim: 'executed' }]
+  })
+});
 const resumed = await runtime.resumeUnfinished();
 assert.equal(resumed.resumed, 3);
 assert.deepEqual(new Set(resumed.missionIds), new Set(['planned-1','retry-1','running-1']));
