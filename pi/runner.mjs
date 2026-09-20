@@ -57,8 +57,12 @@ if (!enabled) {
 // A scheduled autonomous invocation is a distinct run. Preserve idempotency for
 // retries of the same GitHub Actions run, while preventing later scheduled runs
 // from reusing an already-completed mission and going immediately idle.
+const resumed = state ? await runtime.resumeUnfinished() : { resumed: 0, missionIds: [] };
 const runIdentity = String(process.env.GITHUB_RUN_ID || process.env.PI_RUN_ID || Date.now());
-const mission = await runtime.submit(objective, { idempotencyKey: `local-cycle:${objective}:${runIdentity}` });
+let mission = null;
+if (resumed.resumed === 0) {
+  mission = await runtime.submit(objective, { idempotencyKey: `local-cycle:${objective}:${runIdentity}` });
+}
 const outcome = await runtime.runCycles({ maxCycles });
-console.log(JSON.stringify({ mode: 'zero-cost-first', providers: modelRouter.available(), state: statePath ? 'file' : 'memory', maxCycles, missionId: mission.id, ...outcome }, null, 2));
+console.log(JSON.stringify({ mode: 'zero-cost-first', providers: modelRouter.available(), state: statePath ? 'file' : 'memory', maxCycles, resumed, missionId: mission?.id || resumed.missionIds[0] || null, ...outcome }, null, 2));
 if (outcome.status !== 'completed') process.exit(1);
