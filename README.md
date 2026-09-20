@@ -33,9 +33,6 @@ The repository contains the owner-console/runtime foundation plus release-gate a
 
 ## Release gate
 
-The current [unified delivery plan](PI_UNIFIED_DELIVERY_PLAN.md) records the
-phone/laptop continuity gap, required owner sign-in setup, staged fixes and
-acceptance evidence. Guest conversation history is currently tab-local; opening
-the same link on another device does not synchronize it.
+The current [unified delivery plan](PI_UNIFIED_DELIVERY_PLAN.md) records the verified V1.02 release path and the remaining authenticated-owner-workspace gap. Private link/token cross-device session sync is available for recent conversation state, but it is not an authenticated owner account and must not be described as one.
 
-V1 is not considered released until the published owner console, runtime endpoint, automated verification, human-understanding behavior, and end-to-end mission flow have each been directly tested and evidenced.
+V1.02 core customer/runtime release readiness is determined by the dedicated V1.02 gate, live-model gate, launch/verification checks, Worker deployment, Pages deployment, and live-browser end-to-end evidence. Authenticated owner workspace and live charging remain separate boundaries and are not implied by a green V1.02 core release.
