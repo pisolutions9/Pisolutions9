@@ -34,7 +34,22 @@ try {
   assert.equal(capability.capabilities.providers.openrouter, false);
   assert.equal(capability.capabilities.capabilities.liveWebResearch, true);
   assert.equal(capability.capabilities.capabilities.crossDeviceSessionSync, false);
+  assert.equal(capability.capabilities.capabilities.authenticatedOwnerWorkspace, false);
+  assert.match(capability.answer, /authenticated owner-account workspace/i);
   assert.doesNotMatch(capability.answer, /test-openai|test-groq/);
+
+
+  const syncEnv = {
+    OPENAI_API_KEY:'test-openai',
+    PI_SESSION:{ idFromName(){ return 'id'; } }
+  };
+  const syncResponse = await ask('What capabilities do you have?', syncEnv);
+  const sync = await syncResponse.json();
+  assert.equal(sync.source, 'pi-runtime-capabilities');
+  assert.equal(sync.capabilities.capabilities.crossDeviceSessionSync, true);
+  assert.equal(sync.capabilities.capabilities.authenticatedOwnerWorkspace, false);
+  assert.match(sync.answer, /private sync link\/token/i);
+  assert.match(sync.answer, /not an authenticated owner-account workspace/i);
 
   for (const prompt of [
     'How do you verify answers?',
