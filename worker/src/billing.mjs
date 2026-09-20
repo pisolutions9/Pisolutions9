@@ -28,8 +28,14 @@ function bearer(request){
   const header=request.headers.get('Authorization')||request.headers.get('authorization')||'';
   const match=header.match(/^Bearer\s+([A-Za-z0-9_-]{43})$/);return match?match[1]:'';
 }
+function stripeMode(env){
+  const key=String(env.PI_STRIPE_SECRET_KEY||'');
+  if(key.startsWith('sk_live_'))return 'live';
+  if(key.startsWith('sk_test_'))return 'test';
+  return 'unknown';
+}
 function configured(env){
-  return Boolean(env.PI_STRIPE_SECRET_KEY&&env.PI_STRIPE_WEBHOOK_SECRET&&env.PI_STRIPE_PRICE_ID&&env.PI_SESSION);
+  return Boolean(env.PI_STRIPE_SECRET_KEY&&env.PI_STRIPE_WEBHOOK_SECRET&&env.PI_STRIPE_PRICE_ID&&env.PI_SESSION&&stripeMode(env)!=='unknown');
 }
 function store(env,name){const id=env.PI_SESSION.idFromName(name);return env.PI_SESSION.get(id);}
 async function internal(stub,payload){
@@ -116,7 +122,8 @@ export async function handleBillingRequest(request,env){
   const url=new URL(request.url);
   if(url.pathname==='/api/billing/config'){
     if(request.method!=='GET')return response({ok:false,error:'method_not_allowed'},405,request);
-    return response({ok:true,provider:'stripe',checkoutConfigured:Boolean(env.PI_STRIPE_SECRET_KEY&&env.PI_STRIPE_PRICE_ID&&env.PI_SESSION),webhookConfigured:Boolean(env.PI_STRIPE_WEBHOOK_SECRET&&env.PI_SESSION),liveBillingReady:configured(env)},200,request);
+    const mode=stripeMode(env);const ready=configured(env);
+    return response({ok:true,provider:'stripe',billingMode:mode,billingReady:ready,testBillingReady:ready&&mode==='test',liveBillingReady:ready&&mode==='live',checkoutConfigured:Boolean(env.PI_STRIPE_SECRET_KEY&&env.PI_STRIPE_PRICE_ID&&env.PI_SESSION),webhookConfigured:Boolean(env.PI_STRIPE_WEBHOOK_SECRET&&env.PI_SESSION)},200,request);
   }
   if(url.pathname==='/api/billing/webhook'){
     if(request.method!=='POST')return response({ok:false,error:'method_not_allowed'},405,request);
