@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-pi-release="v1.02-owner-workspace">
+<html lang="en" data-pi-release="v1.02-billing-ready">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,7 +12,7 @@
   <main class="shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="PI home"><span class="mark">π</span><span><strong>PI</strong><small>Think. Plan. Execute. With You.</small></span></a>
-      <div class="top-actions"><button id="ownerAccess" class="sync-button" type="button">Owner sign in</button><button id="syncDevice" class="sync-button" type="button">Sync devices</button><div class="status" data-state="idle" role="status"><span class="dot"></span><span id="systemStatus">Ready to ask</span></div></div>
+      <div class="top-actions"><button id="billingAction" class="sync-button" type="button" hidden>Upgrade</button><button id="ownerAccess" class="sync-button" type="button">Owner sign in</button><button id="syncDevice" class="sync-button" type="button">Sync devices</button><div class="status" data-state="idle" role="status"><span class="dot"></span><span id="systemStatus">Ready to ask</span></div></div>
     </header>
 
     <section class="workspace" aria-label="PI conversation">
@@ -65,6 +65,6 @@
     </dialog>
     <input id="ownerToken" type="hidden" value="" />
   </main>
-  <script type="module" src="app.js?v=20260920-v102-owner-workspace"></script>
+  <script type="module" src="app.js?v=20260920-v102-billing-ready"></script>
 </body>
 </html>
