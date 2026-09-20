@@ -216,6 +216,73 @@ export class PISessionStore {
       await this.ctx.storage.delete('workspace');
       return reply({ ok: true });
     }
+    if (action === 'billing_event_check') {
+      const events = (await this.ctx.storage.get('billing_events')) || {};
+      return reply({ ok: true, processed: Boolean(events[String(payload.eventId || '')]) });
+    }
+    if (action === 'billing_event_mark') {
+      const eventId = String(payload.eventId || '').trim();
+      if (!eventId) return reply({ ok:false, error:'billing_event_id_required' },400);
+      const events = (await this.ctx.storage.get('billing_events')) || {};
+      events[eventId] = Date.now();
+      const trimmed = Object.entries(events).sort((a,b)=>b[1]-a[1]).slice(0,1000);
+      await this.ctx.storage.put('billing_events', Object.fromEntries(trimmed));
+      return reply({ ok:true });
+    }
+    if (action === 'billing_bind_customer') {
+      const stripeCustomerId = String(payload.stripeCustomerId || '').trim();
+      const customerKey = String(payload.customerKey || '').trim();
+      if (!stripeCustomerId || !customerKey) return reply({ok:false,error:'billing_mapping_invalid'},400);
+      const mappings = (await this.ctx.storage.get('billing_customer_map')) || {};
+      mappings[stripeCustomerId] = customerKey;
+      await this.ctx.storage.put('billing_customer_map', mappings);
+      return reply({ok:true});
+    }
+    if (action === 'billing_lookup_customer') {
+      const stripeCustomerId = String(payload.stripeCustomerId || '').trim();
+      const mappings = (await this.ctx.storage.get('billing_customer_map')) || {};
+      return reply({ok:true,customerKey:stripeCustomerId ? (mappings[stripeCustomerId] || null) : null});
+    }
+    if (action === 'billing_entitlement_set') {
+      const status = String(payload.status || 'unknown').slice(0,80);
+      const entitlement = {
+        entitled: payload.entitled === true,
+        status,
+        stripeCustomerId: String(payload.stripeCustomerId || '').slice(0,120),
+        subscriptionId: String(payload.subscriptionId || '').slice(0,120),
+        updatedAt: Date.now()
+      };
+      await this.ctx.storage.put('billing_entitlement', entitlement);
+      return reply({ok:true,entitlement});
+    }
+    if (action === 'billing_entitlement_get') {
+      const entitlement = await this.ctx.storage.get('billing_entitlement');
+      return reply({ok:true,entitlement:entitlement || {entitled:false,status:'none',updatedAt:0}});
+    }
+    if (action === 'billing_checkout_set') {
+      const checkout = {
+        sessionId: String(payload.sessionId || '').slice(0,160),
+        customerKey: String(payload.customerKey || '').slice(0,160),
+        createdAt: Date.now()
+      };
+      if (!checkout.sessionId || !checkout.customerKey) return reply({ok:false,error:'billing_checkout_invalid'},400);
+      await this.ctx.storage.put('billing_checkout', checkout);
+      return reply({ok:true,checkout});
+    }
+    if (action === 'billing_rate_check') {
+      const key = String(payload.key || '').trim();
+      if (!key) return reply({ok:false,error:'billing_rate_key_required'},400);
+      const now = Date.now();
+      const windowMs = 15 * 60 * 1000;
+      const limit = 5;
+      const rates = (await this.ctx.storage.get('billing_rates')) || {};
+      const current = rates[key] && now - Number(rates[key].startedAt || 0) < windowMs ? rates[key] : {startedAt:now,count:0};
+      current.count += 1;
+      rates[key] = current;
+      const trimmed = Object.fromEntries(Object.entries(rates).filter(([,value]) => now - Number(value.startedAt || 0) < windowMs).slice(-500));
+      await this.ctx.storage.put('billing_rates', trimmed);
+      return reply({ok:true,allowed:current.count <= limit,retryAfterMs:current.count <= limit ? 0 : Math.max(0,windowMs-(now-current.startedAt))});
+    }
     return reply({ ok: false, error: 'session_action_invalid' }, 400);
   }
 }
