@@ -81,6 +81,67 @@ function runtimeClockAnswer(message='',now=new Date()){
   };
 }
 
+function runtimeCapabilities(env={}){
+  const workersAI=Boolean(env.AI&&typeof env.AI.run==='function');
+  const openai=Boolean(env.OPENAI_API_KEY);
+  const groq=Boolean(env.GROQ_API_KEY);
+  const openrouter=Boolean(env.OPENROUTER_API_KEY);
+  const independentFallback=Boolean(env.PI_FALLBACK_API_KEY&&env.PI_FALLBACK_API_URL&&env.PI_FALLBACK_MODEL);
+  const liveResearch=openai||groq;
+  return {
+    version:'PI V1.02',
+    runtime:'cloudflare-worker',
+    providers:{
+      cloudflareWorkersAI:workersAI,
+      openai,
+      groq,
+      openrouter,
+      independentFallback
+    },
+    capabilities:{
+      conversationalAI:workersAI||openai||groq||openrouter||independentFallback,
+      independentHardReasoningReview:workersAI,
+      liveWebResearch:liveResearch,
+      liveWeather:true,
+      liveShoppingSearch:Boolean(env.SERPAPI_API_KEY)||liveResearch,
+      attachmentUnderstanding:Boolean(env.AI&&typeof env.AI.toMarkdown==='function'),
+      crossDeviceSessionSync:Boolean(env.PI_SESSION&&typeof env.PI_SESSION.idFromName==='function'),
+      deterministicVerifiedTools:true,
+      providerFallback:true
+    }
+  };
+}
+
+function runtimeCapabilityAnswer(env,message=''){
+  const value=String(message).trim();
+  const asks=/\b(who are you|what are you|what can you do|what capabilities do you have|what (?:models?|providers?|tools?) (?:do you|can you) (?:use|have|access)|what is your runtime|are you an ai)\b/i.test(value);
+  if(!asks)return null;
+  const state=runtimeCapabilities(env);
+  const providerLabels=[];
+  if(state.providers.cloudflareWorkersAI)providerLabels.push('Cloudflare Workers AI');
+  if(state.providers.openai)providerLabels.push('OpenAI');
+  if(state.providers.groq)providerLabels.push('Groq');
+  if(state.providers.openrouter)providerLabels.push('OpenRouter');
+  if(state.providers.independentFallback)providerLabels.push('independent fallback provider');
+  const enabled=Object.entries(state.capabilities).filter(([,on])=>on).map(([name])=>name);
+  const unavailable=Object.entries(state.capabilities).filter(([,on])=>!on).map(([name])=>name);
+  return {
+    ok:true,
+    status:'answered',
+    answer:[
+      `I am ${state.version}, an AI orchestration system running on a ${state.runtime} runtime.`,
+      `Providers detected in this runtime: ${providerLabels.length?providerLabels.join(', '):'no model provider currently detected'}.`,
+      `Capabilities currently available: ${enabled.join(', ')}.`,
+      unavailable.length?`Capabilities not currently configured here: ${unavailable.join(', ')}.`:'',
+      'This report is generated from runtime configuration. It does not expose credentials and it does not claim integrations that are not actually configured.'
+    ].filter(Boolean).join(' '),
+    source:'pi-runtime-capabilities',
+    truth:'runtime-derived',
+    capabilities:state
+  };
+}
+
+
 const WEATHER_CODE_LABELS = new Map([
   [0,'clear sky'],[1,'mainly clear'],[2,'partly cloudy'],[3,'overcast'],
   [45,'fog'],[48,'depositing rime fog'],[51,'light drizzle'],[53,'moderate drizzle'],[55,'dense drizzle'],
@@ -626,7 +687,7 @@ async function produceVerifiedHardAnswer(env,message,history){
 }
 function recoveryResponse(message,request,failure){const answer=deterministicFallback(message);if(!answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return json({ok:true,answer,source:'pi-chat-deterministic-recovery',truth:'deterministic',providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);if(!attachmentInfo){const clock=runtimeClockAnswer(message);if(clock)return json(clock,200,request);const paymentSafety=paymentRetrySafetyAnswer(message);if(paymentSafety)return json(paymentSafety,200,request);const runwayScenario=deterministicRunwayScenarioAnswer(message);if(runwayScenario)return json(runwayScenario,200,request);const weather=await directWeatherAnswer(message);if(weather)return json(weather,200,request);const shopping=await directShoppingAnswer(env,message);if(shopping)return json(shopping,200,request);}if(requiresLiveEvidenceForRequest(history,message)){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);if(!attachmentInfo){const capability=runtimeCapabilityAnswer(env,message);if(capability)return json(capability,200,request);const clock=runtimeClockAnswer(message);if(clock)return json(clock,200,request);const paymentSafety=paymentRetrySafetyAnswer(message);if(paymentSafety)return json(paymentSafety,200,request);const runwayScenario=deterministicRunwayScenarioAnswer(message);if(runwayScenario)return json(runwayScenario,200,request);const weather=await directWeatherAnswer(message);if(weather)return json(weather,200,request);const shopping=await directShoppingAnswer(env,message);if(shopping)return json(shopping,200,request);}if(requiresLiveEvidenceForRequest(history,message)){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
