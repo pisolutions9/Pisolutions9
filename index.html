@@ -6,13 +6,13 @@
   <meta name="description" content="PI — Think. Plan. Execute. With You." />
   <title>PI — Assistant</title>
   <link rel="canonical" href="https://pisolutions9.github.io/Pisolutions9/" />
-  <link rel="stylesheet" href="styles.css?v=20260919-browser-continuity" />
+  <link rel="stylesheet" href="styles.css?v=20260919-private-device-sync" />
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="PI home"><span class="mark">π</span><span><strong>PI</strong><small>Think. Plan. Execute. With You.</small></span></a>
-      <div class="status" data-state="idle" role="status"><span class="dot"></span><span id="systemStatus">Ready to ask</span></div>
+      <div class="top-actions"><button id="syncDevice" class="sync-button" type="button">Sync devices</button><div class="status" data-state="idle" role="status"><span class="dot"></span><span id="systemStatus">Ready to ask</span></div></div>
     </header>
 
     <section class="workspace" aria-label="PI conversation">
@@ -32,7 +32,8 @@
     </section>
 
     <section class="composer-wrap" aria-label="Ask PI">
-      <p class="session-notice">This browser remembers recent conversation · Cross-device sync requires owner sign-in.</p>
+      <p class="session-notice">This browser remembers recent conversation · Use a private sync link to continue on another device.</p>
+      <p id="syncNotice" class="sync-notice hidden" aria-live="polite"></p>
       <p id="attachmentStatus" class="attachment-status hidden" aria-live="polite"></p>
       <div class="composer">
         <button id="clearChat" class="icon-button" type="button" title="New conversation" aria-label="New conversation">＋</button>
@@ -47,10 +48,10 @@
         <button data-command="Help me build a clear business plan.">Build a plan</button>
       </div>
       <p class="motto">BIG IDEAS. REAL RESULTS.</p>
-      <p class="site-reference" id="sessionScope"><a href="https://pisolutions9.github.io/Pisolutions9/">Official PI link</a> · Recent conversation stays in this browser; it does not move between devices.</p>
+      <p class="site-reference" id="sessionScope"><a href="https://pisolutions9.github.io/Pisolutions9/">Official PI link</a> · Recent conversation stays in this browser unless private device sync is enabled.</p>
     </section>
     <input id="ownerToken" type="hidden" value="" />
   </main>
-  <script type="module" src="app.js?v=20260919-browser-continuity"></script>
+  <script type="module" src="app.js?v=20260919-private-device-sync"></script>
 </body>
 </html>
