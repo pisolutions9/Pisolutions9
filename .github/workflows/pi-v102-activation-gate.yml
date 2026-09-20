@@ -1,0 +1,85 @@
+name: PI V1.02 Activation Gate
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pi-v102-activation
+  cancel-in-progress: true
+
+env:
+  PI_CHAT_URL: https://pi-chat.premchandyadlapati.workers.dev
+  PI_PUBLIC_URL: https://pisolutions9.github.io/Pisolutions9
+  PI_OWNER_TOKEN: ${{ secrets.PI_OWNER_TOKEN }}
+  PI_STRIPE_SECRET_KEY: ${{ secrets.PI_STRIPE_SECRET_KEY }}
+  PI_STRIPE_WEBHOOK_SECRET: ${{ secrets.PI_STRIPE_WEBHOOK_SECRET }}
+  PI_STRIPE_PRICE_ID: ${{ secrets.PI_STRIPE_PRICE_ID }}
+
+jobs:
+  activation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Verify V1.02 code release suite
+        run: npm run test:release:v1.02
+      - name: Require owner authentication configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${PI_OWNER_TOKEN:-}" ]]; then
+            echo 'PI_OWNER_TOKEN is not configured in GitHub Actions secrets.' >&2
+            exit 1
+          fi
+          response="$(curl --silent --show-error --max-time 20             -H 'content-type: application/json'             -H 'origin: https://pisolutions9.github.io'             -d "$(python -c 'import json,os; print(json.dumps({"secret":os.environ["PI_OWNER_TOKEN"]}))')"             "$PI_CHAT_URL/api/owner/login")"
+          python - <<'PY' "$response"
+          import json,sys
+          d=json.loads(sys.argv[1])
+          assert d.get('ok') is True and d.get('authenticated') is True
+          token=d.get('sessionToken')
+          assert isinstance(token,str) and len(token)==43
+          print(token)
+          PY
+          token="$(python -c 'import json,sys; print(json.loads(sys.argv[1])["sessionToken"])' "$response")"
+          status="$(curl --silent --show-error --max-time 20             -H "authorization: Bearer $token"             -H 'origin: https://pisolutions9.github.io'             "$PI_CHAT_URL/api/owner/status")"
+          python -c 'import json,sys; d=json.loads(sys.argv[1]); assert d.get("authenticated") is True' "$status"
+          curl --silent --show-error --max-time 20             -H "authorization: Bearer $token"             -H 'content-type: application/json'             -H 'origin: https://pisolutions9.github.io'             -d '{}' "$PI_CHAT_URL/api/owner/logout" >/dev/null
+      - name: Require Stripe configuration and checkout creation
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in PI_STRIPE_SECRET_KEY PI_STRIPE_WEBHOOK_SECRET PI_STRIPE_PRICE_ID; do
+            if [[ -z "${!name:-}" ]]; then echo "$name is not configured in GitHub Actions secrets." >&2; exit 1; fi
+          done
+          config="$(curl --silent --show-error --max-time 20             -H 'origin: https://pisolutions9.github.io'             "$PI_CHAT_URL/api/billing/config")"
+          python -c 'import json,sys; d=json.loads(sys.argv[1]); assert d.get("liveBillingReady") is True and d.get("checkoutConfigured") is True and d.get("webhookConfigured") is True' "$config"
+          checkout="$(curl --silent --show-error --max-time 25             -H 'content-type: application/json'             -H 'origin: https://pisolutions9.github.io'             -d '{}' "$PI_CHAT_URL/api/billing/start")"
+          python - <<'PY' "$checkout"
+          import json,sys
+          d=json.loads(sys.argv[1])
+          assert d.get('ok') is True
+          assert isinstance(d.get('checkoutUrl'),str) and d['checkoutUrl'].startswith('https://checkout.stripe.com/')
+          assert isinstance(d.get('customerToken'),str) and len(d['customerToken'])==43
+          PY
+      - name: Verify exact customer release marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(grep -o 'data-pi-release="[^"]*"' index.html | head -1)"
+          body="$(curl --silent --show-error --location --max-time 20 "$PI_PUBLIC_URL/?candidate=$GITHUB_SHA")"
+          grep -Fq "$expected" <<<"$body"
+      - name: Activation boundary
+        run: |
+          echo 'Owner auth and Stripe checkout configuration are verified.'
+          echo 'Live charging still requires a real signed-webhook -> persisted-entitlement -> customer-access transaction smoke before charging customers.'
