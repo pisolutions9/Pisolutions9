@@ -64,7 +64,7 @@ jobs:
             if [[ -z "${!name:-}" ]]; then echo "$name is not configured in GitHub Actions secrets." >&2; exit 1; fi
           done
           config="$(curl --silent --show-error --max-time 20             -H 'origin: https://pisolutions9.github.io'             "$PI_CHAT_URL/api/billing/config")"
-          python -c 'import json,sys; d=json.loads(sys.argv[1]); assert d.get("liveBillingReady") is True and d.get("checkoutConfigured") is True and d.get("webhookConfigured") is True' "$config"
+          python -c 'import json,sys; d=json.loads(sys.argv[1]); assert d.get("billingReady") is True and d.get("billingMode") in ("test","live") and d.get("checkoutConfigured") is True and d.get("webhookConfigured") is True' "$config"
           checkout="$(curl --silent --show-error --max-time 25             -H 'content-type: application/json'             -H 'origin: https://pisolutions9.github.io'             -d '{}' "$PI_CHAT_URL/api/billing/start")"
           python - <<'PY' "$checkout"
           import json,sys
@@ -82,5 +82,5 @@ jobs:
           grep -Fq "$expected" <<<"$body"
       - name: Activation boundary
         run: |
-          echo 'Owner auth and Stripe checkout configuration are verified.'
+          echo 'Owner auth and Stripe checkout configuration are verified for the currently deployed Stripe mode.'
           echo 'Live charging still requires a real signed-webhook -> persisted-entitlement -> customer-access transaction smoke before charging customers.'
