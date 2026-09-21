@@ -5,11 +5,22 @@ const html=fs.readFileSync('owner-dashboard.html','utf8');
 const js=fs.readFileSync('owner-dashboard.js','utf8');
 const index=fs.readFileSync('index.html','utf8');
 const history=JSON.parse(fs.readFileSync('pi/engineering-history.json','utf8'));
+const app=fs.readFileSync('app.js','utf8');
+const store=fs.readFileSync('worker/src/session-store.mjs','utf8');
 
 assert.ok(html.includes('Private owner monitor'),'public_owner_lock_notice_missing');
 assert.ok(html.includes('disabled on the public PI website'),'public_owner_monitor_not_locked');
 assert.equal(js.includes('api.github.com'),false,'public_owner_monitor_must_not_fetch_telemetry');
 assert.equal(index.includes('id="ownerDashboard"'),false,'public_pi_must_not_link_owner_dashboard');
+assert.equal(app.includes('pi-v1-owner-conversation'),false,'owner_conversation_must_not_persist_in_browser_local_storage');
+assert.equal(app.includes('pi-v1-owner-draft'),false,'owner_draft_must_not_persist_in_browser_local_storage');
+assert.match(app,/sessionStorage\.setItem\(OWNER_SESSION_KEY/,'owner_session_must_be_tab_scoped');
+assert.match(store,/secureEqual\(payload\?\.secret, env\.PI_OWNER_TOKEN\)/,'owner_secret_must_be_verified_server_side');
+assert.match(store,/owner_login_rate_check/,'owner_login_must_be_rate_limited');
+assert.match(store,/OWNER_SESSION_TTL_MS = 12 \* 60 \* 60 \* 1000/,'owner_session_ttl_must_remain_bounded');
+assert.match(store,/origin && origin !== allowedOrigin/,'owner_api_must_reject_wrong_origin');
+assert.match(store,/workspace_clear/,'owner_workspace_must_support_server_side_deletion');
+assert.match(store,/'cache-control': 'no-store'/,'owner_api_must_disable_response_caching');
 
 assert.equal(history.verifiedDay1.date,'2026-09-15','wrong_verified_day1');
 assert.equal(history.verifiedDay1.commit,'20d9c93d34e2e58e569415e479144d6ab1374dfd','wrong_day1_commit');
