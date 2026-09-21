@@ -22,6 +22,20 @@ function assertNoInternalLeak(result){
     assert.equal(text.includes(marker),false,`internal_planner_leak:${marker}`);
   }
 }
+function assertSafeHardOutcome(result){
+  assert.ok([200,503].includes(result.status),`unexpected_hard_status:${result.status}`);
+  assertNoInternalLeak(result);
+  if(result.status===200){
+    assert.equal(result.body.ok,true);
+    assert.ok(['verified-model-response','provisional-model-response','deterministic-verified'].includes(result.body.truth),`unsafe_hard_truth:${result.body.truth}`);
+    return;
+  }
+  assert.equal(result.body.ok,false);
+  assert.equal(result.body.status,'verification_failed');
+  assert.equal(result.body.error,'hard_reasoning_not_verified');
+  assert.equal(result.body.truth,'unknown');
+  assert.match(answerText(result),/will not present|could not independently verify|verification/i);
+}
 
 const math=await ask('Calculate 17 * 19.');
 assert.equal(math.status,200);
@@ -63,14 +77,6 @@ assert.match(generalText,/storage|SSD|disk/i);
 assertNoInternalLeak(general);
 
 const hard=await ask('Explain why high availability does not necessarily imply security. Identify the invalid inference and give a better framework for evaluating availability, reliability, and security.');
-assert.ok([200,503].includes(hard.status),`unexpected_hard_status:${hard.status}`);
-assertNoInternalLeak(hard);
-if(hard.status===200){
-  assert.equal(hard.body.ok,true);
-  assert.ok(['verified-model-response','provisional-model-response','deterministic-verified'].includes(hard.body.truth),`unsafe_hard_truth:${hard.body.truth}`);
-}else{
-  assert.equal(hard.body.ok,false);
-  assert.equal(hard.body.truth,'unknown');
-}
+assertSafeHardOutcome(hard);
 
 console.log(JSON.stringify({ok:true,cases:6,url},null,2));
