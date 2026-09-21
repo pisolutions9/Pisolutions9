@@ -92,6 +92,30 @@ const rejectEnv={AI:{run:async(_model,input)=>{
 const rejected=await worker.fetch(request({message:'Calculate a Bayesian posterior probability and show enough calculations to audit the answer.'}),rejectEnv);
 const rejectedBody=await rejected.json();
 assert.equal(rejected.status,503);assert.equal(rejectedBody.error,'hard_reasoning_not_verified');assert.equal(rejectedBody.truth,'unknown');assert.equal(rejectCalls,3);
+// Regression: hard-reasoning capacity failure must fall through to another configured
+// provider instead of falsely claiming the user's supplied facts could not be verified.
+resetHardAnswerCacheForTest();
+let fallbackFetchCalls=0;
+const savedFetch=globalThis.fetch;
+globalThis.fetch=async(url,options)=>{
+  if(String(url).includes('api.openai.com/v1/responses')){
+    fallbackFetchCalls+=1;
+    return new Response(JSON.stringify({output_text:'Using the supplied customer, price, churn, and AI-cost inputs, compute break-even churn reduction, scenarios, missing inputs, and an experiment. These are prompt-supplied assumptions; no external factual verification is required.'}),{status:200,headers:{'content-type':'application/json'}});
+  }
+  return savedFetch(url,options);
+};
+const hardCapacityFallback=await worker.fetch(request({message:'A SaaS company has 10,000 customers paying $20/month. Monthly churn is 4%. It is considering an AI feature costing $1.50 per active customer per month. Management predicts the feature will reduce churn to 3%, but that estimate is uncertain. Determine whether launching it is economically justified. Do not simply calculate one scenario. Find the break-even churn reduction, model at least three plausible outcomes, identify what information is missing, and recommend an experiment that would let management decide with evidence.'}),{
+  AI:{run:async()=>{throw new Error('Capacity temporarily exceeded');}},
+  OPENAI_API_KEY:'test-key'
+});
+const hardCapacityFallbackBody=await hardCapacityFallback.json();
+globalThis.fetch=savedFetch;
+assert.equal(hardCapacityFallback.status,200);
+assert.equal(hardCapacityFallbackBody.ok,true);
+assert.equal(hardCapacityFallbackBody.truth,'model-response');
+assert.ok(fallbackFetchCalls>=1);
+assert.notEqual(hardCapacityFallbackBody.error,'hard_reasoning_not_verified');
+
 const technicalResponse=await worker.fetch(request({message:'Explain quantum computing to a software engineer. Compare it with classical computing, give one concrete example where it could matter, and clearly separate what is practical today from what is still experimental.'}),env);
 const technicalBody=await technicalResponse.json();
 assert.equal(technicalResponse.status,200);assert.equal(technicalBody.ok,true);assert.ok(technicalBody.answer);
