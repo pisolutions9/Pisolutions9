@@ -1,14 +1,28 @@
 import { evidenceRecord } from './evidence.mjs';
 
+export const FRESHNESS_POLICY = Object.freeze({
+  weather: { maxAgeMs: 5 * 60_000, fallbackMaxAgeMs: 15 * 60_000 },
+  markets: { maxAgeMs: 2 * 60_000, fallbackMaxAgeMs: 10 * 60_000 },
+  sports: { maxAgeMs: 2 * 60_000, fallbackMaxAgeMs: 10 * 60_000 },
+  outages: { maxAgeMs: 5 * 60_000, fallbackMaxAgeMs: 15 * 60_000 },
+  transport: { maxAgeMs: 5 * 60_000, fallbackMaxAgeMs: 15 * 60_000 },
+  news: { maxAgeMs: 15 * 60_000, fallbackMaxAgeMs: 60 * 60_000 },
+  geopolitics: { maxAgeMs: 30 * 60_000, fallbackMaxAgeMs: 2 * 60 * 60_000 },
+  immigration: { maxAgeMs: 6 * 60 * 60_000, fallbackMaxAgeMs: 24 * 60 * 60_000 },
+  tariffs: { maxAgeMs: 6 * 60 * 60_000, fallbackMaxAgeMs: 24 * 60 * 60_000 },
+  energy: { maxAgeMs: 30 * 60_000, fallbackMaxAgeMs: 2 * 60 * 60_000 },
+  space: { maxAgeMs: 30 * 60_000, fallbackMaxAgeMs: 2 * 60 * 60_000 },
+  default: { maxAgeMs: 60 * 60_000, fallbackMaxAgeMs: 6 * 60 * 60_000 }
+});
+
+export function freshnessPolicy(domain = 'default', { fallback = false } = {}) {
+  const policy = FRESHNESS_POLICY[domain] || FRESHNESS_POLICY.default;
+  return { domain: FRESHNESS_POLICY[domain] ? domain : 'default', maxAgeMs: fallback ? policy.fallbackMaxAgeMs : policy.maxAgeMs, fallback };
+}
+
 export function normalizeToolEvidence({ tool, result, observedAt = new Date().toISOString(), confidence = 'probable', limitations = [] } = {}) {
   if (!tool) throw new Error('tool_required');
-  return evidenceRecord({
-    source: `tool:${tool}`,
-    claim: JSON.stringify(result ?? null),
-    observedAt,
-    confidence,
-    limitations
-  });
+  return evidenceRecord({ source: `tool:${tool}`, claim: JSON.stringify(result ?? null), observedAt, confidence, limitations });
 }
 
 export function verifyToolEvidence(record, expectedTool, { now = Date.now(), maxAgeMs = null, requireFresh = false } = {}) {
@@ -28,6 +42,11 @@ export function verifyToolEvidence(record, expectedTool, { now = Date.now(), max
   return { ok, reason, observedAt: record?.observedAt || null, ageMs, fresh };
 }
 
+export function verifyDomainFreshness(record, expectedTool, domain, options = {}) {
+  const policy = freshnessPolicy(domain, { fallback: Boolean(options.fallback) });
+  return { ...verifyToolEvidence(record, expectedTool, { now: options.now ?? Date.now(), maxAgeMs: policy.maxAgeMs, requireFresh: true }), policy };
+}
+
 export function requiresLiveEvidence(text = '') {
-  return /\b(today|tonight|current|currently|latest|live|now|right now|this (?:morning|afternoon|evening|week|month|year)|weather|temperature|forecast|price|stock|market|score|standings|news|traffic|open now|available now)\b/i.test(String(text));
+  return /\b(today|tonight|current|currently|latest|live|now|right now|this (?:morning|afternoon|evening|week|month|year)|weather|temperature|forecast|price|stock|market|score|standings|news|traffic|open now|available now|uscis|sevis|f-1|j-1|h-1b|opt|stem opt|cpt|visa stamping|travel ban|tariff|outage|flight status)\b/i.test(String(text));
 }
