@@ -74,8 +74,6 @@ const PENDING_KEY = 'pi-v1-pending-question';
 const HISTORY_KEY = 'pi-v1-conversation';
 const SYNC_KEY = 'pi-v1-sync-token';
 const OWNER_SESSION_KEY = 'pi-v1-owner-session';
-const OWNER_HISTORY_KEY = 'pi-v1-owner-conversation';
-const OWNER_DRAFT_KEY = 'pi-v1-owner-draft';
 const BILLING_TOKEN_KEY = 'pi-v1-billing-access';
 let ownerSession = '';
 try { ownerSession = sessionStorage.getItem(OWNER_SESSION_KEY) || ''; } catch {}
@@ -160,8 +158,6 @@ async function saveOwnerWorkspace() {
     body: { action:'save', expectedRevision:ownerRevision, conversation:syncConversationPayload(), draft:command.value.slice(0,8000), preferences:{}, tasks:[], artifacts:[] }
   });
   ownerRevision = Number(payload?.workspace?.revision || ownerRevision);
-  storageSet(OWNER_HISTORY_KEY, JSON.stringify(conversation));
-  storageSet(OWNER_DRAFT_KEY, command.value);
 }
 function scheduleOwnerWorkspaceSync() {
   if (!ownerMode || applyingRemoteSession) return;
@@ -181,7 +177,7 @@ function scheduleSessionSync() {
   syncTimer = setTimeout(() => { syncRequest('save', { conversation: syncConversationPayload(), draft: command.value.slice(0, 8000) }).catch(() => {}); }, 350);
 }
 function saveDraft() {
-  storageSet(ownerMode ? OWNER_DRAFT_KEY : DRAFT_KEY, command.value);
+  if (!ownerMode) storageSet(DRAFT_KEY, command.value);
   scheduleSessionSync();
 }
 function restoreDraft(text) {
@@ -212,7 +208,7 @@ function rememberTurn(role, content, artifacts = [], sources = []) {
   const savedArtifacts = artifacts.filter(isDownloadableArtifact).slice(0, 1).map(({ filename, mimeType, content }) => ({ filename, mimeType, content }));
   const savedSources = role === 'assistant' ? sanitizeSavedSources(sources) : [];
   conversation.push({ role, content, ...(savedArtifacts.length ? { artifacts: savedArtifacts } : {}), ...(savedSources.length ? { sources: savedSources } : {}) }); conversation = historyWindow();
-  storageSet(ownerMode ? OWNER_HISTORY_KEY : HISTORY_KEY, JSON.stringify(conversation));
+  if (!ownerMode) storageSet(HISTORY_KEY, JSON.stringify(conversation));
   scheduleSessionSync();
 }
 function syncWelcome() { const welcome = document.querySelector('#welcome'); if (welcome) welcome.classList.toggle('hidden', conversation.length > 0 || document.querySelector('#transcript').children.length > 0); }
@@ -298,7 +294,7 @@ async function loadSyncedSession() {
 syncDevice?.addEventListener('click', () => { copySyncLink().catch(() => updateSyncUi('Could not create the sync link. Please try again.')); });
 document.querySelector('#clearChat').addEventListener('click', () => {
   conversation = [];
-  storageRemove(ownerMode ? OWNER_HISTORY_KEY : HISTORY_KEY);
+  if (!ownerMode) storageRemove(HISTORY_KEY);
   storageRemove(PENDING_KEY);
   document.querySelector('#transcript').replaceChildren();
   for (const url of artifactUrls) URL.revokeObjectURL(url);
@@ -567,8 +563,6 @@ async function loadOwnerWorkspace() {
     ownerRevision = Number(workspace?.revision || 0);
     conversation = Array.isArray(workspace?.conversation) ? workspace.conversation.filter(t => t && ['user','assistant'].includes(t.role) && typeof t.content === 'string').slice(-20) : [];
     command.value = typeof workspace?.draft === 'string' ? workspace.draft.slice(0,8000) : '';
-    storageSet(OWNER_HISTORY_KEY, JSON.stringify(conversation));
-    storageSet(OWNER_DRAFT_KEY, command.value);
     renderConversation();
     command.style.height = 'auto';
     command.style.height = Math.min(command.scrollHeight, 140) + 'px';
