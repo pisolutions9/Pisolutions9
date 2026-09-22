@@ -39,6 +39,22 @@ const ownerSecurityStatus = document.querySelector('#ownerSecurityStatus');
 const ownerSignOut = document.querySelector('#ownerSignOut');
 const ownerLastUpdated = document.querySelector('#ownerLastUpdated');
 const ownerActionList = document.querySelector('#ownerActionList');
+const ownerViewTabs = [...document.querySelectorAll('[data-owner-view-target]')];
+const ownerViewPanels = [...document.querySelectorAll('[data-owner-view]')];
+const ownerKrishnaState = document.querySelector('#ownerKrishnaState');
+const ownerKrishnaActivity = document.querySelector('#ownerKrishnaActivity');
+function setOwnerView(view='overview') {
+  const selected = ['overview','krishna','execution','intelligence'].includes(view) ? view : 'overview';
+  for (const tab of ownerViewTabs) {
+    const active = tab.dataset.ownerViewTarget === selected;
+    tab.classList.toggle('is-active', active);
+    tab.setAttribute('aria-pressed', String(active));
+  }
+  for (const panel of ownerViewPanels) panel.hidden = panel.dataset.ownerView !== selected;
+}
+ownerViewTabs.forEach(tab => tab.addEventListener('click', () => setOwnerView(tab.dataset.ownerViewTarget)));
+setOwnerView('overview');
+
 let attachedFile = null;
 const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
 
@@ -508,7 +524,15 @@ async function refreshOwnerCommandCenter() {
     document.body.classList.add('owner-mode');
     ownerPiStatus.textContent = readiness.productionActivationVerified ? 'Production activation verified' : 'Engineering ready; production activation not verified';
     ownerPiStatus.className = readiness.productionActivationVerified ? 'owner-good' : 'owner-warn';
-    ownerTeamStatus.textContent = (body?.team?.currentFocus || []).join(' · ') || 'Verified owner workspace active';
+    const currentFocus = Array.isArray(body?.team?.currentFocus) ? body.team.currentFocus : [];
+    ownerTeamStatus.textContent = currentFocus.join(' · ') || 'Verified owner workspace active';
+    if (ownerKrishnaState) ownerKrishnaState.textContent = currentFocus.length ? 'Active on verified priorities' : 'Owner workspace active';
+    if (ownerKrishnaActivity) {
+      ownerKrishnaActivity.replaceChildren();
+      if (!currentFocus.length) ownerLine(ownerKrishnaActivity,'State','No verified active focus reported');
+      else currentFocus.forEach((focus,index)=>ownerLine(ownerKrishnaActivity,'Focus '+(index+1),focus));
+      ownerLine(ownerKrishnaActivity,'Boundary','Shows operational state and evidence, not private reasoning');
+    }
     const actionable = actions.filter(x=>!/^No .*action detected/i.test(String(x)));
     ownerBlockers.textContent = String(actionable.length);
     ownerActions.textContent = actionable.length ? `${actionable.length} action(s) — review below` : 'No verified owner action';
