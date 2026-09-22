@@ -23,19 +23,26 @@
         <div><p class="eyebrow">PRIVATE OWNER</p><h2>PI Command Center</h2></div>
         <div class="owner-command-actions"><button id="ownerRefresh" class="sync-button" type="button">Refresh</button><button id="ownerSignOut" class="sync-button" type="button">Sign out</button></div>
       </div>
+      <nav class="owner-view-nav" aria-label="Owner dashboard views">
+        <button class="owner-view-tab is-active" type="button" data-owner-view-target="overview" aria-pressed="true">Command Center</button>
+        <button class="owner-view-tab" type="button" data-owner-view-target="krishna" aria-pressed="false">Krishna Live</button>
+        <button class="owner-view-tab" type="button" data-owner-view-target="execution" aria-pressed="false">Execution</button>
+        <button class="owner-view-tab" type="button" data-owner-view-target="intelligence" aria-pressed="false">Intelligence</button>
+      </nav>
       <p id="ownerSnapshotNote" class="owner-snapshot-note">Authenticated owner data only.</p><p id="ownerLastUpdated" class="owner-last-updated"></p>
-      <div class="owner-grid">
+      <div class="owner-grid" data-owner-view="overview">
         <article><span>PI status</span><strong id="ownerPiStatus">Loading…</strong></article>
         <article><span>Krishna / team</span><strong id="ownerTeamStatus">Loading…</strong></article>
         <article><span>Open blockers</span><strong id="ownerBlockers">—</strong></article>
         <article><span>Your actions</span><strong id="ownerActions">—</strong></article><article><span>Owner security</span><strong id="ownerSecurityStatus">Checking…</strong></article>
       </div>
       <div class="owner-sections">
-        <section><h3>Day 1 → now</h3><div id="ownerHistorySummary" class="owner-list"></div><div class="owner-chart-wrap"><div class="owner-growth-head"><div><strong id="ownerGrowthPercent">0%</strong><span>Verified engineering growth since Day 1</span></div><div><strong id="ownerDailyGrowth">0%</strong><span>Latest day growth</span></div></div><div class="owner-chart-stage"><svg id="ownerProgressChart" class="owner-progress-chart" viewBox="0 0 360 180" role="img" aria-label="PI verified engineering growth trend. Touch or drag for daily values." tabindex="0"></svg><div id="ownerChartTooltip" class="owner-chart-tooltip hidden" aria-live="polite"></div></div><div id="ownerChartLegend" class="owner-chart-legend"></div><p class="owner-chart-method">Growth index: Day 1 = 100. Equal-weight average of cumulative commits and cumulative passed workflows. This measures verified engineering activity, not PI intelligence or capability.</p></div></section>
-        <section><h3>Owner actions</h3><div id="ownerActionList" class="owner-list"></div></section>
-        <section><h3>Release & production</h3><div id="ownerReleaseStatus" class="owner-list"></div></section>
-        <section><h3>Payments</h3><div id="ownerPaymentStatus" class="owner-list"></div></section>
-        <section><h3>Recent verified activity</h3><div id="ownerRecentActivity" class="owner-list"></div></section>
+        <section data-owner-view="intelligence"><h3>Day 1 → now</h3><div id="ownerHistorySummary" class="owner-list"></div><div class="owner-chart-wrap"><div class="owner-growth-head"><div><strong id="ownerGrowthPercent">0%</strong><span>Verified engineering growth since Day 1</span></div><div><strong id="ownerDailyGrowth">0%</strong><span>Latest day growth</span></div></div><div class="owner-chart-stage"><svg id="ownerProgressChart" class="owner-progress-chart" viewBox="0 0 360 180" role="img" aria-label="PI verified engineering growth trend. Touch or drag for daily values." tabindex="0"></svg><div id="ownerChartTooltip" class="owner-chart-tooltip hidden" aria-live="polite"></div></div><div id="ownerChartLegend" class="owner-chart-legend"></div><p class="owner-chart-method">Growth index: Day 1 = 100. Equal-weight average of cumulative commits and cumulative passed workflows. This measures verified engineering activity, not PI intelligence or capability.</p></div></section>
+        <section data-owner-view="krishna"><h3>Krishna Live</h3><div class="owner-live-core"><span class="owner-live-orb" aria-hidden="true"></span><div><strong id="ownerKrishnaState">Observing verified system state</strong><p>Operational status only — no private chain-of-thought.</p></div></div><div id="ownerKrishnaActivity" class="owner-list"></div></section>
+        <section data-owner-view="execution"><h3>Owner actions</h3><div id="ownerActionList" class="owner-list"></div></section>
+        <section data-owner-view="execution"><h3>Release & production</h3><div id="ownerReleaseStatus" class="owner-list"></div></section>
+        <section data-owner-view="overview"><h3>Payments</h3><div id="ownerPaymentStatus" class="owner-list"></div></section>
+        <section data-owner-view="intelligence"><h3>Recent verified activity</h3><div id="ownerRecentActivity" class="owner-list"></div></section>
       </div>
     </section>
 
