@@ -509,8 +509,9 @@ async function refreshOwnerCommandCenter() {
     ownerPiStatus.textContent = readiness.productionActivationVerified ? 'Production activation verified' : 'Engineering ready; production activation not verified';
     ownerPiStatus.className = readiness.productionActivationVerified ? 'owner-good' : 'owner-warn';
     ownerTeamStatus.textContent = (body?.team?.currentFocus || []).join(' · ') || 'Verified owner workspace active';
-    ownerBlockers.textContent = actions.filter(x=>!/No credential/.test(x)).length ? String(actions.filter(x=>!/No credential/.test(x)).length) : '0';
-    ownerActions.textContent = actions.filter(x=>!/No credential/.test(x)).length ? `${actions.filter(x=>!/No credential/.test(x)).length} action(s)` : 'No action required';
+    const actionable = actions.filter(x=>!/^No .*action detected/i.test(String(x)));
+    ownerBlockers.textContent = String(actionable.length);
+    ownerActions.textContent = actionable.length ? `${actionable.length} action(s) — review below` : 'No verified owner action';
     if (ownerSecurityStatus) {
       const layers=[security.originRestricted,security.bearerSessionRequired,security.noStore,security.loginRateLimited].filter(Boolean).length;
       ownerSecurityStatus.textContent = layers >= 4 ? '4 layers active' : `${layers}/4 layers active`;
