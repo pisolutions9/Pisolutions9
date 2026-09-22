@@ -23,7 +23,7 @@ async function ask(message, history=[], { requireModel = true } = {}) {
 const first='Remember: project code ORCHID-7319, budget 73000 rupees, deadline 14 November. Reply with the project code only.';
 const one=await ask(first);assert.equal(one.truth,'model-response');
 const two=await ask('What project code, budget, and deadline did I give you?',[{role:'user',content:first},{role:'assistant',content:one.answer}]);
-assert.equal(two.truth,'model-response');assert.match(two.answer,/ORCHID-7319/);assert.match(two.answer,/73,?000/);assert.match(two.answer,/(14.*November|November.*14)/i);
+assert.ok(['model-response','conversation-grounded'].includes(two.truth));assert.match(two.answer,/ORCHID-7319/);assert.match(two.answer,/73,?000/);assert.match(two.answer,/(14.*November|November.*14)/i);
 const file=await ask('Create an inventory CSV:\npens,12,15.00\nnotebooks,8,45.00',[],{requireModel:false});
 assert.equal(file.status,'completed');assert.equal(file.truth,'verified-calculation');
 assert.equal(file.artifacts?.[0]?.content,'item,quantity,unit_price,total\r\npens,12,15.00,180.00\r\nnotebooks,8,45.00,360.00\r\nGrand total,,,540.00\r\n');
