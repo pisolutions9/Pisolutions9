@@ -14,7 +14,7 @@
   <main class="shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="PI home"><span class="mark">π</span><span><strong>PI</strong><small>Think. Plan. Execute. With You.</small></span></a>
-      <div class="top-actions"><button id="billingAction" class="sync-button" type="button" hidden>Upgrade</button><button id="ownerAccess" class="sync-button" type="button">Owner sign in</button><button id="syncDevice" class="sync-button" type="button">Sync devices</button><div class="status" data-state="idle" role="status"><span class="dot"></span><span id="systemStatus">Ready to ask</span></div></div>
+      <div class="top-actions"><button id="billingAction" class="sync-button" type="button" hidden>Upgrade</button><button id="ownerAccess" class="sync-button" type="button" aria-haspopup="dialog" aria-controls="ownerDialog">Owner Login</button><button id="syncDevice" class="sync-button" type="button">Sync devices</button><div class="status" data-state="idle" role="status"><span class="dot"></span><span id="systemStatus">Ready to ask</span></div></div>
     </header>
 
     <section class="workspace" aria-label="PI conversation">
@@ -54,7 +54,6 @@
       </div>
     </section>
 
-
     <section class="composer-wrap" aria-label="Ask PI">
       <p class="session-notice">This browser remembers recent conversation · Use a private sync link to continue on another device.</p>
       <p id="syncNotice" class="sync-notice hidden" aria-live="polite"></p>
@@ -74,9 +73,9 @@
       <p class="motto">BIG IDEAS. REAL RESULTS.</p>
       <p class="site-reference" id="sessionScope"><a href="https://pisolutions9.github.io/Pisolutions9/">Official PI link</a> · Recent conversation stays in this browser unless private device sync is enabled.</p>
     </section>
-    <dialog id="ownerDialog" class="owner-dialog">
+    <dialog id="ownerDialog" class="owner-dialog" aria-labelledby="ownerLoginTitle">
       <form id="ownerLoginForm" method="dialog" class="owner-login-form">
-        <h2>Owner sign in</h2>
+        <h2 id="ownerLoginTitle">Owner Login</h2>
         <p>Enter the owner access secret. PI exchanges it for a short-lived session and does not save the master secret in the browser.</p>
         <label for="ownerSecret">Owner access secret</label>
         <input id="ownerSecret" type="password" autocomplete="current-password" required maxlength="512" />
