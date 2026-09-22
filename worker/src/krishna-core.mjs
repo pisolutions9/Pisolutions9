@@ -4,6 +4,25 @@ const LEGACY_MARKERS = [
   /\btemporarily operating in verified recovery mode\b/i
 ];
 
+function simpleHistoryRecall(message = '', history = []) {
+  const value = String(message).trim();
+  if (!Array.isArray(history) || !history.length) return null;
+  const budgetQuestion = /\bwhat\s+(?:was|is)\s+my\s+budget\b/i.test(value);
+  if (!budgetQuestion) return null;
+  const userText = history.filter(turn => turn?.role === 'user').map(turn => String(turn.content || '')).join('\n');
+  const budget = userText.match(/\b(?:my\s+)?budget\s+(?:is|was|:)?\s*(?:₹|rs\.?|inr\s*)?([0-9][0-9,]*(?:\.\d+)?)\s*(rupees?|inr)?\b/i);
+  if (!budget) return null;
+  return {
+    ok: true,
+    status: 'answered',
+    answer: `Your budget was ${budget[1]} ${budget[2] || 'rupees'}.`,
+    source: 'pi-conversation-grounding',
+    truth: 'conversation-grounded',
+    verification: 'supplied-history-extraction',
+    sources: []
+  };
+}
+
 export async function decideKrishnaRoute({
   message = '',
   history = [],
@@ -14,6 +33,11 @@ export async function decideKrishnaRoute({
 } = {}) {
   const trace = [];
   if (!attachmentInfo) {
+    const recalled = simpleHistoryRecall(message, history);
+    if (recalled) {
+      trace.push({ step: 'conversation_grounding', matched: true });
+      return { route: 'direct', result: recalled, trace };
+    }
     for (const tool of directTools) {
       if (!tool || typeof tool.run !== 'function') continue;
       const result = await tool.run();
