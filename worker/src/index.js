@@ -36,7 +36,7 @@ const EDGE_MODEL_FALLBACKS = [
   '@cf/nvidia/nemotron-3-120b-a12b'
 ];
 const OPENAI_MODEL_FALLBACKS = ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5'];
-const HARD_REASONING = /\b(calculate|posterior|bayes|probability|optimi[sz]|linear programming|profit-maximi[sz]|cash model|cash flow|runway|break-even|show the math|total costs? become equal|which is cheaper|double (?:its )?operating profit|additional annual gross profit|additional gross profit|constraint|corner points?|binding constraints?|distributed systems?|network partition|cap theorem|exactly.once|no double charges?|duplicate charges?|idempotenc(?:y|e)|payment api|retry strategy|ledger|migration|reconciliation|invariants?|rollback|shard(?:ed|ing)?|25,?000 writes|correlation|causality|causal inference|confound(?:er|ing)|prove why|show enough calculations|audit the answer)\b/i;
+const HARD_REASONING = /\b(calculate|posterior|bayes|probability|optimi[sz]|linear programming|profit-maximi[sz]|cash model|cash flow|runway|break-even|show the math|total costs? become equal|which is cheaper|double (?:its )?operating profit|additional annual gross profit|additional gross profit|constraint|corner points?|binding constraints?|distributed systems?|network partition|cap theorem|exactly.once|no double charges?|duplicate charges?|idempotenc(?:y|e)|payment api|retry strategy|ledger|migration|reconciliation|invariants?|rollback|shard(?:ed|ing)?|25,?000 writes|correlation|causality|causal inference|confound(?:er|ing)|invalid inference|high availability|security framework|scalable (?:marketplace|architecture)|10m users|prove why|show enough calculations|audit the answer)\b/i;
 function requiresHardReasoning(text=''){return HARD_REASONING.test(String(text));}
 const LIVE_EVIDENCE_ALWAYS = /\b(weather|temperature|forecast|stock (?:price|quote)|score|standings|traffic|open now|available now|in stock|available on|buy online|shop for|find (?:me )?(?:a |an |the )?(?:product|item))\b/i;
 const LIVE_EVIDENCE_FRESHNESS = /\b(latest|live|current|currently|now|right now|today|tonight|this (?:morning|afternoon|evening|week|month|year))\b/i;
@@ -780,7 +780,6 @@ async function produceVerifiedHardAnswer(env,message,history){
 }
 function usefulProviderAnswer(answer=''){
   const value=String(answer||'').trim();
-  if(value.length<40)return false;
   if(/^(?:user\s+safety|safety(?:\s+assessment)?|content\s+safety)\s*:\s*(?:safe|unsafe)\s*[.!]?$/i.test(value))return false;
   if(/^(?:safe|unsafe)\s*[.!]?$/i.test(value))return false;
   return true;
