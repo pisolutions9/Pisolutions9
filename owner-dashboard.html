@@ -1,18 +1,18 @@
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self'; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-src 'none'">
+<meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://pi-chat.premchandyadlapati.workers.dev; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-src 'none'; form-action 'self'">
 <title>PI Owner Control</title><link rel="stylesheet" href="owner-dashboard.css"></head>
 <body><main class="dashboard-shell">
-<header><p class="eyebrow">PI · OWNER CONTROL</p><h1>Canonical owner status</h1><p class="subtitle" id="syncState">Authenticating and loading verified state…</p></header>
-<section id="locked" class="panel"><h2>Private owner monitor</h2><p>This owner monitor remains disabled on the public PI website. Owner telemetry is available only through the authenticated private runtime. Access fails closed.</p></section>
+<header><p class="eyebrow">PI · OWNER CONTROL</p><h1>Canonical owner status</h1><p class="subtitle" id="syncState">Private owner monitor locked.</p></header>
+<section id="locked" class="panel"><h2>Private owner monitor</h2><p>This owner monitor remains disabled on the public PI website until an authenticated owner session is present. No owner telemetry is exposed while locked.</p></section>
 <section id="dashboard" hidden>
 <div class="grid">
-<article class="panel"><p class="eyebrow">RELEASE</p><h2 id="release">—</h2><p id="releaseDetail">—</p></article>
-<article class="panel"><p class="eyebrow">RUNTIME</p><h2 id="runtime">—</h2><p id="runtimeDetail">—</p></article>
-<article class="panel"><p class="eyebrow">TESTS</p><h2 id="tests">—</h2><p id="testsDetail">—</p></article>
-<article class="panel"><p class="eyebrow">OWNER ACTION</p><h2 id="ownerAction">—</h2><p id="ownerActionDetail">—</p></article>
+<article class="panel"><p class="eyebrow">OWNER AUTH</p><h2 id="release">—</h2><p id="releaseDetail">—</p></article>
+<article class="panel"><p class="eyebrow">BILLING CONFIG</p><h2 id="runtime">—</h2><p id="runtimeDetail">—</p></article>
+<article class="panel"><p class="eyebrow">SECURITY</p><h2 id="tests">—</h2><p id="testsDetail">—</p></article>
+<article class="panel"><p class="eyebrow">PRODUCTION</p><h2 id="ownerAction">—</h2><p id="ownerActionDetail">—</p></article>
 </div>
-<article class="panel"><p class="eyebrow">TODAY</p><div id="today"></div></article>
-<article class="panel"><p class="eyebrow">BLOCKERS</p><div id="blockers"></div></article>
-<footer><span id="updatedAt">—</span><button id="refresh" type="button">Refresh verified state</button></footer>
+<article class="panel"><p class="eyebrow">VERIFIED ENGINEERING HISTORY</p><div id="today"></div></article>
+<article class="panel"><p class="eyebrow">OWNER ACTIONS</p><div id="blockers"></div></article>
+<footer><span id="updatedAt">Authenticated owner session</span><button id="refresh" type="button">Refresh verified state</button></footer>
 </section></main><script src="owner-dashboard.js" defer></script></body></html>
