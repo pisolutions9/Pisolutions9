@@ -9,6 +9,10 @@ const app=fs.readFileSync('app.js','utf8');
 const store=fs.readFileSync('worker/src/session-store.mjs','utf8');
 
 assert.ok(html.includes('Private owner monitor'),'public_owner_lock_notice_missing');
+assert.ok(html.includes('Owner Control Center'),'owner_control_center_heading_missing');
+assert.ok(html.includes('Krishna / Team'),'owner_team_panel_missing');
+assert.ok(html.includes('7-Day Engineering Summary'),'owner_history_summary_missing');
+assert.ok(html.includes('Lock dashboard'),'owner_logout_control_missing');
 assert.ok(html.includes('disabled on the public PI website'),'public_owner_monitor_not_locked');
 assert.equal(js.includes('api.github.com'),false,'public_owner_monitor_must_not_fetch_telemetry');
 assert.match(js,/sessionStorage\.getItem\(OWNER_SESSION_KEY\)/,'owner_dashboard_must_use_tab_scoped_owner_session');
@@ -18,6 +22,9 @@ assert.equal(js.includes('PI_OWNER_DASHBOARD_TOKEN'),false,'owner_dashboard_must
 assert.equal(js.includes('/.netlify/functions/owner-status'),false,'owner_dashboard_must_not_use_parallel_netlify_auth_path');
 assert.match(js,/cache:"no-store"/,'owner_dashboard_fetch_must_not_cache_private_state');
 assert.match(js,/referrerPolicy:"no-referrer"/,'owner_dashboard_must_not_leak_referrer');
+assert.match(js,/\/api\/owner\/logout/,'owner_dashboard_must_support_secure_logout');
+assert.match(js,/renderHistory\(d\.history\)/,'owner_dashboard_must_render_verified_history');
+assert.match(js,/renderTeam\(d\.team\)/,'owner_dashboard_must_render_verified_team_state');
 assert.equal(index.includes('id="ownerDashboard"'),false,'public_pi_must_not_link_owner_dashboard');
 assert.equal(app.includes('pi-v1-owner-conversation'),false,'owner_conversation_must_not_persist_in_browser_local_storage');
 assert.equal(app.includes('pi-v1-owner-draft'),false,'owner_draft_must_not_persist_in_browser_local_storage');
