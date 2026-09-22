@@ -7,8 +7,13 @@ let seenOptions;
 const env = { AI:{run:async(model,input,options)=>{seen=input;seenModel=model;seenOptions=options;return {response:'Your budget was 73000 rupees.'};}} };
 const history=[{role:'user',content:'My budget is 73000 rupees.'},{role:'assistant',content:'Understood.'}];
 let result=await (await worker.fetch(request({message:'What was my budget?',history}),env)).json();
-assert.equal(result.truth,'model-response');assert.deepEqual(seen.messages.slice(1,-1),history);
+assert.equal(result.truth,'conversation-grounded');assert.match(result.answer,/73000/);
+const modelResult=await (await worker.fetch(request({message:'Explain why customer retention matters.',history}),env)).json();
+assert.equal(modelResult.truth,'model-response');assert.deepEqual(seen.messages.slice(1,-1),history);
 assert.equal(seen.max_tokens,1200);assert.equal(seenOptions.rejectIfBusy,true);assert.equal(seenOptions.gateway.id,'default');assert.equal(seenOptions.gateway.cacheTtl,300);assert.match(seenOptions.gateway.cacheKey,/^pi-v1-[0-9a-f]{64}$/);
+const recallHistory=[{role:'user',content:'Remember: project code ORCHID-7319, budget 73000 rupees, deadline 14 November. Reply with the project code only.'},{role:'assistant',content:'ORCHID-7319'}];
+const recall=await (await worker.fetch(request({message:'What project code, budget, and deadline did I give you?',history:recallHistory}),env)).json();
+assert.equal(recall.truth,'conversation-grounded');assert.match(recall.answer,/ORCHID-7319/);assert.match(recall.answer,/73,?000/);assert.match(recall.answer,/14 November/i);
 
 let capacityCalls=[];
 const capacityEnv={AI:{run:async(model,input,options)=>{
