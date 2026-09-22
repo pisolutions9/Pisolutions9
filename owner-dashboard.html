@@ -3,16 +3,21 @@
 <meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://pi-chat.premchandyadlapati.workers.dev; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-src 'none'; form-action 'self'">
 <title>PI Owner Control</title><link rel="stylesheet" href="owner-dashboard.css"></head>
 <body><main class="dashboard-shell">
-<header><p class="eyebrow">PI · OWNER CONTROL</p><h1>Canonical owner status</h1><p class="subtitle" id="syncState">Private owner monitor locked.</p></header>
+<header class="dashboard-topbar"><div><p class="eyebrow">PI · OWNER CONTROL</p><h1>Owner Control Center</h1><p class="subtitle" id="syncState">Private owner state locked.</p></div><div class="header-actions"><button id="refresh" type="button">Refresh</button><button id="logout" type="button" hidden>Lock dashboard</button></div></header>
 <section id="locked" class="panel"><h2>Private owner monitor</h2><p>This owner monitor remains disabled on the public PI website until an authenticated owner session is present. No owner telemetry is exposed while locked.</p></section>
 <section id="dashboard" hidden>
-<div class="grid">
-<article class="panel"><p class="eyebrow">OWNER AUTH</p><h2 id="release">—</h2><p id="releaseDetail">—</p></article>
-<article class="panel"><p class="eyebrow">BILLING CONFIG</p><h2 id="runtime">—</h2><p id="runtimeDetail">—</p></article>
-<article class="panel"><p class="eyebrow">SECURITY</p><h2 id="tests">—</h2><p id="testsDetail">—</p></article>
-<article class="panel"><p class="eyebrow">PRODUCTION</p><h2 id="ownerAction">—</h2><p id="ownerActionDetail">—</p></article>
+<article class="panel hero-status"><div><p class="eyebrow">PI V1.02</p><h2 id="overall">Checking verified state…</h2><p class="muted" id="overallDetail">Only authenticated evidence is shown.</p></div><div class="owner-action"><span>OWNER ACTION</span><strong id="ownerAction">—</strong><small id="ownerActionDetail">—</small></div></article>
+<div class="cards">
+<article><span>OWNER AUTH</span><strong id="release">—</strong><small id="releaseDetail">—</small></article>
+<article><span>SECURITY</span><strong id="tests">—</strong><small id="testsDetail">—</small></article>
+<article><span>BILLING CONFIG</span><strong id="runtime">—</strong><small id="runtimeDetail">—</small></article>
+<article><span>PRODUCTION</span><strong id="production">—</strong><small id="productionDetail">—</small></article>
 </div>
-<article class="panel"><p class="eyebrow">VERIFIED ENGINEERING HISTORY</p><div id="today"></div></article>
-<article class="panel"><p class="eyebrow">OWNER ACTIONS</p><div id="blockers"></div></article>
-<footer><span id="updatedAt">Authenticated owner session</span><button id="refresh" type="button">Refresh verified state</button></footer>
+<div class="two-col">
+<article class="panel"><div class="panel-head"><h2>Krishna / Team</h2><span id="teamMode">—</span></div><div id="team" class="feed"></div></article>
+<article class="panel"><div class="panel-head"><h2>Owner Actions</h2><span>verified blockers only</span></div><div id="blockers" class="feed"></div></article>
+</div>
+<article class="panel"><div class="panel-head"><h2>Recent Engineering Work</h2><span>repository + workflow evidence</span></div><div id="today" class="feed"></div></article>
+<article class="panel"><div class="panel-head"><h2>7-Day Engineering Summary</h2><span id="historyScope">—</span></div><div class="summary-grid"><div><span>Commits</span><strong id="sumCommits">—</strong></div><div><span>Workflow runs</span><strong id="sumRuns">—</strong></div><div><span>Passed</span><strong id="sumPassed">—</strong></div><div><span>Failed</span><strong id="sumFailed">—</strong></div><div><span>Pages passed</span><strong id="sumPages">—</strong></div><div><span>Worker passed</span><strong id="sumWorker">—</strong></div></div></article>
+<footer><span id="updatedAt">Authenticated owner session</span></footer>
 </section></main><script src="owner-dashboard.js" defer></script></body></html>
