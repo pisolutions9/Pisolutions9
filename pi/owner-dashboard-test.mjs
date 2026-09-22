@@ -25,6 +25,11 @@ assert.match(js,/referrerPolicy:"no-referrer"/,'owner_dashboard_must_not_leak_re
 assert.match(js,/\/api\/owner\/logout/,'owner_dashboard_must_support_secure_logout');
 assert.match(js,/renderHistory\(d\.history\)/,'owner_dashboard_must_render_verified_history');
 assert.match(js,/renderTeam\(d\.team\)/,'owner_dashboard_must_render_verified_team_state');
+assert.match(index,/id="ownerAccess"[^>]*>Owner Login<\/button>/,'owner_login_must_be_clearly_visible');
+assert.match(index,/aria-haspopup="dialog"/,'owner_login_must_expose_dialog_semantics');
+assert.match(index,/aria-controls="ownerDialog"/,'owner_login_must_identify_controlled_dialog');
+assert.match(index,/id="ownerDialog"[^>]*aria-labelledby="ownerLoginTitle"/,'owner_dialog_must_have_accessible_name');
+assert.match(index,/id="ownerLoginTitle">Owner Login<\/h2>/,'owner_dialog_title_must_be_explicit');
 assert.equal(index.includes('id="ownerDashboard"'),false,'public_pi_must_not_link_owner_dashboard');
 assert.equal(app.includes('pi-v1-owner-conversation'),false,'owner_conversation_must_not_persist_in_browser_local_storage');
 assert.equal(app.includes('pi-v1-owner-draft'),false,'owner_draft_must_not_persist_in_browser_local_storage');
@@ -54,4 +59,4 @@ assert.equal(history.backfill?.unavailableFields?.filesChanged,null,'unknown_fil
 assert.ok(history.daily.every((row)=>Object.hasOwn(row,'additions') && Object.hasOwn(row,'deletions') && Object.hasOwn(row,'filesChanged')),'daily_code_volume_unknowns_must_be_explicit');
 assert.equal(history.daily.at(-1).snapshotPartialDay,true,'current_snapshot_must_be_marked_partial');
 
-console.log('PI owner privacy and Day 1 history contract tests passed.');
+console.log('PI owner privacy, visible Owner Login, and Day 1 history contract tests passed.');
