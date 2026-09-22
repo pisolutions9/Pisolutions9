@@ -398,7 +398,10 @@ export async function handleOwnerRequest(request, env, allowedOrigin) {
     if (!stripeSecretConfigured) actions.push('Configure PI_STRIPE_SECRET_KEY before live billing.');
     if (!stripeWebhookConfigured) actions.push('Configure PI_STRIPE_WEBHOOK_SECRET before live billing.');
     if (!stripePriceConfigured) actions.push('Configure PI_STRIPE_PRICE_ID before customer charging.');
-    if (!actions.length) actions.push('No credential/configuration action detected by this dashboard.');
+    // Configuration presence is not release proof. Keep unresolved verification boundaries visible
+    // even when all credentials exist so the owner dashboard never reports a false zero-blocker state.
+    actions.push('Production activation is not verified yet; keep customer charging disabled until the activation gate passes with end-to-end evidence.');
+    actions.push('Customer charging is not verified yet; require signed webhook -> persisted entitlement -> customer access evidence before enabling live charging.');
     return reply({
       ok: true,
       history: OWNER_HISTORY,
