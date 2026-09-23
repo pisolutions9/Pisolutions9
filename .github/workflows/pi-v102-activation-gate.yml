@@ -31,22 +31,29 @@ jobs:
       - name: Verify V1.02 code release suite
         run: npm run test:release:v1.02
       - name: Verify live owner authentication is configured
+        env:
+          PI_OWNER_TOKEN: ${{ secrets.PI_OWNER_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
-          http_code="$(curl --silent --show-error --max-time 20 -o /tmp/pi-owner-login.json -w '%{http_code}' \
+          if [[ -z "${PI_OWNER_TOKEN:-}" ]]; then
+            echo 'PI_OWNER_TOKEN is not configured in GitHub Actions secrets.' >&2
+            exit 1
+          fi
+
+          http_code="$(curl --silent --show-error --max-time 20 -o /tmp/pi-owner-login-invalid.json -w '%{http_code}' \
             -H 'content-type: application/json' \
             -H 'origin: https://pisolutions9.github.io' \
             -d '{"secret":"__pi_activation_probe_invalid_secret__"}' \
             "$PI_CHAT_URL/api/owner/login")"
-          body="$(cat /tmp/pi-owner-login.json)"
-          python - <<'PY' "$http_code" "$body"
+          python - <<'PY' "$http_code" "$(cat /tmp/pi-owner-login-invalid.json)"
           import json,sys
           code=int(sys.argv[1])
           d=json.loads(sys.argv[2])
           assert code == 401, f"expected configured owner auth to reject invalid secret with 401, got {code}: {d}"
           assert d.get("error") == "unauthorized", f"unexpected owner auth probe response: {d}"
           PY
+
           dashboard_code="$(curl --silent --show-error --max-time 20 -o /tmp/pi-owner-dashboard.json -w '%{http_code}' \
             -H 'origin: https://pisolutions9.github.io' \
             "$PI_CHAT_URL/api/owner/dashboard")"
@@ -56,6 +63,63 @@ jobs:
           d=json.loads(sys.argv[2])
           assert code == 401, f"owner dashboard must fail closed without a session, got {code}: {d}"
           assert d.get("error") == "owner_session_invalid", f"unexpected owner dashboard response: {d}"
+          PY
+
+          login_payload="$(python -c 'import json,os; print(json.dumps({"secret":os.environ["PI_OWNER_TOKEN"]}))')"
+          login_code="$(curl --silent --show-error --max-time 20 -o /tmp/pi-owner-login.json -w '%{http_code}' \
+            -H 'content-type: application/json' \
+            -H 'origin: https://pisolutions9.github.io' \
+            -d "$login_payload" \
+            "$PI_CHAT_URL/api/owner/login")"
+          session_token="$(python - <<'PY' "$login_code" "$(cat /tmp/pi-owner-login.json)"
+          import json,sys
+          code=int(sys.argv[1])
+          d=json.loads(sys.argv[2])
+          assert code == 200, f"owner login failed with {code}: {d}"
+          assert d.get('ok') is True and d.get('authenticated') is True
+          token=d.get('sessionToken')
+          assert isinstance(token,str) and len(token)==43
+          assert d.get('expiresAt'), 'owner session expiry missing'
+          print(token)
+          PY
+          )"
+          echo "::add-mask::$session_token"
+
+          status_code="$(curl --silent --show-error --max-time 20 -o /tmp/pi-owner-status.json -w '%{http_code}' \
+            -H 'origin: https://pisolutions9.github.io' \
+            -H "authorization: Bearer $session_token" \
+            "$PI_CHAT_URL/api/owner/status")"
+          python - <<'PY' "$status_code" "$(cat /tmp/pi-owner-status.json)"
+          import json,sys
+          code=int(sys.argv[1])
+          d=json.loads(sys.argv[2])
+          assert code == 200, f"owner status failed with {code}: {d}"
+          assert d.get('ok') is True and d.get('authenticated') is True
+          assert d.get('ownerId') == 'primary-owner'
+          PY
+
+          logout_code="$(curl --silent --show-error --max-time 20 -o /tmp/pi-owner-logout.json -w '%{http_code}' \
+            -X POST \
+            -H 'origin: https://pisolutions9.github.io' \
+            -H "authorization: Bearer $session_token" \
+            "$PI_CHAT_URL/api/owner/logout")"
+          python - <<'PY' "$logout_code" "$(cat /tmp/pi-owner-logout.json)"
+          import json,sys
+          code=int(sys.argv[1])
+          d=json.loads(sys.argv[2])
+          assert code == 200 and d.get('ok') is True, f"owner logout failed with {code}: {d}"
+          PY
+
+          revoked_code="$(curl --silent --show-error --max-time 20 -o /tmp/pi-owner-revoked.json -w '%{http_code}' \
+            -H 'origin: https://pisolutions9.github.io' \
+            -H "authorization: Bearer $session_token" \
+            "$PI_CHAT_URL/api/owner/status")"
+          python - <<'PY' "$revoked_code" "$(cat /tmp/pi-owner-revoked.json)"
+          import json,sys
+          code=int(sys.argv[1])
+          d=json.loads(sys.argv[2])
+          assert code == 401, f"revoked owner session remained usable: {code}: {d}"
+          assert d.get('error') == 'owner_session_invalid'
           PY
       - name: Require Stripe configuration and checkout creation
         env:
@@ -68,9 +132,9 @@ jobs:
           for name in PI_STRIPE_SECRET_KEY PI_STRIPE_WEBHOOK_SECRET PI_STRIPE_PRICE_ID; do
             if [[ -z "${!name:-}" ]]; then echo "$name is not configured in GitHub Actions secrets." >&2; exit 1; fi
           done
-          config="$(curl --silent --show-error --max-time 20             -H 'origin: https://pisolutions9.github.io'             "$PI_CHAT_URL/api/billing/config")"
+          config="$(curl --silent --show-error --max-time 20 -H 'origin: https://pisolutions9.github.io' "$PI_CHAT_URL/api/billing/config")"
           python -c 'import json,sys; d=json.loads(sys.argv[1]); assert d.get("billingReady") is True and d.get("billingMode") in ("test","live") and d.get("checkoutConfigured") is True and d.get("webhookConfigured") is True' "$config"
-          checkout="$(curl --silent --show-error --max-time 25             -H 'content-type: application/json'             -H 'origin: https://pisolutions9.github.io'             -d '{}' "$PI_CHAT_URL/api/billing/start")"
+          checkout="$(curl --silent --show-error --max-time 25 -H 'content-type: application/json' -H 'origin: https://pisolutions9.github.io' -d '{}' "$PI_CHAT_URL/api/billing/start")"
           python - <<'PY' "$checkout"
           import json,sys
           d=json.loads(sys.argv[1])
@@ -87,5 +151,5 @@ jobs:
           grep -Fq "$expected" <<<"$body"
       - name: Activation boundary
         run: |
-          echo 'Owner auth and Stripe checkout configuration are verified for the currently deployed Stripe mode.'
+          echo 'Owner login, authenticated status, logout, revocation, and Stripe checkout configuration are verified for the currently deployed mode.'
           echo 'Live charging still requires a real signed-webhook -> persisted-entitlement -> customer-access transaction smoke before charging customers.'
