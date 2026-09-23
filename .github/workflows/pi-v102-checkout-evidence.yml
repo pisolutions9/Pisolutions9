@@ -1,0 +1,62 @@
+name: PI V1.02 Live Checkout Evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pi-v102-live-checkout-evidence
+  cancel-in-progress: true
+
+env:
+  PI_CHAT_URL: https://pi-chat.premchandyadlapati.workers.dev
+
+jobs:
+  verify-live-checkout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PI_STRIPE_SECRET_KEY: ${{ secrets.PI_STRIPE_SECRET_KEY }}
+      PI_STRIPE_PRICE_ID: ${{ secrets.PI_STRIPE_PRICE_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Require owner-controlled live Stripe inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${PI_STRIPE_SECRET_KEY:-}" == sk_live_* ]] || { echo 'A live PI_STRIPE_SECRET_KEY is required.' >&2; exit 1; }
+          [[ "${PI_STRIPE_PRICE_ID:-}" == price_* ]] || { echo 'PI_STRIPE_PRICE_ID is required.' >&2; exit 1; }
+      - name: Create checkout session without charging
+        id: checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --silent --show-error --fail-with-body --max-time 25 \
+            -H 'content-type: application/json' \
+            -H 'origin: https://pisolutions9.github.io' \
+            -d '{}' \
+            "$PI_CHAT_URL/api/billing/start")"
+          checkout_url="$(python - <<'PY' "$response"
+          import json,sys
+          d=json.loads(sys.argv[1])
+          assert d.get('ok') is True, d
+          url=d.get('checkoutUrl')
+          assert isinstance(url,str) and url.startswith('https://checkout.stripe.com/'), d
+          print(url)
+          PY
+          )"
+          echo "::add-mask::$checkout_url"
+          printf 'checkout_url=%s\n' "$checkout_url" >> "$GITHUB_OUTPUT"
+      - name: Independently verify exact live Stripe session
+        env:
+          PI_CHECKOUT_URL: ${{ steps.checkout.outputs.checkout_url }}
+        run: node pi/verify-live-checkout.mjs
+      - name: Preserve fail-closed charging boundary
+        run: |
+          echo 'Live Checkout session evidence verified read-only.'
+          echo 'No payment was submitted. Customer charging remains blocked until real payment, signed webhook, persisted entitlement, duplicate-event, and failure/revocation evidence are complete.'
