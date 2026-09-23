@@ -121,7 +121,7 @@ jobs:
           assert code == 401, f"revoked owner session remained usable: {code}: {d}"
           assert d.get('error') == 'owner_session_invalid'
           PY
-      - name: Require Stripe configuration and checkout creation
+      - name: Require live Stripe configuration and checkout creation
         env:
           PI_STRIPE_SECRET_KEY: ${{ secrets.PI_STRIPE_SECRET_KEY }}
           PI_STRIPE_WEBHOOK_SECRET: ${{ secrets.PI_STRIPE_WEBHOOK_SECRET }}
@@ -133,7 +133,14 @@ jobs:
             if [[ -z "${!name:-}" ]]; then echo "$name is not configured in GitHub Actions secrets." >&2; exit 1; fi
           done
           config="$(curl --silent --show-error --max-time 20 -H 'origin: https://pisolutions9.github.io' "$PI_CHAT_URL/api/billing/config")"
-          python -c 'import json,sys; d=json.loads(sys.argv[1]); assert d.get("billingReady") is True and d.get("billingMode") in ("test","live") and d.get("checkoutConfigured") is True and d.get("webhookConfigured") is True' "$config"
+          python - <<'PY' "$config"
+          import json,sys
+          d=json.loads(sys.argv[1])
+          assert d.get('billingReady') is True, f"billing is not configured: {d}"
+          assert d.get('billingMode') == 'live', f"activation gate requires live Stripe mode, got {d.get('billingMode')!r}"
+          assert d.get('liveBillingReady') is True, f"live billing is not ready: {d}"
+          assert d.get('checkoutConfigured') is True and d.get('webhookConfigured') is True, f"Stripe checkout/webhook configuration incomplete: {d}"
+          PY
           checkout="$(curl --silent --show-error --max-time 25 -H 'content-type: application/json' -H 'origin: https://pisolutions9.github.io' -d '{}' "$PI_CHAT_URL/api/billing/start")"
           python - <<'PY' "$checkout"
           import json,sys
@@ -151,5 +158,5 @@ jobs:
           grep -Fq "$expected" <<<"$body"
       - name: Activation boundary
         run: |
-          echo 'Owner login, authenticated status, logout, revocation, and Stripe checkout configuration are verified for the currently deployed mode.'
-          echo 'Live charging still requires a real signed-webhook -> persisted-entitlement -> customer-access transaction smoke before charging customers.'
+          echo 'Owner login, authenticated status, logout, revocation, and live Stripe checkout configuration are verified.'
+          echo 'Customer charging remains disabled until a real signed-webhook -> persisted-entitlement -> customer-access transaction smoke plus duplicate/failure-path evidence is complete.'
