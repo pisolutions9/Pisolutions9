@@ -199,6 +199,62 @@ function operatingProfitAnswer(message=''){
   };
 }
 
+function parseFlexibleMoney(value){
+  const match=String(value||'').match(/\$?([0-9]+(?:\.[0-9]+)?)\s*(million|m|thousand|k)?/i);
+  if(!match)return null;
+  const n=Number(match[1]);
+  if(!Number.isFinite(n))return null;
+  const suffix=String(match[2]||'').toLowerCase();
+  return n*(suffix==='million'||suffix==='m'?1e6:suffix==='thousand'||suffix==='k'?1e3:1);
+}
+
+function cashFlowSequenceAnswer(message='',history=[]){
+  const current=String(message);
+  const priorUser=[...history].reverse().find(item=>item?.role==='user'&&/\b(cash|operating expenses?|revenue|month 1|cash flow)\b/i.test(String(item?.content||'')))?.content||'';
+  const baseText=priorUser?String(priorUser):current;
+  const isFollowup=Boolean(priorUser)&&/\b(now|change|recalculate|starting in month|drop to|increase to|expenses?)\b/i.test(current);
+  const initialMatch=baseText.match(/(?:starts? with|initial cash(?: is|:)?|cash(?: on hand)?(?: is|:)?)[^$0-9]{0,20}(\$?[0-9]+(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i);
+  const expenseMatch=baseText.match(/operating expenses?(?: are| is|:)?\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i);
+  const revenueMatch=baseText.match(/revenue(?: is|:)?\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)\s+in\s+month\s*1/i);
+  const growthMatch=baseText.match(/grows? by\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)\s*(?:each|per)\s+month/i);
+  const targetMatch=(current.match(/after\s+month\s*(\d+)/i)||baseText.match(/after\s+month\s*(\d+)/i));
+  if(!initialMatch||!expenseMatch||!revenueMatch||!growthMatch||!targetMatch)return null;
+
+  const initialCash=parseFlexibleMoney(initialMatch[1].replaceAll(',',''));
+  const baseExpense=parseFlexibleMoney(expenseMatch[1].replaceAll(',',''));
+  const month1Revenue=parseFlexibleMoney(revenueMatch[1].replaceAll(',',''));
+  const monthlyGrowth=parseFlexibleMoney(growthMatch[1].replaceAll(',',''));
+  const targetMonth=Number(targetMatch[1]);
+  if(![initialCash,baseExpense,month1Revenue,monthlyGrowth,targetMonth].every(Number.isFinite)||targetMonth<1||targetMonth>120)return null;
+
+  let overrideExpense=null,overrideStart=null;
+  if(isFollowup){
+    const override=current.match(/operating expenses?[^$0-9]{0,30}(?:drop|decrease|change|fall|reduce|increase|rise)?[^$0-9]{0,20}(?:to\s*)?(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i)
+      || current.match(/(?:drop|decrease|change|fall|reduce|increase|rise)\s+to\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i);
+    const start=current.match(/starting\s+in\s+month\s*(\d+)/i);
+    if(override)overrideExpense=parseFlexibleMoney(override[1].replaceAll(',',''));
+    if(start)overrideStart=Number(start[1]);
+  }
+
+  let cash=initialCash;
+  const lines=[];
+  for(let month=1;month<=targetMonth;month++){
+    const revenue=month1Revenue+(month-1)*monthlyGrowth;
+    const expense=Number.isFinite(overrideExpense)&&Number.isFinite(overrideStart)&&month>=overrideStart?overrideExpense:baseExpense;
+    const net=revenue-expense;
+    cash+=net;
+    lines.push(`Month ${month}: revenue ${formatMoney(revenue)} - expenses ${formatMoney(expense)} = net ${formatMoney(net)}; ending cash ${formatMoney(cash)}.`);
+  }
+  return {
+    ok:true,status:'answered',
+    answer:`${lines.join('\n')}\nCash remaining after month ${targetMonth}: ${formatMoney(cash)}.`,
+    source:'pi-deterministic-cash-flow',
+    truth:'deterministic-verified',
+    verification:'local-calculation',
+    sources:[]
+  };
+}
+
 function causalInferenceGuardAnswer(message=''){
   const value=String(message);
   const asksCause=/\b(caus(?:e|ed|al|ality)|prove .*caus|created .*revenue|attribute .*increase|caused .*increase)\b/i.test(value);
@@ -425,6 +481,32 @@ async function directNewsAnswer(message=''){
         observedAt:new Date().toISOString(),
         sources:parsed.map(item=>({url:item.link,title:item.source}))
       };
+    }
+  }catch{}
+  try{
+    const endpoint='https://www.theguardian.com/world/rss';
+    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
+    if(response.ok){
+      const xml=await response.text();
+      const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,10);
+      const parsed=[];
+      for(const match of items){
+        const block=match[1];
+        const title=decodeXml(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
+        const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
+        const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
+        if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:'The Guardian'});
+        if(parsed.length===3)break;
+      }
+      if(parsed.length>=3){
+        const lines=parsed.map((item,index)=>`${index+1}. ${item.title} — source: ${item.source}; published: ${item.pubDate}.`);
+        return {
+          ok:true,status:'answered',
+          answer:`Three current world-news developments from the live Guardian World feed:\n\n${lines.join('\n')}`,
+          source:'pi-news-guardian-rss',truth:'live-data-response',observedAt:new Date().toISOString(),
+          sources:parsed.map(item=>({url:item.link,title:item.source}))
+        };
+      }
     }
   }catch{}
   try{
@@ -990,7 +1072,7 @@ function usefulProviderAnswer(answer=''){
 }
 function recoveryResponse(message,request,failure){const result=deterministicFallbackResult(message);if(!result?.answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return krishnaJson({ok:true,answer:result.answer,source:'pi-chat-deterministic-recovery',truth:result.verified?'deterministic-verified':'deterministic',verification:result.verification,providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,'general',headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
