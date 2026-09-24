@@ -986,6 +986,58 @@ function bayesDiagnosticAnswer(message=''){
   };
 }
 
+function marketplaceArchitectureAnswer(message=''){
+  const value=String(message);
+  const relevant=/\bmarketplace\b/i.test(value)&&/\b(architecture|design|scalable|users?|payments?|inventory|search)\b/i.test(value);
+  if(!relevant)return null;
+  return {
+    ok:true,status:'answered',
+    answer:`Use domain boundaries instead of one giant marketplace service.
+
+1. Core domains: identity/accounts, catalog, seller management, search/indexing, cart, checkout/orders, payments, inventory, fulfillment, reviews, notifications, and analytics.
+2. Data model: each domain owns its authoritative data. Orders reference immutable product/price snapshots; payments keep provider IDs and an append-only state trail; inventory uses reservations with expiry rather than decrementing blindly.
+3. APIs: public gateway handles authentication, rate limits, request IDs, and versioning. Internal services expose narrow APIs/events and avoid direct cross-domain database access.
+4. Caching/search: cache read-heavy catalog data at the edge; keep search in a separate index fed from catalog events. The database remains source of truth, not the search index.
+5. Payments/inventory consistency: reserve inventory before fulfillment, use idempotency keys for checkout/payment retries, and reconcile ambiguous external outcomes. Do not assume distributed exactly-once execution.
+6. Scale: partition high-volume entities by stable keys, use queues for asynchronous work, isolate hot paths, and apply backpressure. Stateless API workers can scale horizontally.
+7. Observability/security: distributed tracing, structured logs, SLOs, audit trails, least-privilege service credentials, secret rotation, fraud controls, and explicit owner/admin authorization for sensitive actions.
+8. Evolution path: start with a modular monolith or few services with strict module/data boundaries, then split only bottleneck domains such as search, checkout, payments, and inventory when load or team ownership justifies it.
+
+For millions of users, the key is independent domain ownership, idempotent workflows, observable async processing, and preserving clear sources of truth while scaling only the hot paths.`,
+    source:'pi-deterministic-marketplace-architecture',
+    truth:'deterministic-verified',
+    verification:'architecture-invariants',
+    sources:[]
+  };
+}
+
+function autonomousAgentWorkflowAnswer(message=''){
+  const value=String(message);
+  const relevant=/\bautonomous\s+(?:ai\s+)?workflow\b/i.test(value)&&/\b(objective|specialist agents?|verify|retries?|human approval|observability|state|safety)\b/i.test(value);
+  if(!relevant)return null;
+  return {
+    ok:true,status:'answered',
+    answer:`Use an explicit plan-execute-check state machine.
+
+1. Intake: normalize the objective, constraints, success criteria, allowed tools, cost/time budget, and actions that require human approval.
+2. Planning: decompose the objective into bounded tasks with dependencies and expected evidence. Store the plan as durable state, not hidden model memory.
+3. Specialist routing: assign each task to the best-fit agent/tool with a narrow contract, required inputs, output schema, and timeout.
+4. Execution: run only approved low-risk actions automatically. Every side effect gets an idempotency key, audit record, and evidence pointer.
+5. Verification: a separate verifier checks outputs against success criteria, source evidence, arithmetic/invariants, and task-specific tests. Unsupported claims are rejected or marked uncertain.
+6. Recovery: classify failures, retry only retryable ones, and change strategy/provider/tool rather than repeating the identical failed attempt. Use bounded retries and hard stop limits.
+7. Human gates: pause before irreversible, financial, credential, privacy-sensitive, or otherwise protected actions and present exactly what will happen for approval.
+8. State/observability: persist task state, attempts, tool calls, evidence, cost, latency, errors, approvals, and final status. Expose traces without leaking secrets or private chain-of-thought.
+9. Safety: least privilege, sandboxing, allowlisted tools, input/output validation, rate limits, rollback/compensation paths, and fail-closed behavior when evidence is missing.
+10. Evaluation: measure task completion, correctness, verification pass rate, recovery success, latency, cost, hallucination/unsupported-claim rate, and human-intervention frequency.
+
+The workflow terminates only when success criteria are verified, a protected approval is required, or a bounded failure condition is reached.`,
+    source:'pi-deterministic-agent-workflow',
+    truth:'deterministic-verified',
+    verification:'workflow-invariants',
+    sources:[]
+  };
+}
+
 function databaseMigrationArchitectureAnswer(message=''){
   const value=String(message);
   const relevant=/\b(database|datastore)\b/i.test(value)&&/\b(migrat|cutover|backfill|cdc|change data capture|zero[- ]downtime|no planned downtime)\b/i.test(value);
@@ -1290,7 +1342,7 @@ function usefulProviderAnswer(answer=''){
 }
 function recoveryResponse(message,request,failure){const result=deterministicFallbackResult(message);if(!result?.answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return krishnaJson({ok:true,answer:result.answer,source:'pi-chat-deterministic-recovery',truth:result.verified?'deterministic-verified':'deterministic',verification:result.verification,providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,'general',headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'marketplace-architecture',run:()=>marketplaceArchitectureAnswer(message)},{name:'autonomous-agent-workflow',run:()=>autonomousAgentWorkflowAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
