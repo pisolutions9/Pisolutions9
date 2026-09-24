@@ -108,15 +108,17 @@ function linearCostComparisonAnswer(message='',history=[]){
   if(!relevant)return null;
 
   function parseChannel(label){
-    const pattern=new RegExp('(?:channel\\s+)?'+label+'\\s+costs?\\s+\\$?([0-9][0-9,]*(?:\\.[0-9]+)?)\\s+fixed\\s+plus\\s+\\$?([0-9][0-9,]*(?:\\.[0-9]+)?)\\s+per\\s+(?:[a-z-]+\\s+){0,3}customer','i');
+    const pattern=new RegExp('(?:(?:plan|channel)\\s+)?'+label+'\\s+(?:(?:is|costs?)\\s+)?\\$?([0-9][0-9,]*(?:\\.[0-9]+)?)\\s+fixed\\s+(?:plus|\\+)\\s+\\$?([0-9][0-9,]*(?:\\.[0-9]+)?)\\s+per\\s+(?:[a-z-]+\\s+){0,3}customer','i');
     const match=value.match(pattern);
     if(!match)return null;
     return {fixed:Number(match[1].replaceAll(',','')),variable:Number(match[2].replaceAll(',',''))};
   }
   const a=parseChannel('A');
   const b=parseChannel('B');
-  const overrideA=current.match(/Plan\s*A\s+variable\s+cost[^$0-9]{0,20}(?:from\s+\$?[0-9.]+\s+)?to\s+\$?([0-9]+(?:\.[0-9]+)?)/i);
-  const overrideB=current.match(/Plan\s*B\s+variable\s+cost[^$0-9]{0,20}(?:from\s+\$?[0-9.]+\s+)?to\s+\$?([0-9]+(?:\.[0-9]+)?)/i);
+  const overrideA=current.match(/Plan\s*A\s+variable\s+cost[^$0-9]{0,24}(?:from\s+\$?[0-9.]+\s+)?to\s+\$?([0-9]+(?:\.[0-9]+)?)/i)
+    || current.match(/Plan\s*A\s+variable\s+cost[^$0-9]{0,24}\$?([0-9]+(?:\.[0-9]+)?)\s+instead\s+of/i);
+  const overrideB=current.match(/Plan\s*B\s+variable\s+cost[^$0-9]{0,24}(?:from\s+\$?[0-9.]+\s+)?to\s+\$?([0-9]+(?:\.[0-9]+)?)/i)
+    || current.match(/Plan\s*B\s+variable\s+cost[^$0-9]{0,24}\$?([0-9]+(?:\.[0-9]+)?)\s+instead\s+of/i);
   if(a&&overrideA)a.variable=Number(overrideA[1]);
   if(b&&overrideB)b.variable=Number(overrideB[1]);
   if(!a||!b||![a.fixed,a.variable,b.fixed,b.variable].every(Number.isFinite))return null;
@@ -402,7 +404,8 @@ function runtimeCapabilities(env={}){
 
 function externalActionBoundaryAnswer(message=''){
   const value=String(message);
-  if(/\b(?:what can you|capabilit(?:y|ies)|configured or not configured|which of these|available or not available)\b/i.test(value))return null;
+  if(/\b(?:what can you|capabilit(?:y|ies)|configured or not configured|which of these|available or not available)\b/i.test(value)
+    || /\b(?:tell me|what)\b[^.?!]{0,60}\bconfigured\b/i.test(value))return null;
   const historicalEmailContext=/\b(?:email\s+campaign|campaign|newsletter|marketing\s+email)\b/i.test(value)&&/\b(?:sent|launched|started|ran)\b/i.test(value);
   const asksEmail=!historicalEmailContext&&/\b(?:send|email|message)\b/i.test(value)&&/\b(email|landlord|accountant|recipient|subject|mechanic|manager)\b/i.test(value);
   const asksBooking=/\b(?:book|reserve|purchase|buy|order)\b/i.test(value);
@@ -422,7 +425,8 @@ function externalActionBoundaryAnswer(message=''){
 
 function runtimeCapabilityAnswer(env,message=''){
   const value=String(message).trim();
-  const asks=/\b(who are you|what are you|what can you(?:\s+really|\s+actually)?(?:\s+do)?(?:\s+here|\s+today|\s+here\s+today)?|what capabilities do you have|which of these (?:can you do|you can do|are configured|are available)|can you do in this runtime|what (?:models?|providers?|tools?) (?:do you|can you) (?:use|have|access)|what is your runtime|are you an ai|how do you verify(?: answers?)?|do you verify(?: answers?)?|how are answers verified|can you browse(?: the (?:web|internet))?|can you search(?: the (?:web|internet))?|do you have live (?:web(?: research)?|internet|research) access|can you access (?:the )?internet)\b/i.test(value);
+  const asks=/\b(who are you|what are you|what can you(?:\s+really|\s+actually)?(?:\s+do)?(?:\s+here|\s+today|\s+here\s+today)?|what capabilities do you have|which of these (?:can you do|you can do|are configured|are available)|can you do in this runtime|what (?:models?|providers?|tools?) (?:do you|can you) (?:use|have|access)|what is your runtime|are you an ai|how do you verify(?: answers?)?|do you verify(?: answers?)?|how are answers verified|can you browse(?: the (?:web|internet))?|can you search(?: the (?:web|internet))?|do you have live (?:web(?: research)?|internet|research) access|can you access (?:the )?internet)\b/i.test(value)
+    || /\b(?:tell me|what)\b[^.?!]{0,60}\bconfigured\b/i.test(value);
   if(!asks)return null;
   const state=runtimeCapabilities(env);
   const providerLabels=[];
