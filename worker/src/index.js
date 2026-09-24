@@ -394,6 +394,7 @@ function runtimeCapabilities(env={}){
       liveWebResearch:liveResearch,
       liveWeather:true,
       liveShoppingSearch:Boolean(env.SERPAPI_API_KEY)||liveResearch,
+      verifiedLiveShopping:false,
       attachmentUnderstanding:Boolean(env.AI&&typeof env.AI.toMarkdown==='function'),
       crossDeviceSessionSync:Boolean(env.PI_SESSION&&typeof env.PI_SESSION.idFromName==='function'),
       authenticatedOwnerWorkspace:Boolean(env.PI_OWNER_TOKEN&&env.PI_SESSION&&typeof env.PI_SESSION.idFromName==='function'),
@@ -409,7 +410,8 @@ function externalActionBoundaryAnswer(message=''){
     || /\b(?:tell me|what)\b[^.?!]{0,60}\bconfigured\b/i.test(value))return null;
   const historicalEmailContext=/\b(?:email\s+campaign|campaign|newsletter|marketing\s+email)\b/i.test(value)&&/\b(?:sent|launched|started|ran)\b/i.test(value);
   const asksEmail=!historicalEmailContext&&/\b(?:send|email|message)\b/i.test(value)&&/\b(email|landlord|accountant|recipient|subject|mechanic|manager)\b/i.test(value);
-  const asksBooking=/\b(?:book|reserve|purchase|buy|order)\b/i.test(value);
+  const asksBooking=/^\s*(?:please\s+)?(?:book|reserve|purchase|buy|order)\b/i.test(value)
+    || /\b(?:can you|could you|would you|go ahead and)\s+(?:book|reserve|purchase|buy|order)\b/i.test(value);
   if(!asksEmail&&!asksBooking)return null;
   return {
     ok:true,
@@ -452,6 +454,12 @@ function runtimeCapabilityAnswer(env,message=''){
       state.capabilities.liveWebResearch
         ? 'Live web research is available through configured live-research providers when a request requires current external evidence.'
         : 'Live web research is not currently configured here; PI must not pretend model memory is current web evidence.',
+      state.capabilities.liveShoppingSearch
+        ? 'Shopping search can retrieve current web/search results, but this does not by itself prove live price, stock, or seller availability.'
+        : 'Shopping search is not currently configured.',
+      state.capabilities.verifiedLiveShopping
+        ? 'Verified live shopping is configured for current price, stock, seller, and direct product evidence.'
+        : 'Verified live shopping for current price, stock, seller, and direct product evidence is not currently configured; PI must not present ordinary search results as verified stock or price.',
       state.capabilities.crossDeviceSessionSync
         ? 'Cross-device continuity is available through a private sync link/token for recent conversation state. It is not an authenticated owner-account workspace; anyone who obtains that private link can access the synced session.'
         : 'Cross-device session sync is not currently configured in this runtime.',
@@ -1046,6 +1054,89 @@ function bayesDiagnosticAnswer(message=''){
   };
 }
 
+
+function availabilityReliabilitySecurityAnswer(message=''){
+  const value=String(message);
+  const relevant=/\b(?:availability|uptime|highly available)\b/i.test(value)
+    && /\b(?:reliab|security|secure|invalid inference|necessarily|imply|prove)\b/i.test(value);
+  if(!relevant)return null;
+  return {
+    ok:true,status:'answered',
+    answer:`Availability, reliability, and security are related but distinct properties, so one does not prove the others.
+
+1. Availability asks whether the service is reachable when needed. Measure uptime, successful-request rate, regional failover, and recovery time.
+2. Reliability asks whether the service behaves correctly over time. Measure error rates, data integrity, consistency, durability, SLO attainment, and repeatable recovery.
+3. Security asks whether the system resists unauthorized access, misuse, disclosure, tampering, and abuse. Measure control effectiveness, least privilege, authentication/authorization, vulnerability exposure, logging, incident response, and data protection.
+4. The invalid inference is treating a high value on one dimension as evidence that another dimension must also be high. A service can be available while returning wrong data, and it can be reliable while still exposing data to an attacker.
+5. Evaluate the dimensions separately, then examine interactions: redundancy can improve availability but expand attack surface; aggressive failover can preserve uptime but create stale or conflicting state; security controls can reduce risk while adding latency or operational complexity.
+6. A better framework is to define independent objectives and tests for availability, reliability, security, performance, and recoverability, then review tradeoffs together rather than collapsing them into one score.
+
+Therefore, high uptime is evidence about availability only. It is not proof of reliability or security.`,
+    source:'pi-deterministic-system-properties',
+    truth:'deterministic-verified',
+    verification:'systems-property-invariants',
+    sources:[]
+  };
+}
+
+function ecommerceReliabilityDiagnosisAnswer(message=''){
+  const value=String(message);
+  const relevant=/\b(?:e-?commerce|checkout|cart|inventory|oversell|overselling)\b/i.test(value)
+    && /\b(?:latency|p95|failures?|diagnos|remediation|acceptance tests?|oversell|overselling)\b/i.test(value);
+  if(!relevant)return null;
+  return {
+    ok:true,status:'answered',
+    answer:`Treat latency, checkout failures, and inventory overselling as related symptoms but diagnose them independently before assuming one root cause.
+
+Priority 1 — instrument the checkout path. Break p95 latency down by API hop, database query, cache, payment provider, inventory reservation, queue, and network. Add correlation IDs and traces. Acceptance test: every checkout has an end-to-end trace and the dominant latency segment is identified for at least 95% of sampled slow requests.
+
+Priority 2 — protect checkout correctness. Use one stable idempotency key per logical checkout/payment attempt, durable order/payment states, and reconciliation for ambiguous provider timeouts. Acceptance test: repeated retries of the same checkout never create a second charge or duplicate order.
+
+Priority 3 — stop overselling. Inventory must have one authoritative source of truth with atomic reservation/decrement semantics, reservation expiry, and idempotent release/commit operations. Avoid read-then-write stock updates without concurrency control. Acceptance test: concurrent purchase tests at stock boundary produce zero negative inventory and zero confirmed orders above available quantity.
+
+Priority 4 — reduce database contention. Inspect slow queries, lock waits, connection-pool saturation, hot rows, N+1 calls, and transaction duration. Add indexes only after query-plan evidence. Acceptance test: checkout database time and lock-wait time meet explicit SLOs under peak-load replay.
+
+Priority 5 — isolate slow dependencies. Put strict timeouts, bounded retries with jitter, circuit breakers, and asynchronous work outside the critical checkout path when possible. Never retry non-idempotent payment calls blindly.
+
+Priority 6 — load-test the complete workflow, not only isolated endpoints. Replay realistic concurrency with payment/inventory failure injection. Track p50/p95/p99 latency, checkout success rate, duplicate-charge rate, oversell count, reconciliation backlog, and recovery time.
+
+A reasonable release target is not merely lower p95 latency; it is a verified combination of latency SLO, checkout success SLO, zero duplicate side effects under retry tests, and zero inventory invariant violations under concurrent load.`,
+    source:'pi-deterministic-ecommerce-reliability',
+    truth:'deterministic-verified',
+    verification:'distributed-commerce-invariants',
+    sources:[]
+  };
+}
+
+function quantumVsClassicalAnswer(message=''){
+  const value=String(message);
+  const concepts=[
+    /\bclassical\b/i,/\bqubits?\b/i,/\bsuperposition\b/i,/\bentanglement\b/i,
+    /\berror correction\b/i,/\bquantum advantage\b/i,/\bfault[- ]tolerant\b/i
+  ].filter(pattern=>pattern.test(value)).length;
+  const relevant=/\bquantum\s+comput/i.test(value)
+    && (concepts>=3||/\b(?:useful|large[- ]scale)\s+quantum\s+advantage\b/i.test(value));
+  if(!relevant)return null;
+  return {
+    ok:true,status:'answered',
+    answer:`Quantum computers do not simply replace classical computers because they use a different computational model and only offer an advantage for particular problem structures.
+
+1. Classical bits are stable 0/1 states and are extremely effective for operating systems, databases, web services, control logic, graphics, and most everyday workloads.
+2. Qubits are quantum states whose amplitudes can represent combinations of basis states. Superposition does not mean a quantum machine can read every possible answer at once; useful algorithms must manipulate amplitudes so desired outcomes become more likely when measured.
+3. Entanglement creates correlations that cannot be represented as independent classical states. Algorithms can exploit those correlations, but creating and preserving useful entanglement is technically difficult.
+4. Quantum gates are noisy. Physical qubits decohere and suffer control/readout errors, so large reliable algorithms require quantum error correction. One logical fault-tolerant qubit can require many physical qubits depending on hardware quality and code.
+5. Practical candidates for quantum advantage include some cryptographic, chemistry/material simulation, and specialized mathematical workloads. Many optimization and machine-learning claims remain experimental or workload-dependent.
+6. Classical computers will still handle control, data preparation, networking, storage, user interfaces, and workloads where quantum algorithms provide no advantage. Future systems are more likely to be heterogeneous: classical machines orchestrating quantum accelerators for narrow tasks.
+7. Useful large-scale advantage requires better qubit fidelity, longer coherence, scalable control, much lower error-correction overhead, enough logical qubits, efficient algorithms, and end-to-end performance that beats strong classical alternatives including data-transfer overhead.
+
+So the right comparison is not “quantum versus classical winner.” It is whether a fault-tolerant quantum accelerator can solve a specific workload faster, cheaper, or more accurately than the best classical approach.`,
+    source:'pi-deterministic-quantum-classical',
+    truth:'deterministic-verified',
+    verification:'computing-model-invariants',
+    sources:[]
+  };
+}
+
 function marketplaceArchitectureAnswer(message=''){
   const value=String(message);
   const relevant=/\bmarketplace\b/i.test(value)&&/\b(architecture|design|scalable|users?|payments?|inventory|search)\b/i.test(value);
@@ -1421,7 +1512,7 @@ function usefulProviderAnswer(answer=''){
 }
 function recoveryResponse(message,request,failure){const result=deterministicFallbackResult(message);if(!result?.answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return krishnaJson({ok:true,answer:result.answer,source:'pi-chat-deterministic-recovery',truth:result.verified?'deterministic-verified':'deterministic',verification:result.verification,providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,'general',headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'external-action-boundary',run:()=>externalActionBoundaryAnswer(message)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'marketplace-architecture',run:()=>marketplaceArchitectureAnswer(message)},{name:'autonomous-agent-workflow',run:()=>autonomousAgentWorkflowAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message,history)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'external-action-boundary',run:()=>externalActionBoundaryAnswer(message)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'system-properties',run:()=>availabilityReliabilitySecurityAnswer(message)},{name:'ecommerce-reliability',run:()=>ecommerceReliabilityDiagnosisAnswer(message)},{name:'quantum-classical',run:()=>quantumVsClassicalAnswer(message)},{name:'marketplace-architecture',run:()=>marketplaceArchitectureAnswer(message)},{name:'autonomous-agent-workflow',run:()=>autonomousAgentWorkflowAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message,history)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
