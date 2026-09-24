@@ -1,0 +1,29 @@
+name: PI Human Multiuser Hardening Round 2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pi/human-multiuser-hardening-round2.mjs'
+      - '.github/workflows/pi-human-multiuser-hardening-round2.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '13 1,7,13,19 * * *'
+
+permissions:
+  contents: read
+
+env:
+  PI_CHAT_URL: https://pi-chat.premchandyadlapati.workers.dev/api/chat
+
+jobs:
+  human-multiuser-round2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Run 5 concurrent human user flows
+        run: node pi/human-multiuser-hardening-round2.mjs
