@@ -49,7 +49,8 @@ function requiresShoppingEvidence(text=''){
   const retailer=/\b(amazon|walmart|ebay|best buy|target|retailer|store)\b/i.test(value);
   const builderContext=/\b(build|design|develop|architecture|api|database|seller onboarding|marketplace|website|app|platform|system|search (?:feature|engine|api|service|functionality)|like amazon)\b/i.test(value);
   if(builderContext&&!productObject&&!/\b(buy|purchase|order|find me|in stock|price|deal|product link|listing)\b/i.test(value))return false;
-  if(explicitBuyerIntent&&(productObject||retailer))return true;
+  const genericPricedShopping=/\bfind\b[\s\S]{0,120}\bunder\s+\$?[0-9]+(?:\.[0-9]+)?\b[\s\S]{0,120}\b(?:seller|price|link|buy\s+online|available\s+online)\b/i.test(value);
+  if(explicitBuyerIntent&&(productObject||retailer||genericPricedShopping))return true;
   const retailerSearchPhrase=/(?:search|find)\s+(?:on\s+)?(?:amazon|walmart|ebay|best buy|target)\b/i.test(lower);
   return retailerSearchPhrase;
 }
@@ -80,6 +81,26 @@ function conversationRecallAnswer(message='',history=[]){
   if(requestedDeadline&&deadline)parts.push(`Deadline: ${deadline}`);
   if(!parts.length)return null;
   return {ok:true,status:'answered',answer:parts.join(', ')+'.',source:'pi-conversation-grounding',truth:'conversation-grounded',verification:'supplied-history-extraction',sources:[]};
+}
+
+function quantifiedMultiplicationAnswer(message=''){
+  const value=String(message);
+  const hasGroup=/\b(?:people|persons|workers|employees|members|mandi|servers?)\b/i.test(value);
+  const hasPer=/\b(?:each|per|okkokadu|okkokaru|okkaokadu|prathi|requests?\s*\/\s*sec|req\s*\/\s*sec)\b/i.test(value);
+  const asksTotal=/\b(?:total|how many|enta|enti|entha|mottham|mottam)\b/i.test(value);
+  const nums=[...value.matchAll(/\b([0-9]+(?:\.[0-9]+)?)\b/g)].map(m=>Number(m[1])).filter(Number.isFinite);
+  if(!hasGroup||!hasPer||!asksTotal||nums.length<2)return null;
+  const result=nums[0]*nums[1];
+  if(!Number.isFinite(result))return null;
+  const rendered=Number.isInteger(result)?String(result):String(Number(result.toFixed(10)));
+  return {
+    ok:true,status:'answered',
+    answer:`The total is ${rendered}.`,
+    source:'pi-deterministic-quantified-multiplication',
+    truth:'deterministic-verified',
+    verification:'local-calculation',
+    sources:[]
+  };
 }
 
 function deterministicArithmeticAnswer(message=''){
@@ -247,9 +268,10 @@ function cashFlowSequenceAnswer(message='',history=[]){
 
   let overrideExpense=null,overrideStart=null;
   if(isFollowup){
-    const override=current.match(/(?:operating\s+)?expenses?[^$0-9]{0,30}(?:drop|decrease|change|fall|reduce|cut|increase|rise)?[^$0-9]{0,20}(?:to\s*)?(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i)
+    const override=current.match(/(?:(?:operating\s+)?expenses?|spending|monthly\s+spending)[^$0-9]{0,30}(?:drop|decrease|change|fall|reduce|cut|increase|rise)?[^$0-9]{0,20}(?:to\s*)?(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i)
       || current.match(/(?:drop|decrease|change|fall|reduce|cut|increase|rise)(?:\s+expenses?)?\s+to\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i);
-    const start=current.match(/(?:starting\s+in|from)\s+month\s*(\d+)/i);
+    const start=current.match(/(?:starting\s+in|from)\s+month\s*(\d+)/i)
+      || current.match(/month\s*(\d+)\s*(?:nunchi|nundi|onwards?|forward)\b/i);
     if(override)overrideExpense=parseFlexibleMoney(override[1].replaceAll(',',''));
     if(start)overrideStart=Number(start[1]);
   }
@@ -490,6 +512,12 @@ const WEATHER_CODE_LABELS = new Map([
 function weatherLocationQuery(message=''){
   const value=String(message).trim();
   if(!/\b(weather|forecast|temperature|rain|snow|humidity|wind)\b/i.test(value))return '';
+  const prefix=value.match(/^\s*([A-Za-z][A-Za-z .,'-]{1,80}?)\s+(?:weather|forecast|temperature)\b/i);
+  if(prefix?.[1]){
+    const cleaned=prefix[1].trim();
+    const looksLikeQuestionLead=/^(?:what(?:'s| is)?(?:\s+the)?|whats(?:\s+the)?|how(?:'s| is)?(?:\s+the)?|tell\s+me(?:\s+the)?|give\s+me(?:\s+the)?)$/i.test(cleaned);
+    if(cleaned&&!looksLikeQuestionLead)return cleaned.slice(0,120);
+  }
   const coarse=value.match(/\b(?:in|around|near)\s+([^,?.!]{2,100})/i);
   if(coarse?.[1]){
     const cleaned=coarse[1].split(/\b(?:right\s+now|now|today|tonight|and|for|with|over|during|this|next|leaving|later)\b/i,1)[0].trim();
@@ -572,7 +600,7 @@ async function directWeatherAnswer(message='',history=[]){
     const nextSix=hourlyTimes.slice(0,6).map((time,index)=>({time,prob:Number(hourlyProb[index]),precip:Number(hourlyPrecip[index])}));
     const maxRainProb=nextSix.reduce((max,item)=>Number.isFinite(item.prob)?Math.max(max,item.prob):max,0);
     const sixHourPrecip=nextSix.reduce((sum,item)=>Number.isFinite(item.precip)?sum+item.precip:sum,0);
-    const asksNextSix=/\bnext\s+6\s+hours?\b/i.test(String(message));
+    const asksNextSix=/\bnext\s+(?:6|six)\s+(?:hours?|hrs?)\b/i.test(String(message));
     const parts=[
       `Current weather for ${placeLabel}: ${current.temperature_2m}°F, ${label}.`,
       Number.isFinite(current.apparent_temperature)?`Feels like ${current.apparent_temperature}°F.`:'',
@@ -605,7 +633,9 @@ function decodeXml(value=''){
 
 async function directNewsAnswer(message=''){
   const value=String(message);
-  const asksNews=/\b(news|developments?|headlines?)\b/i.test(value)&&/\b(today|current|latest|happening\s+today|right\s+now|now)\b/i.test(value);
+  const asksNews=(/\b(news|developments?|headlines?|updates?)\b/i.test(value)
+      || (/\b(world|global|international)\b/i.test(value)&&/\b(?:things?|stories|events?)\b/i.test(value)))
+    && /\b(today|current|latest|happening\s+today|right\s+now|now)\b/i.test(value);
   if(!asksNews)return null;
   try{
     const cacheUrl='https://raw.githubusercontent.com/pisolutions9/Pisolutions9/live-data/data/live-news.json';
@@ -1515,7 +1545,7 @@ function usefulProviderAnswer(answer=''){
 }
 function recoveryResponse(message,request,failure){const result=deterministicFallbackResult(message);if(!result?.answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return krishnaJson({ok:true,answer:result.answer,source:'pi-chat-deterministic-recovery',truth:result.verified?'deterministic-verified':'deterministic',verification:result.verification,providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,'general',headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'external-action-boundary',run:()=>externalActionBoundaryAnswer(message)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'system-properties',run:()=>availabilityReliabilitySecurityAnswer(message)},{name:'ecommerce-reliability',run:()=>ecommerceReliabilityDiagnosisAnswer(message)},{name:'quantum-classical',run:()=>quantumVsClassicalAnswer(message)},{name:'marketplace-architecture',run:()=>marketplaceArchitectureAnswer(message)},{name:'autonomous-agent-workflow',run:()=>autonomousAgentWorkflowAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message,history)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'external-action-boundary',run:()=>externalActionBoundaryAnswer(message)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'quantified-multiplication',run:()=>quantifiedMultiplicationAnswer(message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'system-properties',run:()=>availabilityReliabilitySecurityAnswer(message)},{name:'ecommerce-reliability',run:()=>ecommerceReliabilityDiagnosisAnswer(message)},{name:'quantum-classical',run:()=>quantumVsClassicalAnswer(message)},{name:'marketplace-architecture',run:()=>marketplaceArchitectureAnswer(message)},{name:'autonomous-agent-workflow',run:()=>autonomousAgentWorkflowAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message,history)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];

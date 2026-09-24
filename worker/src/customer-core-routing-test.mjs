@@ -38,4 +38,28 @@ assert.equal(weatherSwitch.body.source,'pi-weather-location-clarification');
 assert.match(weatherSwitch.body.answer,/what location/i);
 assert.doesNotMatch(weatherSwitch.body.answer,/month 1|cash remaining|460,000/i);
 
+const teluguMath=await ask('29 mandi unnaru okkokadu 14 checks chesthe total enti?');
+assert.equal(teluguMath.status,200);
+assert.equal(teluguMath.body.source,'pi-deterministic-quantified-multiplication');
+assert.equal(teluguMath.body.truth,'deterministic-verified');
+assert.match(teluguMath.body.answer,/406/);
+
+const resetMath=await ask('postgres migration gurinchi vadiley. 37 servers each 460 req/sec total enta?');
+assert.equal(resetMath.status,200);
+assert.equal(resetMath.body.source,'pi-deterministic-quantified-multiplication');
+assert.match(resetMath.body.answer,/17020/);
+assert.doesNotMatch(resetMath.body.answer,/migration|postgres|database/i);
+
+const teluguCash=await ask('month 3 nunchi spending 180k chey. recalc month 4',staleHistory);
+assert.equal(teluguCash.status,200);
+assert.equal(teluguCash.body.source,'pi-deterministic-cash-flow');
+assert.match(teluguCash.body.answer,/Cash remaining after month 4: \$540,000/);
+assert.match(teluguCash.body.answer,/Month 3: revenue \$120,000 - expenses \$180,000/);
+
+const typoShopping=await ask('find 2 lapops under 700 available to buy online rn seller price link');
+assert.equal(typoShopping.status,200);
+assert.equal(typoShopping.body.source,'pi-shopping-search-link');
+assert.equal(typoShopping.body.truth,'retailer-search-link');
+assert.match(typoShopping.body.answer,/not independently verified/i);
+
 console.log('customer core routing regression: ok');
