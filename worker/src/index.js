@@ -652,7 +652,7 @@ async function directNewsAnswer(message=''){
     }
   }catch{}
   try{
-    const endpoint='https://api.gdeltproject.org/api/v2/doc/doc?query=sourcelang%3Aenglish&mode=ArtList&format=json&maxrecords=12&sort=HybridRel';
+    const endpoint='https://api.gdeltproject.org/api/v2/doc/doc?query=world&mode=artlist&format=json&maxrecords=12&timespan=1d&sort=datedesc';
     const response=await fetch(endpoint,{headers:{accept:'application/json'}});
     if(!response.ok)return null;
     const data=await response.json();
