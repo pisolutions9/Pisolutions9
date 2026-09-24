@@ -1,0 +1,29 @@
+name: PI Human Multiuser Hardening
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pi/human-multiuser-hardening.mjs'
+      - '.github/workflows/pi-human-multiuser-hardening.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '47 */6 * * *'
+
+permissions:
+  contents: read
+
+env:
+  PI_CHAT_URL: https://pi-chat.premchandyadlapati.workers.dev/api/chat
+
+jobs:
+  human-multiuser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Run human-language multi-user hardening
+        run: node pi/human-multiuser-hardening.mjs
