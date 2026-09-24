@@ -403,7 +403,8 @@ function runtimeCapabilities(env={}){
 function externalActionBoundaryAnswer(message=''){
   const value=String(message);
   if(/\b(?:what can you|capabilit(?:y|ies)|configured or not configured|which of these|available or not available)\b/i.test(value))return null;
-  const asksEmail=/\b(?:send|email|message)\b/i.test(value)&&/\b(email|landlord|accountant|recipient|subject)\b/i.test(value);
+  const historicalEmailContext=/\b(?:email\s+campaign|campaign|newsletter|marketing\s+email)\b/i.test(value)&&/\b(?:sent|launched|started|ran)\b/i.test(value);
+  const asksEmail=!historicalEmailContext&&/\b(?:send|email|message)\b/i.test(value)&&/\b(email|landlord|accountant|recipient|subject|mechanic|manager)\b/i.test(value);
   const asksBooking=/\b(?:book|reserve|purchase|buy|order)\b/i.test(value);
   if(!asksEmail&&!asksBooking)return null;
   return {
@@ -1003,7 +1004,8 @@ function deterministicRunwayScenarioAnswer(message=''){
 
 function bayesDiagnosticAnswer(message=''){
   const value=String(message);
-  const prevalence=value.match(/(?:affects?|prevalence(?: is|:)?)[^0-9]{0,20}([0-9]+(?:\.[0-9]+)?)\s*%/i);
+  const prevalence=value.match(/(?:affects?|prevalence(?: is|:)?)[^0-9]{0,20}([0-9]+(?:\.[0-9]+)?)\s*%/i)
+    || value.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s+of\s+(?:people|patients|users)\s+(?:have|has|with)\b/i);
   const oneIn=value.match(/\b1\s+in\s+([0-9]+(?:\.[0-9]+)?)\b/i);
   const sensitivity=value.match(/sensitivity(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i) || value.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s+sensitivity/i) || value.match(/catches?\s*([0-9]+(?:\.[0-9]+)?)\s*%\s+of\s+(?:real|actual)\s+cases/i);
   const falsePositive=value.match(/false[- ]positives?(?:\s+rate)?(?:\s+(?:of|is|are|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i) || value.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s+false[- ]positives?(?:\s+rate)?/i);

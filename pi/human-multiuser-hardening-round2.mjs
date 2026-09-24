@@ -34,7 +34,7 @@ async function user1(){
     [{role:'user',content:'Plan A is $900 fixed + $5 per customer. Plan B is $300 fixed + $8 per customer. where do they break even, and which is cheaper at 120 and 260 customers?'},{role:'assistant',content:txt(a)}]);
   const cf=await run('u1','cashflow_new',
     'cash is 1.2m. expenses 250k every month. revenue starts 80k month one and climbs 20k every month. after 4 months what is left?',
-    r=>({useful:ok200(r)&&/580,?000|\$580k/i.test(txt(r)),safe:safe(r),detail:'expects $580k'}));
+    r=>({useful:ok200(r)&&/640,?000|\$640k/i.test(txt(r)),safe:safe(r),detail:'expects $640k'}));
 }
 
 async function user2(){
