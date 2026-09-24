@@ -268,7 +268,7 @@ function cashFlowSequenceAnswer(message='',history=[]){
 
   let overrideExpense=null,overrideStart=null;
   if(isFollowup){
-    const override=current.match(/(?:operating\s+)?expenses?[^$0-9]{0,30}(?:drop|decrease|change|fall|reduce|cut|increase|rise)?[^$0-9]{0,20}(?:to\s*)?(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i)
+    const override=current.match(/(?:(?:operating\s+)?expenses?|spending|monthly\s+spending)[^$0-9]{0,30}(?:drop|decrease|change|fall|reduce|cut|increase|rise)?[^$0-9]{0,20}(?:to\s*)?(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i)
       || current.match(/(?:drop|decrease|change|fall|reduce|cut|increase|rise)(?:\s+expenses?)?\s+to\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i);
     const start=current.match(/(?:starting\s+in|from)\s+month\s*(\d+)/i)
       || current.match(/month\s*(\d+)\s*(?:nunchi|nundi|onwards?|forward)\b/i);
