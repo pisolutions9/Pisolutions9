@@ -1110,8 +1110,12 @@ A reasonable release target is not merely lower p95 latency; it is a verified co
 
 function quantumVsClassicalAnswer(message=''){
   const value=String(message);
+  const concepts=[
+    /\bclassical\b/i,/\bqubits?\b/i,/\bsuperposition\b/i,/\bentanglement\b/i,
+    /\berror correction\b/i,/\bquantum advantage\b/i,/\bfault[- ]tolerant\b/i
+  ].filter(pattern=>pattern.test(value)).length;
   const relevant=/\bquantum\s+comput/i.test(value)
-    && /\b(?:classical|qubits?|superposition|entanglement|error correction|advantage|replace)\b/i.test(value);
+    && (concepts>=3||/\b(?:useful|large[- ]scale)\s+quantum\s+advantage\b/i.test(value));
   if(!relevant)return null;
   return {
     ok:true,status:'answered',
