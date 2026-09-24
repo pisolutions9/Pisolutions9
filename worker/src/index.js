@@ -322,6 +322,21 @@ function causalInferenceGuardAnswer(message=''){
   const beforeAfter=/\b(after|before|week after|launched|launch|rose|increased|decreased)\b/i.test(value);
   const correlationCase=/\b(correlation|correlated|study finds|confounder|association)\b/i.test(value);
   if(!asksCause||(!beforeAfter&&!correlationCase))return null;
+  if(correlationCase&&!beforeAfter){
+    const lighterCancer=/\b(lighters?|lung\s+cancer|smok(?:e|er|ing)|tobacco|cigarette)\b/i.test(value);
+    const example=lighterCancer
+      ? ' In the lighter/lung-cancer example, smoking or tobacco use is the likely confounder: smokers are more likely to carry lighters, and smoking increases lung-cancer risk.'
+      : ' A plausible confounder is a third variable that influences both the exposure and the outcome.';
+    return {
+      ok:true,
+      status:'answered',
+      answer:`Correlation does not prove causation because two variables can move together due to a confounder, reverse causation, selection effects, or chance.${example}\n\nA confounder is a variable related to both the supposed cause and the outcome; failing to control for it can create a misleading association. Better evidence would come from a randomized experiment when ethical and feasible, or otherwise a well-designed longitudinal/controlled observational study that measures and adjusts for major confounders, uses an appropriate comparison group, and tests whether the association persists.\n\nSo the correct conclusion is that the observed correlation is evidence of association, not proof that the correlated item itself causes the outcome.`,
+      source:'pi-deterministic-causal-inference-guard',
+      truth:'deterministic-verified',
+      verification:'causal-boundary',
+      sources:[]
+    };
+  }
   const percent=value.match(/\b([0-9]+(?:\.[0-9]+)?)\s*%/);
   const observed=percent?` The observed change was ${percent[1]}%, but that is an association, not a causal estimate.`:'';
   return {
