@@ -99,9 +99,10 @@ function deterministicArithmeticAnswer(message=''){
 function linearCostComparisonAnswer(message='',history=[]){
   const current=String(message);
   const priorUser=[...history].reverse().find(item=>item?.role==='user'&&/\bfixed\b/i.test(String(item?.content||''))&&/\bper\b[^.]{0,40}\bcustomer/i.test(String(item?.content||'')))?.content||'';
+  const continuation=/\b(?:plan\s*[ab]|channel\s*[ab]|variable\s+cost|fixed\s+cost|break[- ]?even|cheaper|customer\s+count|change\s+only|new\s+break[- ]?even)\b/i.test(current);
+  if(priorUser&&!continuation)return null;
   const value=priorUser?String(priorUser):current;
-  const combined=priorUser?value+'\n'+current:current;
-  const relevant=/\b(?:equal|break[- ]?even|which is cheaper|compare|change only|new break[- ]?even)\b/i.test(combined)
+  const relevant=/\b(?:equal|break[- ]?even|which is cheaper|compare|change only|new break[- ]?even)\b/i.test(priorUser?current:value)
     && /\bfixed\b/i.test(value)
     && /\bper\b[^.]{0,40}\bcustomer/i.test(value);
   if(!relevant)return null;
@@ -183,6 +184,7 @@ function operatingProfitAnswer(message=''){
   if(!Number.isFinite(grossProfit))return null;
   const expensePatterns=[
     ['payroll',/\bpayroll(?:\s+(?:costs?|expense))?(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
+    ['fixed operating costs',/\bfixed\s+operating\s+costs?(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
     ['rent',/\brent(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
     ['card fees',/\bcard\s+fees?(?:\s+(?:of|is|was|were|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
     ['utilities',/\butilities(?:\s+allocation)?(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
@@ -267,6 +269,33 @@ function cashFlowSequenceAnswer(message='',history=[]){
   };
 }
 
+function financeFollowupAnswer(message='',history=[]){
+  const current=String(message);
+  const relevant=/\b(additional\s+annual\s+gross\s+profit|double\s+(?:its\s+)?operating\s+profit)\b/i.test(current);
+  if(!relevant)return null;
+  const priorUser=[...history].reverse().find(item=>item?.role==='user'&&/\b(?:annual\s+)?revenue\b/i.test(String(item?.content||''))&&/\bgross\s+margin\b/i.test(String(item?.content||''))&&/\boperating\s+costs?\b/i.test(String(item?.content||'')))?.content||'';
+  if(!priorUser)return null;
+  const value=String(priorUser);
+  const money=(pattern)=>{const m=value.match(pattern);return m?Number(m[1].replaceAll(',','')):null;};
+  const revenue=money(/\b(?:annual\s+)?revenue(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i);
+  const marginMatch=value.match(/\bgross\s+margin(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
+  const fixed=money(/\bfixed\s+operating\s+costs?(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i);
+  if(!Number.isFinite(revenue)||!marginMatch||!Number.isFinite(fixed))return null;
+  const grossProfit=revenue*(Number(marginMatch[1])/100);
+  const operatingProfit=grossProfit-fixed;
+  const targetOperatingProfit=operatingProfit*2;
+  const targetGrossProfit=targetOperatingProfit+fixed;
+  const additionalGrossProfit=targetGrossProfit-grossProfit;
+  return {
+    ok:true,status:'answered',
+    answer:`From the previous numbers: gross profit = ${formatMoney(revenue)} × ${Number(marginMatch[1])}% = ${formatMoney(grossProfit)}. Operating profit = ${formatMoney(grossProfit)} - ${formatMoney(fixed)} = ${formatMoney(operatingProfit)}. To double operating profit, the target is ${formatMoney(targetOperatingProfit)}. With fixed costs unchanged, target gross profit must be ${formatMoney(targetGrossProfit)}. Therefore it needs an additional ${formatMoney(additionalGrossProfit)} in annual gross profit.`,
+    source:'pi-deterministic-finance-followup',
+    truth:'deterministic-verified',
+    verification:'conversation-grounded-calculation',
+    sources:[]
+  };
+}
+
 function falsePrecisionGuardAnswer(message=''){
   const value=String(message);
   const asksExact=/\bexact(?:ly)?\b/i.test(value);
@@ -291,7 +320,8 @@ function causalInferenceGuardAnswer(message=''){
   const value=String(message);
   const asksCause=/\b(caus(?:e|ed|al|ality)|prove .*caus|created .*revenue|attribute .*increase|caused .*increase)\b/i.test(value);
   const beforeAfter=/\b(after|before|week after|launched|launch|rose|increased|decreased)\b/i.test(value);
-  if(!asksCause||!beforeAfter)return null;
+  const correlationCase=/\b(correlation|correlated|study finds|confounder|association)\b/i.test(value);
+  if(!asksCause||(!beforeAfter&&!correlationCase))return null;
   const percent=value.match(/\b([0-9]+(?:\.[0-9]+)?)\s*%/);
   const observed=percent?` The observed change was ${percent[1]}%, but that is an association, not a causal estimate.`:'';
   return {
@@ -1260,7 +1290,7 @@ function usefulProviderAnswer(answer=''){
 }
 function recoveryResponse(message,request,failure){const result=deterministicFallbackResult(message);if(!result?.answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return krishnaJson({ok:true,answer:result.answer,source:'pi-chat-deterministic-recovery',truth:result.verified?'deterministic-verified':'deterministic',verification:result.verification,providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,'general',headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
@@ -1343,6 +1373,27 @@ if(krishnaDecision.route==='hard'){
   const verified=await produceVerifiedHardAnswer(env,effectiveMessage,history);
   if(verified?.verified)return krishnaJson({ok:true,status:'answered',answer:verified.answer,source:`pi-chat-cloudflare-ai:${verified.model}`,truth:'verified-model-response',verification:'independent-pass'},200,request,'hard');
   if(verified?.provisional){const runwayFallback=runwaySafetyFallback(effectiveMessage);if(runwayFallback)return krishnaJson(runwayFallback,200,request,'hard');return krishnaJson({ok:true,status:'answered',answer:verified.answer,source:`pi-chat-cloudflare-ai:${verified.model}`,truth:'provisional-model-response',verification:'not-completed',verificationReason:verified.verificationReason},200,request,'hard');}
+  if(env.PI_FALLBACK_API_KEY&&env.PI_FALLBACK_API_URL&&env.PI_FALLBACK_MODEL){
+    try{
+      const response=await callProvider({
+        apiKey:env.PI_FALLBACK_API_KEY,
+        model:env.PI_FALLBACK_MODEL,
+        baseUrl:env.PI_FALLBACK_API_URL,
+        message:effectiveMessage,
+        history,
+        timeoutMs:Math.min(PROVIDER_TIMEOUT_MS,18000),
+        instructions:HARD_REASONING_INSTRUCTIONS,
+        apiStyle:env.PI_FALLBACK_API_STYLE||'responses'
+      });
+      if(response.ok){
+        const body=await response.json();
+        const answer=extractAnswer(body);
+        if(answer&&usefulProviderAnswer(answer)){
+          return krishnaJson({ok:true,status:'answered',answer,source:'pi-chat-fallback',truth:'provisional-model-response',verification:'not-completed',verificationReason:verified?.verificationReason||'edge_hard_reasoning_unavailable'},200,request,'hard');
+        }
+      }
+    }catch{}
+  }
   const verificationReason=verified?.verificationReason||'material_verification_defect';
   return json({ok:false,status:'verification_failed',error:'hard_reasoning_not_verified',answer:'PI found a material verification problem and will not present that draft as reliable.',truth:'unknown',verificationReason},503,request);
 }
