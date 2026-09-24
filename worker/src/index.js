@@ -345,7 +345,8 @@ A practical approach is: establish the baseline, identify plausible causes, test
 function causalInferenceGuardAnswer(message=''){
   const value=String(message);
   const asksCause=/\b(caus(?:e|ed|al|ality)|prove .*caus|created .*revenue|attribute .*increase|caused .*increase)\b/i.test(value);
-  const beforeAfter=/\b(after|before|week after|launched|launch|rose|increased|decreased)\b/i.test(value);
+  const beforeAfter=/\b(after|before|week after|launched|launch|rose|increased|decreased)\b/i.test(value)
+    || (/\b(?:campaign|email campaign|promotion)\b/i.test(value)&&/\b(?:sent|ran|started)\b/i.test(value)&&/\b(?:sales|revenue)\b/i.test(value)&&/\b(?:up|down|higher|lower|increase|decrease|grew|fell)\b/i.test(value));
   const correlationCase=/\b(correlation|correlated|study finds|confounder|association)\b/i.test(value);
   if(!asksCause||(!beforeAfter&&!correlationCase))return null;
   if(correlationCase&&!beforeAfter){
