@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "${PI_STRIPE_SECRET_KEY:-}" == sk_live_* ]] || { echo 'A live PI_STRIPE_SECRET_KEY is required.' >&2; exit 1; }
+          [[ "${PI_STRIPE_SECRET_KEY:-}" == sk_live_* || "${PI_STRIPE_SECRET_KEY:-}" == rk_live_* ]] || { echo 'A live PI_STRIPE_SECRET_KEY is required.' >&2; exit 1; }
           [[ "${PI_STRIPE_PRICE_ID:-}" == price_* ]] || { echo 'PI_STRIPE_PRICE_ID is required.' >&2; exit 1; }
       - name: Create checkout session without charging
         id: checkout
