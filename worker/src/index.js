@@ -160,7 +160,8 @@ function operatingProfitAnswer(message=''){
   const money=(pattern)=>{const match=value.match(pattern);return match?Number(match[1].replaceAll(',','')):null;};
   const sales=money(/\b(?:monthly\s+|daily\s+|today(?:'s)?\s+)?(?:sales|revenue)(?:\s+(?:of|is|are|was|were|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i)
     ?? money(/\$?([0-9][0-9,]*(?:\.[0-9]+)?)\s+(?:in\s+)?(?:total\s+)?(?:sales|revenue)\b/i)
-    ?? money(/\b(?:made|had|generated)\s+\$?([0-9][0-9,]*(?:\.[0-9]+)?)\s+in\s+(?:total\s+)?(?:sales|revenue)\b/i);
+    ?? money(/\b(?:made|had|generated)\s+\$?([0-9][0-9,]*(?:\.[0-9]+)?)\s+in\s+(?:total\s+)?(?:sales|revenue)\b/i)
+    ?? money(/\b(?:sold|did)\s+\$?([0-9][0-9,]*(?:\.[0-9]+)?)(?:\s+(?:today|yesterday|this\s+day))?\b/i);
   const marginMatch=value.match(/\bgross\s+margin(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
   const grossProfitParts=[
     ['fuel gross profit',/\bfuel\s+gross\s+profit(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],

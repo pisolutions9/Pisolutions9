@@ -19,7 +19,9 @@ const hasInternal=r=>/classification:|i recognized this as an informational ques
 const safeFailure=r=>r.status===503 && r.body?.ok===false && (r.body?.truth==='unknown'||r.body?.status==='verification_failed'||/could not|cannot|unavailable|missing|not configured|try again/i.test(text(r)));
 const safeLiveBoundary=r=>{
   if(r.status===200 && r.body?.ok===true){
-    return r.body?.truth==='live-data-response' && Array.isArray(r.body?.sources) && r.body.sources.length>0;
+    if(r.body?.truth==='live-data-response' && Array.isArray(r.body?.sources) && r.body.sources.length>0)return true;
+    if(r.body?.truth==='retailer-search-link' && Array.isArray(r.body?.sources) && r.body.sources.length>0 && /not independently verified|live shopping-data connector is not available/i.test(text(r)))return true;
+    return false;
   }
   return safeFailure(r);
 };
