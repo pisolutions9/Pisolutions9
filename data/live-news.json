@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-24T22:36:43.690Z",
+  "updatedAt": "2026-09-24T22:50:54.057Z",
   "items": [
+    {
+      "title": "Benjamin Netanyahu attacks Israel’s enemies and allies in UN speech",
+      "url": "https://www.aljazeera.com/news/2026/9/24/benjamin-netanyahu-attacks-israels-enemies-and-allies-in-un-speech?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Thu, 24 Sep 2026 22:32:39 +0000"
+    },
     {
       "title": "DR Congo and Ivory Coast top Africa Cup of Nations qualifying opening wins",
       "url": "https://www.aljazeera.com/sports/2026/9/24/dr-congo-and-ivory-coast-top-africa-cup-of-nations-qualifying-opening-wins?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/economy/2026/9/24/new-york-sues-polymarket-over-allegations-of-illegal-gambling-operations?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 24 Sep 2026 20:15:25 +0000"
-    },
-    {
-      "title": "Israel moves to ban main Palestinian-led lists from election",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/24/09-24-israel-palestinian-parties-banned-sv?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 24 Sep 2026 19:54:00 +0000"
     }
   ]
 }
