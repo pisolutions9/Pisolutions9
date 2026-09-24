@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/pi-answer-quality.yml'
       - 'pi/live-answer-quality-test.mjs'
+      - 'pi/owner-style-live-test.mjs'
       - 'worker/src/**'
   workflow_dispatch:
   schedule:
@@ -39,3 +40,5 @@ jobs:
           node-version: 22
       - name: Verify production answer quality
         run: node pi/live-answer-quality-test.mjs
+      - name: Run owner-style 10-question readiness test
+        run: node pi/owner-style-live-test.mjs

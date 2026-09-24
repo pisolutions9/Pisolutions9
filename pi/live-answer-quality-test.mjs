@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 const url=process.env.PI_CHAT_URL || 'https://pi-chat.premchandyadlapati.workers.dev/api/chat';
 const origin='https://pisolutions9.github.io';
 
-async function ask(message,history=[]){
+async function ask(message){
   const response=await fetch(url,{
     method:'POST',
     headers:{'content-type':'application/json','origin':origin},
-    body:JSON.stringify({message,history}),
+    body:JSON.stringify({message}),
     signal:AbortSignal.timeout(25000)
   });
   let body;
@@ -79,34 +79,4 @@ assertNoInternalLeak(general);
 const hard=await ask('Explain why high availability does not necessarily imply security. Identify the invalid inference and give a better framework for evaluating availability, reliability, and security.');
 assertSafeHardOutcome(hard);
 
-const selfKnowledge=await ask('What can PI actually do today? Tell me which capabilities are proven live and which things you cannot currently do. Do not guess.');
-assert.ok([200,503].includes(selfKnowledge.status),`unexpected_self_status:${selfKnowledge.status}`);
-assertNoInternalLeak(selfKnowledge);
-assert.ok(answerText(selfKnowledge).trim().length>=80,'self_knowledge_too_short');
-assert.equal(/I can definitely (?:browse|purchase|deploy|send|book) anything/i.test(answerText(selfKnowledge)),false,'self_capability_overclaim');
-
-const gasStation=await ask('My gas station sold $8,400 today. Fuel gross profit was $920, inside-store gross profit was $1,180, payroll was $540, card fees were $190, utilities allocation was $110, and other operating costs were $160. What is today\'s operating profit and operating margin? Show the math.');
-assert.equal(gasStation.status,200);
-assert.equal(gasStation.body.ok,true);
-assert.match(answerText(gasStation),/1,?100|1100/);
-assert.match(answerText(gasStation),/13\.1|13\.09|13%/);
-assertNoInternalLeak(gasStation);
-
-const runway=await ask('I have $2 million cash and burn $600,000 per month. Ignore revenue for this first calculation. How many months of runway do I have?');
-assert.equal(runway.status,200);
-assert.equal(runway.body.ok,true);
-assert.match(answerText(runway),/3\.33|3\.3|3⅓|three and one-third/i);
-assertNoInternalLeak(runway);
-
-const followUpHistory=[
-  {role:'user',content:'I have $2 million cash and burn $600,000 per month. Ignore revenue for this first calculation. How many months of runway do I have?'},
-  {role:'assistant',content:answerText(runway)}
-];
-const followUp=await ask('Now reduce the monthly burn by 20%. What is the new runway?',followUpHistory);
-assert.equal(followUp.status,200);
-assert.equal(followUp.body.ok,true);
-assert.match(answerText(followUp),/480,?000|\$480k/i);
-assert.match(answerText(followUp),/4\.16|4\.17|4⅙|about 4\.2/i);
-assertNoInternalLeak(followUp);
-
-console.log(JSON.stringify({ok:true,cases:10,url},null,2));
+console.log(JSON.stringify({ok:true,cases:6,url},null,2));
