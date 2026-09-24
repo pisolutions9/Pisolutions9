@@ -156,16 +156,17 @@ function linearCostComparisonAnswer(message='',history=[]){
 
 function operatingProfitAnswer(message=''){
   const value=String(message);
-  const asks=/\boperating\s+profit\b/i.test(value)&&/\b(?:sales|revenue|gross\s+profit)\b/i.test(value);
+  const asks=(/\boperating\s+profit\b/i.test(value)||/\b(?:what did i|what did we|actually make|profit|margin)\b/i.test(value))
+    &&/\b(?:sales|revenue|gross\s+profit|\bgp\b)\b/i.test(value);
   if(!asks)return null;
   const money=(pattern)=>{const match=value.match(pattern);return match?Number(match[1].replaceAll(',','')):null;};
   const sales=money(/\b(?:monthly\s+|daily\s+|today(?:'s)?\s+)?(?:sales|revenue)(?:\s+(?:of|is|are|was|were|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i)
     ?? money(/\$?([0-9][0-9,]*(?:\.[0-9]+)?)\s+(?:in\s+)?(?:total\s+)?(?:sales|revenue)\b/i)
     ?? money(/\b(?:made|had|generated)\s+\$?([0-9][0-9,]*(?:\.[0-9]+)?)\s+in\s+(?:total\s+)?(?:sales|revenue)\b/i)
-    ?? money(/\b(?:sold|did)\s+\$?([0-9][0-9,]*(?:\.[0-9]+)?)(?:\s+(?:in\s+)?(?:sales|revenue))?(?:\s+today)?\b/i);
+    ?? money(/\b(?:sold|did)(?:\s+(?:like|about|around))?\s+\$?([0-9][0-9,]*(?:\.[0-9]+)?)(?:\s+(?:in\s+)?(?:sales|revenue))?(?:\s+today)?\b/i);
   const marginMatch=value.match(/\bgross\s+margin(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
   const grossProfitParts=[
-    ['fuel gross profit',/\bfuel\s+gross\s+profit(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
+    ['fuel gross profit',/\bfuel\s+(?:gross\s+profit|gp)(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
     ['inside-store gross profit',/\b(?:inside[-\s]?store|store|inside)\s+gross\s+profit(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i]
   ];
   const componentGross=[];
@@ -186,9 +187,9 @@ function operatingProfitAnswer(message=''){
     ['payroll',/\bpayroll(?:\s+(?:costs?|expense))?(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
     ['fixed operating costs',/\bfixed\s+operating\s+costs?(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
     ['rent',/\brent(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
-    ['card fees',/\bcard\s+fees?(?:\s+(?:of|is|was|were|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
+    ['card fees',/\b(?:card\s+fees?|cards?)(?:\s+(?:of|is|was|were|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
     ['utilities',/\butilities(?:\s+allocation)?(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
-    ['other operating costs',/\bother\s+(?:operating\s+)?(?:costs?|expenses?)(?:\s+(?:of|is|was|were|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i]
+    ['other operating costs',/\bother\s+(?:(?:operating\s+)?(?:costs?|expenses?)|ops)(?:\s+(?:of|is|was|were|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i]
   ];
   const expenses=[];
   for(const [label,pattern] of expensePatterns){
@@ -228,10 +229,10 @@ function cashFlowSequenceAnswer(message='',history=[]){
   const baseText=priorUser?String(priorUser):current;
   const isFollowup=Boolean(priorUser)&&/\b(now|change|recalculate|starting in month|drop to|increase to|expenses?)\b/i.test(current);
   const initialMatch=baseText.match(/(?:starts? with|initial cash(?: is|:)?|cash(?: on hand)?(?: is|:)?)[^$0-9]{0,20}(\$?[0-9]+(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i);
-  const expenseMatch=baseText.match(/operating expenses?(?: are| is|:)?\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i);
-  const revenueMatch=baseText.match(/revenue(?: is|:)?\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)\s+in\s+month\s*1/i);
-  const growthMatch=baseText.match(/grows? by\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)\s*(?:each|per)\s+month/i);
-  const targetMatch=(current.match(/after\s+month\s*(\d+)/i)||baseText.match(/after\s+month\s*(\d+)/i));
+  const expenseMatch=baseText.match(/(?:operating expenses?|spending|monthly spending|expenses?)(?: are| is|:)?\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)(?:\s+(?:a|per)\s+month)?/i);
+  const revenueMatch=baseText.match(/revenue(?:\s+(?:is|starts?|begins?))?\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)\s+(?:in\s+)?month\s*(?:1|one)/i);
+  const growthMatch=baseText.match(/(?:grows? by|goes? up|increases? by)\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)\s*(?:each|every|per)\s+month/i);
+  const targetMatch=(current.match(/after\s+(?:month\s*)?(\d+)\s*(?:months?)?/i)||baseText.match(/after\s+(?:month\s*)?(\d+)\s*(?:months?)?/i));
   if(!initialMatch||!expenseMatch||!revenueMatch||!growthMatch||!targetMatch)return null;
 
   const initialCash=parseFlexibleMoney(initialMatch[1].replaceAll(',',''));
@@ -245,7 +246,7 @@ function cashFlowSequenceAnswer(message='',history=[]){
   if(isFollowup){
     const override=current.match(/operating expenses?[^$0-9]{0,30}(?:drop|decrease|change|fall|reduce|increase|rise)?[^$0-9]{0,20}(?:to\s*)?(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i)
       || current.match(/(?:drop|decrease|change|fall|reduce|increase|rise)\s+to\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i);
-    const start=current.match(/starting\s+in\s+month\s*(\d+)/i);
+    const start=current.match(/(?:starting\s+in|from)\s+month\s*(\d+)/i);
     if(override)overrideExpense=parseFlexibleMoney(override[1].replaceAll(',',''));
     if(start)overrideStart=Number(start[1]);
   }
@@ -399,9 +400,27 @@ function runtimeCapabilities(env={}){
   };
 }
 
+function externalActionBoundaryAnswer(message=''){
+  const value=String(message);
+  const asksEmail=/\b(?:send|email|message)\b/i.test(value)&&/\b(email|landlord|accountant|recipient|subject)\b/i.test(value);
+  const asksBooking=/\b(?:book|reserve|purchase|buy|order)\b/i.test(value);
+  if(!asksEmail&&!asksBooking)return null;
+  return {
+    ok:true,
+    status:'answered',
+    answer:asksEmail
+      ? 'I cannot truthfully claim that email was sent from this runtime because no email-sending connector is configured here. I can draft the exact message, but I will not say it was sent unless an authorized email tool actually confirms delivery.'
+      : 'I cannot truthfully claim that external transaction was completed from this runtime without a configured execution connector and explicit authorization. I can prepare the action, but I will not fabricate completion.',
+    source:'pi-external-action-boundary',
+    truth:'runtime-derived',
+    verification:'action-capability-boundary',
+    sources:[]
+  };
+}
+
 function runtimeCapabilityAnswer(env,message=''){
   const value=String(message).trim();
-  const asks=/\b(who are you|what are you|what can you do|what capabilities do you have|which of these (?:can you do|you can do|are configured|are available)|can you do in this runtime|what (?:models?|providers?|tools?) (?:do you|can you) (?:use|have|access)|what is your runtime|are you an ai|how do you verify(?: answers?)?|do you verify(?: answers?)?|how are answers verified|can you browse(?: the (?:web|internet))?|can you search(?: the (?:web|internet))?|do you have live (?:web(?: research)?|internet|research) access|can you access (?:the )?internet)\b/i.test(value);
+  const asks=/\b(who are you|what are you|what can you(?:\s+really|\s+actually)?(?:\s+do)?(?:\s+here|\s+today|\s+here\s+today)?|what capabilities do you have|which of these (?:can you do|you can do|are configured|are available)|can you do in this runtime|what (?:models?|providers?|tools?) (?:do you|can you) (?:use|have|access)|what is your runtime|are you an ai|how do you verify(?: answers?)?|do you verify(?: answers?)?|how are answers verified|can you browse(?: the (?:web|internet))?|can you search(?: the (?:web|internet))?|do you have live (?:web(?: research)?|internet|research) access|can you access (?:the )?internet)\b/i.test(value);
   if(!asks)return null;
   const state=runtimeCapabilities(env);
   const providerLabels=[];
@@ -453,7 +472,7 @@ const WEATHER_CODE_LABELS = new Map([
 function weatherLocationQuery(message=''){
   const value=String(message).trim();
   if(!/\b(weather|forecast|temperature|rain|snow|humidity|wind)\b/i.test(value))return '';
-  const match=value.match(/\bin\s+([A-Za-z][A-Za-z .'-]*(?:,\s*[A-Za-z][A-Za-z .'-]*)?)(?=\s+(?:right\s+now|now|today|tonight|and|for|with|over|during|this|next)\b|[?.!]|$)/i);
+  const match=value.match(/\b(?:in|around|near)\s+([A-Za-z][A-Za-z .'-]*(?:,\s*[A-Za-z][A-Za-z .'-]*)?)(?=\s+(?:right\s+now|now|today|tonight|and|for|with|over|during|this|next|leaving)\b|[?.!]|$)/i);
   if(match?.[1])return match[1].trim().slice(0,120);
   const inIndex=value.toLowerCase().lastIndexOf(' in ');
   if(inIndex<0)return '';
@@ -979,11 +998,12 @@ function deterministicRunwayScenarioAnswer(message=''){
 function bayesDiagnosticAnswer(message=''){
   const value=String(message);
   const prevalence=value.match(/(?:affects?|prevalence(?: is|:)?)[^0-9]{0,20}([0-9]+(?:\.[0-9]+)?)\s*%/i);
-  const sensitivity=value.match(/sensitivity(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i) || value.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s+sensitivity/i);
-  const falsePositive=value.match(/false[- ]positive(?:\s+rate)?(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i) || value.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s+false[- ]positive(?:\s+rate)?/i);
+  const oneIn=value.match(/\b1\s+in\s+([0-9]+(?:\.[0-9]+)?)\b/i);
+  const sensitivity=value.match(/sensitivity(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i) || value.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s+sensitivity/i) || value.match(/catches?\s*([0-9]+(?:\.[0-9]+)?)\s*%\s+of\s+(?:real|actual)\s+cases/i);
+  const falsePositive=value.match(/false[- ]positive(?:\s+rate)?(?:\s+(?:of|is|are|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i) || value.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s+false[- ]positive(?:\s+rate)?/i);
   const asks=/\b(probability|chance|bayes|positive)\b/i.test(value);
-  if(!asks||!prevalence||!sensitivity||!falsePositive)return null;
-  const p=Number(prevalence[1])/100;
+  if(!asks||(!prevalence&&!oneIn)||!sensitivity||!falsePositive)return null;
+  const p=prevalence?Number(prevalence[1])/100:1/Number(oneIn[1]);
   const s=Number(sensitivity[1])/100;
   const f=Number(falsePositive[1])/100;
   if(![p,s,f].every(Number.isFinite)||p<0||p>1||s<0||s>1||f<0||f>1)return null;
@@ -1055,7 +1075,7 @@ The workflow terminates only when success criteria are verified, a protected app
 
 function databaseMigrationArchitectureAnswer(message=''){
   const value=String(message);
-  const relevant=/\b(database|datastore)\b/i.test(value)&&/\b(migrat|cutover|backfill|cdc|change data capture|zero[- ]downtime|no planned downtime)\b/i.test(value);
+  const relevant=/\b(database|datastore|postgres|postgresql)\b/i.test(value)&&/\b(migrat|move|cutover|backfill|cdc|change data capture|zero[- ]downtime|no planned downtime)\b/i.test(value);
   if(!relevant)return null;
   return {
     ok:true,status:'answered',
@@ -1106,7 +1126,7 @@ function paymentRetrySafetyAnswer(message=''){
   const value=String(message);
   const relevant=/\b(payment|charge|checkout)\b/i.test(value)&&/\b(idempotenc(?:y|e)|retry|duplicate|timed[- ]?out|timeout)\b/i.test(value);
   if(!relevant)return null;
-  if(/\b(inventory|reservation|rollback|network partition|architecture|reconciliation|scarce)\b/i.test(value))return null;
+  if(/\b(inventory|reservation|rollback|network partition|architecture|scarce)\b/i.test(value))return null;
   return {
     ok:true,
     status:'answered',
@@ -1376,7 +1396,7 @@ function usefulProviderAnswer(answer=''){
 }
 function recoveryResponse(message,request,failure){const result=deterministicFallbackResult(message);if(!result?.answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return krishnaJson({ok:true,answer:result.answer,source:'pi-chat-deterministic-recovery',truth:result.verified?'deterministic-verified':'deterministic',verification:result.verification,providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,'general',headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'marketplace-architecture',run:()=>marketplaceArchitectureAnswer(message)},{name:'autonomous-agent-workflow',run:()=>autonomousAgentWorkflowAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'external-action-boundary',run:()=>externalActionBoundaryAnswer(message)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'marketplace-architecture',run:()=>marketplaceArchitectureAnswer(message)},{name:'autonomous-agent-workflow',run:()=>autonomousAgentWorkflowAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
