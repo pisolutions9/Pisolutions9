@@ -515,7 +515,8 @@ function weatherLocationQuery(message=''){
   const prefix=value.match(/^\s*([A-Za-z][A-Za-z .,'-]{1,80}?)\s+(?:weather|forecast|temperature)\b/i);
   if(prefix?.[1]){
     const cleaned=prefix[1].trim();
-    if(cleaned)return cleaned.slice(0,120);
+    const looksLikeQuestionLead=/^(?:what(?:'s| is)?(?:\s+the)?|whats(?:\s+the)?|how(?:'s| is)?(?:\s+the)?|tell\s+me(?:\s+the)?|give\s+me(?:\s+the)?)$/i.test(cleaned);
+    if(cleaned&&!looksLikeQuestionLead)return cleaned.slice(0,120);
   }
   const coarse=value.match(/\b(?:in|around|near)\s+([^,?.!]{2,100})/i);
   if(coarse?.[1]){
