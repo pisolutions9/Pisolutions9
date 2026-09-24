@@ -152,17 +152,17 @@ function operatingProfitAnswer(message=''){
   const marginMatch=value.match(/\bgross\s+margin(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
   const grossProfitParts=[
     ['fuel gross profit',/\bfuel\s+gross\s+profit(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
-    ['inside-store gross profit',/\b(?:inside[-\s]?store|store|inside)\s+gross\s+profit(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
-    ['gross profit',/\bgross\s+profit(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i]
+    ['inside-store gross profit',/\b(?:inside[-\s]?store|store|inside)\s+gross\s+profit(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i]
   ];
   const componentGross=[];
   for(const [label,pattern] of grossProfitParts){
     const amount=money(pattern);
     if(Number.isFinite(amount))componentGross.push([label,amount]);
   }
+  const genericGrossProfit=money(/(?:^|[.;]\s*)gross\s+profit(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i);
   let grossProfit=null;
-  if(componentGross.length>=2)grossProfit=componentGross.reduce((sum,[,amount])=>sum+amount,0);
-  else if(componentGross.length===1&&!/\bfuel\s+gross\s+profit|\b(?:inside[-\s]?store|store|inside)\s+gross\s+profit/i.test(value))grossProfit=componentGross[0][1];
+  if(componentGross.length>=1)grossProfit=componentGross.reduce((sum,[,amount])=>sum+amount,0);
+  else if(Number.isFinite(genericGrossProfit))grossProfit=genericGrossProfit;
   else if(Number.isFinite(sales)&&marginMatch){
     const margin=Number(marginMatch[1])/100;
     if(Number.isFinite(margin)&&margin>=0&&margin<=1)grossProfit=sales*margin;
@@ -250,7 +250,7 @@ function runtimeCapabilities(env={}){
 
 function runtimeCapabilityAnswer(env,message=''){
   const value=String(message).trim();
-  const asks=/\b(who are you|what are you|what can you do|what capabilities do you have|what (?:models?|providers?|tools?) (?:do you|can you) (?:use|have|access)|what is your runtime|are you an ai|how do you verify(?: answers?)?|do you verify(?: answers?)?|how are answers verified|can you browse(?: the (?:web|internet))?|can you search(?: the (?:web|internet))?|do you have live (?:web(?: research)?|internet|research) access|can you access (?:the )?internet)\b/i.test(value);
+  const asks=/\b(who are you|what are you|what can you do|what capabilities do you have|which of these (?:can you do|are configured|are available)|can you do in this runtime|what (?:models?|providers?|tools?) (?:do you|can you) (?:use|have|access)|what is your runtime|are you an ai|how do you verify(?: answers?)?|do you verify(?: answers?)?|how are answers verified|can you browse(?: the (?:web|internet))?|can you search(?: the (?:web|internet))?|do you have live (?:web(?: research)?|internet|research) access|can you access (?:the )?internet)\b/i.test(value);
   if(!asks)return null;
   const state=runtimeCapabilities(env);
   const providerLabels=[];
@@ -396,16 +396,40 @@ async function directNewsAnswer(message=''){
       if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:source||'Google News source'});
       if(parsed.length===3)break;
     }
+    if(parsed.length>=3){
+      const lines=parsed.map((item,index)=>`${index+1}. ${item.title} — source: ${item.source}; published: ${item.pubDate}.`);
+      return {
+        ok:true,
+        status:'answered',
+        answer:`Three current world-news developments from the live news feed:\n\n${lines.join('\n')}`,
+        source:'pi-news-google-rss',
+        truth:'live-data-response',
+        observedAt:new Date().toISOString(),
+        sources:parsed.map(item=>({url:item.link,title:item.source}))
+      };
+    }
+  }catch{}
+  try{
+    const endpoint='https://api.gdeltproject.org/api/v2/doc/doc?query=sourcelang%3Aenglish&mode=ArtList&format=json&maxrecords=12&sort=HybridRel';
+    const response=await fetch(endpoint,{headers:{accept:'application/json'}});
+    if(!response.ok)return null;
+    const data=await response.json();
+    const articles=Array.isArray(data?.articles)?data.articles:[];
+    const parsed=articles.filter(item=>item&&item.url&&item.title&&item.seendate).slice(0,3);
     if(parsed.length<3)return null;
-    const lines=parsed.map((item,index)=>`${index+1}. ${item.title} — source: ${item.source}; published: ${item.pubDate}.`);
+    const lines=parsed.map((item,index)=>{
+      const source=String(item.domain||'GDELT source');
+      const published=String(item.seendate);
+      return `${index+1}. ${String(item.title).trim()} — source: ${source}; published: ${published} UTC.`;
+    });
     return {
       ok:true,
       status:'answered',
-      answer:`Three current world-news developments from the live news feed:\n\n${lines.join('\n')}`,
-      source:'pi-news-google-rss',
+      answer:`Three current world-news developments from the live GDELT feed:\n\n${lines.join('\n')}`,
+      source:'pi-news-gdelt',
       truth:'live-data-response',
       observedAt:new Date().toISOString(),
-      sources:parsed.map(item=>({url:item.link,title:item.source}))
+      sources:parsed.map(item=>({url:String(item.url),title:String(item.domain||'GDELT source')}))
     };
   }catch{
     return null;
@@ -647,6 +671,7 @@ function paymentRetrySafetyAnswer(message=''){
   const value=String(message);
   const relevant=/\b(payment|charge|checkout)\b/i.test(value)&&/\b(idempotenc(?:y|e)|retry|duplicate|timed[- ]?out|timeout)\b/i.test(value);
   if(!relevant)return null;
+  if(/\b(inventory|reservation|rollback|network partition|architecture|reconciliation|scarce)\b/i.test(value))return null;
   return {
     ok:true,
     status:'answered',
