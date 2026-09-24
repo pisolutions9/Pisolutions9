@@ -7,6 +7,7 @@ on:
       - '.github/workflows/pi-answer-quality.yml'
       - 'pi/live-answer-quality-test.mjs'
       - 'pi/owner-style-live-test.mjs'
+      - 'pi/adversarial-live-routing-test.mjs'
       - 'worker/src/**'
   workflow_dispatch:
   schedule:
@@ -42,3 +43,5 @@ jobs:
         run: node pi/live-answer-quality-test.mjs
       - name: Run owner-style 10-question readiness test
         run: node pi/owner-style-live-test.mjs
+      - name: Run fresh adversarial routing test
+        run: node pi/adversarial-live-routing-test.mjs
