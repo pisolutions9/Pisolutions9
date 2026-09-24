@@ -107,9 +107,9 @@ await Promise.all([
   ]),
 
   run('weather_messy_location','mobile al weather now next six hrs rain?',r=>({
-    useful:r.status===200&&r.body?.truth==='live-data-response'&&/Mobile/i.test(text(r))&&/6 hours/i.test(text(r)),
-    safe:(r.status===200&&r.body?.truth==='live-data-response')||safeFailure(r),
-    detail:'messy location + word six should route live weather'
+    useful:r.status===200&&r.body?.truth==='live-data-response'&&/Mobile, Alabama, United States/i.test(text(r))&&/America\/Chicago/i.test(text(r))&&/6 hours/i.test(text(r)),
+    safe:(r.status===200&&r.body?.truth==='live-data-response'&&/Alabama/i.test(text(r)))||safeFailure(r),
+    detail:'messy US state abbreviation must resolve to Mobile, Alabama, not a similarly named foreign place'
   })),
 
   run('news_slang','today 3 big world things cheppu source time kuda',r=>({
