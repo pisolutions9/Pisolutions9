@@ -228,8 +228,9 @@ function parseFlexibleMoney(value){
 function cashFlowSequenceAnswer(message='',history=[]){
   const current=String(message);
   const priorUser=[...history].reverse().find(item=>item?.role==='user'&&/\b(cash|operating expenses?|revenue|month 1|cash flow)\b/i.test(String(item?.content||'')))?.content||'';
+  const isFollowup=Boolean(priorUser)&&/\b(now|same|change|recalculate|recalc|starting in month|from month|drop to|increase to|decrease to|cut to|expenses?|spending|revenue|cash)\b/i.test(current);
+  if(priorUser&&!isFollowup)return null;
   const baseText=priorUser?String(priorUser):current;
-  const isFollowup=Boolean(priorUser)&&/\b(now|change|recalculate|starting in month|drop to|increase to|expenses?)\b/i.test(current);
   const initialMatch=baseText.match(/(?:starts? with|initial cash(?: is|:)?|cash(?: on hand)?(?: is|:)?)[^$0-9]{0,20}(\$?[0-9]+(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i);
   const expenseMatch=baseText.match(/(?:operating expenses?|spending|monthly spending|expenses?)(?: are| is|:)?\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)(?:\s+(?:a|per)\s+month)?/i);
   const revenueMatch=baseText.match(/revenue(?:\s+(?:is|starts?|begins?))?\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)\s+(?:in\s+)?month\s*(?:1|one)/i);
@@ -492,7 +493,19 @@ function weatherLocationQuery(message=''){
 
 async function directWeatherAnswer(message=''){
   const location=weatherLocationQuery(message);
-  if(!location)return null;
+  if(!location){
+    if(/\b(weather|forecast|temperature|rain|snow|humidity|wind)\b/i.test(String(message))){
+      return {
+        ok:true,
+        status:'clarification_needed',
+        answer:'What location should I use for the weather?',
+        source:'pi-weather-location-clarification',
+        truth:'runtime-derived',
+        sources:[]
+      };
+    }
+    return null;
+  }
   try{
     let place=null;
     for(const query of [...new Set([location,location.split(',')[0].trim()].filter(Boolean))]){
