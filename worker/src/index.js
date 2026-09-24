@@ -1183,7 +1183,26 @@ function extractSources(body){const found=new Map();for(const item of body?.outp
 function extractGroqSources(body){const found=new Map();for(const tool of body?.choices?.[0]?.message?.executed_tools||[]){for(const source of tool?.search_results||[]){const url=source?.url||source?.link;if(url)found.set(url,{url,title:source?.title||url});}}return [...found.values()].slice(0,8);}
 function extractEdgeAnswer(result){if(typeof result==='string')return result.trim()||null;const candidates=[result?.response,result?.output_text,result?.result?.response,result?.result?.output_text,result?.choices?.[0]?.message?.content];for(const value of candidates){if(typeof value==='string'&&value.trim())return value.trim();if(Array.isArray(value)){const text=value.map(part=>typeof part==='string'?part:(part?.text||part?.content||'')).join('').trim();if(text)return text;}}return null;}
 async function edgeCacheKey(model,input){const source=JSON.stringify({v:1,model,input});const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(source));return 'pi-v1-'+[...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join('');}
-async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INSTRUCTIONS,maxTokens=MAX_OUTPUT_TOKENS,timeoutMs=EDGE_TIMEOUT_MS,rejectIfBusy=true}={}){const input={messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:maxTokens};const cacheKey=await edgeCacheKey(model,input);const options={gateway:{id:'default',skipCache:false,cacheTtl:300,cacheKey},...(rejectIfBusy?{rejectIfBusy:true}:{})};const work=env.AI.run(model,input,options);let timer;const boundedTimeout=Math.max(1,timeoutMs);const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`edge model timeout: ${model}`)),boundedTimeout);});try{return await Promise.race([work,timeout]);}finally{clearTimeout(timer);}}
+const edgeInFlight=new Map();
+async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INSTRUCTIONS,maxTokens=MAX_OUTPUT_TOKENS,timeoutMs=EDGE_TIMEOUT_MS,rejectIfBusy=true}={}){
+  const input={messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:maxTokens};
+  const cacheKey=await edgeCacheKey(model,input);
+  const inFlightKey=`${cacheKey}:${rejectIfBusy?'probe':'queue'}`;
+  const existing=edgeInFlight.get(inFlightKey);
+  if(existing)return await existing;
+  const options={gateway:{id:'default',skipCache:false,cacheTtl:300,cacheKey},...(rejectIfBusy?{rejectIfBusy:true}:{})};
+  const boundedTimeout=Math.max(1,timeoutMs);
+  const work=(async()=>{
+    let timer;
+    const providerWork=env.AI.run(model,input,options);
+    const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`edge model timeout: ${model}`)),boundedTimeout);});
+    try{return await Promise.race([providerWork,timeout]);}
+    finally{clearTimeout(timer);}
+  })();
+  if(edgeInFlight.size<128)edgeInFlight.set(inFlightKey,work);
+  try{return await work;}
+  finally{if(edgeInFlight.get(inFlightKey)===work)edgeInFlight.delete(inFlightKey);}
+}
 function edgeResultIncomplete(result,maxTokens){const finishReasons=[result?.finish_reason,result?.choices?.[0]?.finish_reason,result?.result?.finish_reason,result?.result?.choices?.[0]?.finish_reason];if(finishReasons.some(reason=>['length','max_tokens','max_output_tokens'].includes(reason)))return true;const usages=[result?.usage,result?.result?.usage].filter(Boolean);return usages.some(usage=>[usage.completion_tokens,usage.output_tokens,usage.tokens_generated].some(value=>Number.isFinite(value)&&value>=maxTokens));}
 async function callWorkersAI(env,message,history,{preferStrong=false,instructions=PI_INSTRUCTIONS,deadline=null,maxTokens=MAX_OUTPUT_TOKENS,fastProbeMs=EDGE_TIMEOUT_MS}={}){if(!env.AI||typeof env.AI.run!=='function')return null;const configured=env.PI_EDGE_MODEL||DEFAULT_EDGE_MODEL;const models=preferStrong
   ? [...new Set([DEFAULT_EDGE_MODEL,configured,'@cf/openai/gpt-oss-20b','@cf/qwen/qwen3-30b-a3b-fp8','@cf/google/gemma-4-26b-a4b-it'].filter(Boolean))]
