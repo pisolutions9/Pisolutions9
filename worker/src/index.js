@@ -429,6 +429,7 @@ function externalActionBoundaryAnswer(message=''){
 function runtimeCapabilityAnswer(env,message=''){
   const value=String(message).trim();
   const asks=/\b(who are you|what are you|what can you(?:\s+really|\s+actually)?(?:\s+do)?(?:\s+here|\s+today|\s+here\s+today)?|what capabilities do you have|which of these (?:can you do|you can do|are configured|are available)|can you do in this runtime|what (?:models?|providers?|tools?) (?:do you|can you) (?:use|have|access)|what is your runtime|are you an ai|how do you verify(?: answers?)?|do you verify(?: answers?)?|how are answers verified|can you browse(?: the (?:web|internet))?|can you search(?: the (?:web|internet))?|do you have live (?:web(?: research)?|internet|research) access|can you access (?:the )?internet)\b/i.test(value)
+    || /\bwhat can\s+pi(?:\s+actually|\s+really)?\s+do(?:\s+today|\s+right now|\s+now)?\b/i.test(value)
     || /\b(?:tell me|what)\b[^.?!]{0,60}\bconfigured\b/i.test(value);
   if(!asks)return null;
   const state=runtimeCapabilities(env);
@@ -463,7 +464,9 @@ function runtimeCapabilityAnswer(env,message=''){
       state.capabilities.crossDeviceSessionSync
         ? 'Cross-device continuity is available through a private sync link/token for recent conversation state. It is not an authenticated owner-account workspace; anyone who obtains that private link can access the synced session.'
         : 'Cross-device session sync is not currently configured in this runtime.',
-      'PI does not currently claim an authenticated owner-account workspace from this runtime capability check.',
+      state.capabilities.authenticatedOwnerWorkspace
+        ? 'An authenticated owner workspace is configured in this runtime.'
+        : 'An authenticated owner workspace is not currently configured in this runtime.',
       'PI also uses deterministic verified tools for supported calculations/actions, and completed external work must include evidence before PI may claim completion.',
       'This report is generated from runtime configuration. It does not expose credentials and it does not claim integrations that are not actually configured.'
     ].filter(Boolean).join(' '),
