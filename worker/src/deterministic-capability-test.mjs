@@ -35,7 +35,9 @@ try {
   assert.equal(capability.capabilities.capabilities.liveWebResearch, true);
   assert.equal(capability.capabilities.capabilities.crossDeviceSessionSync, false);
   assert.equal(capability.capabilities.capabilities.authenticatedOwnerWorkspace, false);
+  assert.equal(capability.capabilities.capabilities.verifiedLiveShopping, false);
   assert.match(capability.answer, /authenticated owner-account workspace/i);
+  assert.match(capability.answer, /verified live shopping.*not currently configured/i);
   assert.doesNotMatch(capability.answer, /test-openai|test-groq/);
 
 
@@ -111,6 +113,35 @@ try {
   assert.match(runwayScenario.answer,/monthly revenue must reach \$600k/i);
   assert.match(runwayScenario.answer,/confirm whether "monthly burn" means gross operating outflow or net cash burn/i);
 
+  const systemsResponse = await ask('Review this logic: if a system is highly available, it must also be highly reliable; if it is highly reliable, it must be secure; therefore highly available systems are necessarily secure. Identify the invalid inference and construct a better framework.');
+  const systems = await systemsResponse.json();
+  assert.equal(systemsResponse.status,200);
+  assert.equal(systems.ok,true);
+  assert.equal(systems.source,'pi-deterministic-system-properties');
+  assert.equal(systems.truth,'deterministic-verified');
+  assert.match(systems.answer,/distinct properties/i);
+  assert.match(systems.answer,/not proof/i);
+
+  const ecommerceResponse = await ask('An e-commerce service has p95 latency of 900ms, 2% checkout failures, and periodic inventory overselling. Diagnose likely causes and propose a prioritized remediation plan with measurable acceptance tests.');
+  const ecommerce = await ecommerceResponse.json();
+  assert.equal(ecommerceResponse.status,200);
+  assert.equal(ecommerce.ok,true);
+  assert.equal(ecommerce.source,'pi-deterministic-ecommerce-reliability');
+  assert.equal(ecommerce.truth,'deterministic-verified');
+  assert.match(ecommerce.answer,/idempotency/i);
+  assert.match(ecommerce.answer,/overselling/i);
+  assert.match(ecommerce.answer,/acceptance test/i);
+
+  const quantumResponse = await ask('Explain why quantum computers do not simply replace classical computers. Compare qubits, superposition, entanglement, error correction, and practical workloads, then identify what would have to improve for useful large-scale quantum advantage.');
+  const quantum = await quantumResponse.json();
+  assert.equal(quantumResponse.status,200);
+  assert.equal(quantum.ok,true);
+  assert.equal(quantum.source,'pi-deterministic-quantum-classical');
+  assert.equal(quantum.truth,'deterministic-verified');
+  assert.match(quantum.answer,/superposition/i);
+  assert.match(quantum.answer,/error correction/i);
+  assert.match(quantum.answer,/heterogeneous/i);
+
   const paymentResponse = await ask('In a payment API, why can retrying a timed-out POST create duplicate charges? Design a safe retry strategy using idempotency keys and server state.');
   const payment = await paymentResponse.json();
   assert.equal(paymentResponse.status, 200);
@@ -165,25 +196,25 @@ try {
     if(value.startsWith('https://serpapi.com/search.json?')){
       const parsed=new URL(value);
       assert.equal(parsed.searchParams.get('engine'),'google');
-      assert.match(parsed.searchParams.get('q')||'',/site:amazon\.com/i);
+      assert.match(parsed.searchParams.get('q')||'',/laptops?/i);
       return new Response(JSON.stringify({
         organic_results:[
-          {position:1,title:'Stainless Steel Water Bottle 32 oz',link:'https://www.amazon.com/dp/B0TEST123',snippet:'Insulated stainless steel bottle.'},
-          {position:2,title:'Another Amazon Bottle',link:'https://www.amazon.com/dp/B0TEST456',snippet:'Second current result.'}
+          {position:1,title:'Laptop A - $649',link:'https://shop.example/laptop-a',snippet:'Seller A current listing $649.'},
+          {position:2,title:'Laptop B - $699',link:'https://shop.example/laptop-b',snippet:'Seller B current listing $699.'}
         ]
       }),{status:200,headers:{'content-type':'application/json'}});
     }
     throw new Error('unexpected shopping URL: '+url);
   };
-  const shoppingResponse = await ask('Find me a stainless steel water bottle currently available on Amazon and give me the product link.', {SERPAPI_API_KEY:'serp-test-key'});
+  const shoppingResponse = await ask('Find me two laptops under $700 that are available to buy online right now. Give the seller, current price, and direct product link.', {SERPAPI_API_KEY:'serp-test-key'});
   const shopping = await shoppingResponse.json();
   assert.equal(shoppingResponse.status,200);
   assert.equal(shopping.ok,true);
   assert.equal(shopping.source,'pi-shopping-serpapi');
   assert.equal(shopping.truth,'live-data-response');
-  assert.match(shopping.answer,/live shopping results from amazon\.com/i);
-  assert.equal(shopping.sources?.[0]?.url,'https://www.amazon.com/dp/B0TEST123');
-  assert.equal(shopping.sources?.[0]?.title,'Stainless Steel Water Bottle 32 oz');
+  assert.match(shopping.answer,/live shopping results from the web/i);
+  assert.equal(shopping.sources?.[0]?.url,'https://shop.example/laptop-a');
+  assert.equal(shopping.sources?.[0]?.title,'Laptop A - $649');
 
   globalThis.fetch = async () => { throw new Error('network must not be used by deterministic capabilities'); };
 
