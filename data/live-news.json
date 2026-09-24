@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-24T19:56:05.016Z",
+  "updatedAt": "2026-09-24T20:10:04.984Z",
   "items": [
+    {
+      "title": "What’s triggered the latest violence in Ethiopia?",
+      "url": "https://www.aljazeera.com/video/inside-story/2026/9/24/whats-triggered-the-latest-violence-in-ethiopia?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Thu, 24 Sep 2026 19:34:53 +0000"
+    },
     {
       "title": "US rapper Macklemore announces Free Palestine tour after Ed Sheeran fallout",
       "url": "https://www.aljazeera.com/news/2026/9/24/us-rapper-macklemore-announces-free-palestine-tour-after-ed-sheeran-fallout?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/24/jerusalem-daily-ben-gvir-sets-out-bid-to-become-defence-minister?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 24 Sep 2026 17:08:50 +0000"
-    },
-    {
-      "title": "Collapsing currency and inflation leave families struggling in Sudan",
-      "url": "https://www.aljazeera.com/features/2026/9/24/collapsing-currency-and-inflation-leave-families-struggling-in-sudan?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 24 Sep 2026 17:03:55 +0000"
     }
   ]
 }
