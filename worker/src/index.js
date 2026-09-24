@@ -402,6 +402,7 @@ function runtimeCapabilities(env={}){
 
 function externalActionBoundaryAnswer(message=''){
   const value=String(message);
+  if(/\b(?:what can you|capabilit(?:y|ies)|configured or not configured|which of these|available or not available)\b/i.test(value))return null;
   const asksEmail=/\b(?:send|email|message)\b/i.test(value)&&/\b(email|landlord|accountant|recipient|subject)\b/i.test(value);
   const asksBooking=/\b(?:book|reserve|purchase|buy|order)\b/i.test(value);
   if(!asksEmail&&!asksBooking)return null;
