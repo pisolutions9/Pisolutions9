@@ -1,0 +1,98 @@
+name: PI Live News Cache
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pi-news-cache.yml'
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout live-data branch
+        uses: actions/checkout@v5
+        with:
+          ref: live-data
+          fetch-depth: 0
+      - name: Refresh live news cache
+        shell: bash
+        run: |
+          node <<'NODE'
+          import fs from 'node:fs/promises';
+
+          async function fetchJson(url){
+            const r=await fetch(url,{headers:{accept:'application/json','user-agent':'PI-V1.02-NewsCache/1.0'},signal:AbortSignal.timeout(15000)});
+            if(!r.ok)throw new Error('HTTP '+r.status);
+            return r.json();
+          }
+          async function fetchText(url){
+            const r=await fetch(url,{headers:{accept:'application/rss+xml,application/xml,text/xml','user-agent':'PI-V1.02-NewsCache/1.0'},signal:AbortSignal.timeout(15000)});
+            if(!r.ok)throw new Error('HTTP '+r.status);
+            return r.text();
+          }
+          const decode=s=>String(s||'').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+          let items=[];
+          try{
+            const url='https://api.gdeltproject.org/api/v2/doc/doc?query=world&mode=artlist&format=json&maxrecords=30&timespan=1d&sort=datedesc';
+            const data=await fetchJson(url);
+            const articles=Array.isArray(data?.articles)?data.articles:[];
+            items=articles.map(a=>({
+              title:String(a?.title||'').trim(),
+              url:String(a?.url||'').trim(),
+              source:String(a?.domain||'GDELT source').trim(),
+              publishedAt:String(a?.seendate||'').trim()
+            })).filter(x=>x.title&&/^https:\/\//.test(x.url)&&x.publishedAt).slice(0,10);
+          }catch{}
+          if(items.length<3){
+            for(const [url,source] of [
+              ['https://www.aljazeera.com/xml/rss/all.xml','Al Jazeera'],
+              ['https://www.theguardian.com/world/rss','The Guardian'],
+              ['https://feeds.bbci.co.uk/news/world/rss.xml','BBC News']
+            ]){
+              try{
+                const xml=await fetchText(url);
+                for(const m of [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,12)){
+                  const block=m[1];
+                  const title=decode(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
+                  const link=decode(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
+                  const pubDate=decode(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
+                  if(title&&/^https:\/\//.test(link)&&pubDate)items.push({title,url:link,source,publishedAt:pubDate});
+                  if(items.length>=10)break;
+                }
+              }catch{}
+              if(items.length>=3)break;
+            }
+          }
+          const dedup=[];
+          const seen=new Set();
+          for(const item of items){
+            const key=item.url||item.title;
+            if(seen.has(key))continue;
+            seen.add(key);dedup.push(item);
+          }
+          if(dedup.length<3)throw new Error('fewer_than_3_live_news_items');
+          const payload={updatedAt:new Date().toISOString(),items:dedup.slice(0,10)};
+          await fs.mkdir('data',{recursive:true});
+          await fs.writeFile('data/live-news.json',JSON.stringify(payload,null,2)+'\n');
+          console.log(JSON.stringify({ok:true,updatedAt:payload.updatedAt,items:payload.items.length,first:payload.items[0]?.title}));
+          NODE
+      - name: Commit refreshed cache
+        shell: bash
+        run: |
+          if git diff --quiet -- data/live-news.json; then
+            echo "No cache change"
+            exit 0
+          fi
+          git config user.name "pi-news-cache"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/live-news.json
+          git commit -m "Refresh live news cache"
+          git push origin HEAD:live-data
