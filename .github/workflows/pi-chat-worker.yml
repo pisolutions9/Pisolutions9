@@ -43,7 +43,7 @@ jobs:
           node-version: 22
       - name: Install current Wrangler
         working-directory: worker
-        run: npm install --no-save --no-package-lock wrangler@4
+        run: npm install --no-save --no-package-lock wrangler@4.138.0.138.0
       - name: Test deterministic recovery
         working-directory: worker
         run: |
