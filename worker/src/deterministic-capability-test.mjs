@@ -36,7 +36,7 @@ try {
   assert.equal(capability.capabilities.capabilities.crossDeviceSessionSync, false);
   assert.equal(capability.capabilities.capabilities.authenticatedOwnerWorkspace, false);
   assert.equal(capability.capabilities.capabilities.verifiedLiveShopping, false);
-  assert.match(capability.answer, /authenticated owner-account workspace/i);
+  assert.match(capability.answer, /authenticated owner workspace is not currently configured/i);
   assert.match(capability.answer, /verified live shopping.*not currently configured/i);
   assert.doesNotMatch(capability.answer, /test-openai|test-groq/);
 
@@ -51,7 +51,24 @@ try {
   assert.equal(sync.capabilities.capabilities.crossDeviceSessionSync, true);
   assert.equal(sync.capabilities.capabilities.authenticatedOwnerWorkspace, false);
   assert.match(sync.answer, /private sync link\/token/i);
-  assert.match(sync.answer, /not an authenticated owner-account workspace/i);
+  assert.match(sync.answer, /authenticated owner workspace is not currently configured/i);
+
+  const ownerEnv = {
+    OPENAI_API_KEY:'test-openai',
+    PI_OWNER_TOKEN:'owner-secret',
+    PI_SESSION:{ idFromName(){ return 'id'; } }
+  };
+  const ownerCapabilityResponse = await ask('What can PI actually do today? Tell me what is proven live and what is not configured.', ownerEnv);
+  const ownerCapability = await ownerCapabilityResponse.json();
+  assert.equal(ownerCapabilityResponse.status,200);
+  assert.equal(ownerCapability.ok,true);
+  assert.equal(ownerCapability.source,'pi-runtime-capabilities');
+  assert.equal(ownerCapability.truth,'runtime-derived');
+  assert.equal(ownerCapability.capabilities.capabilities.authenticatedOwnerWorkspace,true);
+  assert.equal(ownerCapability.capabilities.capabilities.verifiedLiveShopping,false);
+  assert.match(ownerCapability.answer,/authenticated owner workspace is configured/i);
+  assert.match(ownerCapability.answer,/verified live shopping.*not currently configured/i);
+  assert.doesNotMatch(ownerCapability.answer,/As PI V1\.02, I can confirm/i);
 
   for (const prompt of [
     'How do you verify answers?',
