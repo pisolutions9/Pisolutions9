@@ -484,6 +484,32 @@ async function directNewsAnswer(message=''){
     }
   }catch{}
   try{
+    const endpoint='https://www.aljazeera.com/xml/rss/all.xml';
+    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
+    if(response.ok){
+      const xml=await response.text();
+      const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,10);
+      const parsed=[];
+      for(const match of items){
+        const block=match[1];
+        const title=decodeXml(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
+        const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
+        const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
+        if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:'Al Jazeera'});
+        if(parsed.length===3)break;
+      }
+      if(parsed.length>=3){
+        const lines=parsed.map((item,index)=>`${index+1}. ${item.title} — source: ${item.source}; published: ${item.pubDate}.`);
+        return {
+          ok:true,status:'answered',
+          answer:`Three current world-news developments from the live Al Jazeera feed:\n\n${lines.join('\n')}`,
+          source:'pi-news-aljazeera-rss',truth:'live-data-response',observedAt:new Date().toISOString(),
+          sources:parsed.map(item=>({url:item.link,title:item.source}))
+        };
+      }
+    }
+  }catch{}
+  try{
     const endpoint='https://www.theguardian.com/world/rss';
     const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
     if(response.ok){
