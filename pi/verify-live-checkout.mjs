@@ -12,7 +12,7 @@ function fail(message) {
   process.exit(1);
 }
 
-if (!secret.startsWith('sk_live_')) fail('PI_STRIPE_SECRET_KEY must be a live Stripe secret key.');
+if (!(secret.startsWith('sk_live_') || secret.startsWith('rk_live_'))) fail('PI_STRIPE_SECRET_KEY must be a live Stripe API key.');
 if (!expectedPrice.startsWith('price_')) fail('PI_STRIPE_PRICE_ID is missing or invalid.');
 
 let sessionId;
