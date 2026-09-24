@@ -152,7 +152,8 @@ function operatingProfitAnswer(message=''){
   if(!asks)return null;
   const money=(pattern)=>{const match=value.match(pattern);return match?Number(match[1].replaceAll(',','')):null;};
   const sales=money(/\b(?:monthly\s+|daily\s+|today(?:'s)?\s+)?(?:sales|revenue)(?:\s+(?:of|is|are|was|were|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i)
-    ?? money(/\$?([0-9][0-9,]*(?:\.[0-9]+)?)\s+(?:in\s+)?(?:sales|revenue)\b/i);
+    ?? money(/\$?([0-9][0-9,]*(?:\.[0-9]+)?)\s+(?:in\s+)?(?:total\s+)?(?:sales|revenue)\b/i)
+    ?? money(/\b(?:made|had|generated)\s+\$?([0-9][0-9,]*(?:\.[0-9]+)?)\s+in\s+(?:total\s+)?(?:sales|revenue)\b/i);
   const marginMatch=value.match(/\bgross\s+margin(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
   const grossProfitParts=[
     ['fuel gross profit',/\bfuel\s+gross\s+profit(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
@@ -410,16 +411,19 @@ async function directWeatherAnswer(message=''){
   const location=weatherLocationQuery(message);
   if(!location)return null;
   try{
-    const geocodeUrl='https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(location)+'&count=1&language=en&format=json';
     let place=null;
-    try{
-      const geocodeResponse=await fetch(geocodeUrl,{headers:{accept:'application/json'}});
-      if(geocodeResponse.ok){
-        const geocode=await geocodeResponse.json();
-        const candidate=geocode?.results?.[0];
-        if(candidate&&Number.isFinite(candidate.latitude)&&Number.isFinite(candidate.longitude))place=candidate;
-      }
-    }catch{}
+    for(const query of [...new Set([location,location.split(',')[0].trim()].filter(Boolean))]){
+      try{
+        const geocodeUrl='https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(query)+'&count=3&language=en&format=json';
+        const geocodeResponse=await fetch(geocodeUrl,{headers:{accept:'application/json'}});
+        if(geocodeResponse.ok){
+          const geocode=await geocodeResponse.json();
+          const candidates=Array.isArray(geocode?.results)?geocode.results:[];
+          const candidate=candidates.find(item=>item&&Number.isFinite(item.latitude)&&Number.isFinite(item.longitude));
+          if(candidate){place=candidate;break;}
+        }
+      }catch{}
+    }
     if(!place){
       try{
         const nominatimUrl='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(location);
@@ -496,6 +500,29 @@ async function directNewsAnswer(message=''){
   const value=String(message);
   const asksNews=/\b(news|developments?|headlines?)\b/i.test(value)&&/\b(today|current|latest|happening\s+today|right\s+now|now)\b/i.test(value);
   if(!asksNews)return null;
+  try{
+    const endpoint='https://news.google.com/home?hl=en-US&gl=US&ceid=US:en';
+    const response=await fetch(endpoint,{headers:{accept:'text/html','user-agent':'Mozilla/5.0'}});
+    if(response.ok){
+      const html=await response.text();
+      const articles=[...html.matchAll(/<article[^>]*>([\s\S]*?)<\/article>/gi)];
+      const parsed=[];
+      for(const article of articles){
+        const block=article[1];
+        const title=decodeXml((block.match(/<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i)?.[2]||'').replace(/<[^>]+>/g,'')).trim();
+        const href=block.match(/<a[^>]*href="([^"]+)"/i)?.[1]||'';
+        const datetime=block.match(/<time[^>]*datetime="([^"]+)"/i)?.[1]||'';
+        const sourceText=decodeXml((block.match(/<div[^>]*class="[^"]*(?:vr1PYe|MgUUmf)[^"]*"[^>]*>([\s\S]*?)<\/div>/i)?.[1]||'Google News').replace(/<[^>]+>/g,'')).trim()||'Google News';
+        const link=href.startsWith('./')?'https://news.google.com/'+href.slice(2):href.startsWith('/')?'https://news.google.com'+href:href;
+        if(title&&/^https:\/\//.test(link)&&datetime)parsed.push({title,link,pubDate:datetime,source:sourceText});
+        if(parsed.length===3)break;
+      }
+      if(parsed.length>=3){
+        const lines=parsed.map((item,index)=>`${index+1}. ${item.title} — publisher: ${item.source}; published: ${item.pubDate}.`);
+        return {ok:true,status:'answered',answer:`Three current world-news developments from live Google News aggregation:\n\n${lines.join('\n')}`,source:'pi-news-google-html',truth:'live-data-response',observedAt:new Date().toISOString(),sources:parsed.map(item=>({url:item.link,title:item.source}))};
+      }
+    }
+  }catch{}
   try{
     const endpoint='https://www.bing.com/news/search?q='+encodeURIComponent('world news')+'&format=rss';
     const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
@@ -882,6 +909,31 @@ function deterministicRunwayScenarioAnswer(message=''){
   };
 }
 
+function bayesDiagnosticAnswer(message=''){
+  const value=String(message);
+  const prevalence=value.match(/(?:affects?|prevalence(?: is|:)?)[^0-9]{0,20}([0-9]+(?:\.[0-9]+)?)\s*%/i);
+  const sensitivity=value.match(/sensitivity(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
+  const falsePositive=value.match(/false[- ]positive(?:\s+rate)?(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
+  const asks=/\b(probability|chance|bayes|positive)\b/i.test(value);
+  if(!asks||!prevalence||!sensitivity||!falsePositive)return null;
+  const p=Number(prevalence[1])/100;
+  const s=Number(sensitivity[1])/100;
+  const f=Number(falsePositive[1])/100;
+  if(![p,s,f].every(Number.isFinite)||p<0||p>1||s<0||s>1||f<0||f>1)return null;
+  const numerator=s*p;
+  const denominator=numerator+f*(1-p);
+  if(denominator<=0)return null;
+  const posterior=numerator/denominator;
+  return {
+    ok:true,status:'answered',
+    answer:`Using Bayes' theorem: P(D|+) = [P(+|D)×P(D)] / ([P(+|D)×P(D)] + [P(+|not D)×P(not D)]). Numerator = ${s.toFixed(4)} × ${p.toFixed(4)} = ${numerator.toFixed(4)}. False-positive contribution = ${f.toFixed(4)} × ${(1-p).toFixed(4)} = ${(f*(1-p)).toFixed(4)}. Posterior = ${numerator.toFixed(4)} / ${denominator.toFixed(4)} = ${(posterior*100).toFixed(2)}%. So a positive result implies about ${(posterior*100).toFixed(2)}% probability of actually having the disease under these assumptions.`,
+    source:'pi-deterministic-bayes',
+    truth:'deterministic-verified',
+    verification:'local-calculation',
+    sources:[]
+  };
+}
+
 function databaseMigrationArchitectureAnswer(message=''){
   const value=String(message);
   const relevant=/\b(database|datastore)\b/i.test(value)&&/\b(migrat|cutover|backfill|cdc|change data capture|zero[- ]downtime|no planned downtime)\b/i.test(value);
@@ -1186,7 +1238,7 @@ function usefulProviderAnswer(answer=''){
 }
 function recoveryResponse(message,request,failure){const result=deterministicFallbackResult(message);if(!result?.answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return krishnaJson({ok:true,answer:result.answer,source:'pi-chat-deterministic-recovery',truth:result.verified?'deterministic-verified':'deterministic',verification:result.verification,providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,'general',headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
