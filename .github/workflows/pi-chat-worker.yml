@@ -160,9 +160,9 @@ jobs:
             exit 1
           else
             case "$PI_STRIPE_SECRET_KEY" in
-              sk_test_*) expected_livemode=false; billing_mode=test ;;
-              sk_live_*) expected_livemode=true; billing_mode=live ;;
-              *) echo 'Stripe secret key must be an sk_test_ or sk_live_ key.' >&2; exit 1 ;;
+              sk_test_*|rk_test_*) expected_livemode=false; billing_mode=test ;;
+              sk_live_*|rk_live_*) expected_livemode=true; billing_mode=live ;;
+              *) echo 'Stripe API key must be an sk_test_, sk_live_, rk_test_, or rk_live_ key.' >&2; exit 1 ;;
             esac
             [[ "$PI_STRIPE_WEBHOOK_SECRET" == whsec_* ]] || { echo 'Stripe webhook secret must start with whsec_.' >&2; exit 1; }
             [[ "$PI_STRIPE_PRICE_ID" == price_* ]] || { echo 'Stripe price ID must start with price_.' >&2; exit 1; }

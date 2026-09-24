@@ -30,8 +30,8 @@ function bearer(request){
 }
 function stripeMode(env){
   const key=String(env.PI_STRIPE_SECRET_KEY||'');
-  if(key.startsWith('sk_live_'))return 'live';
-  if(key.startsWith('sk_test_'))return 'test';
+  if(key.startsWith('sk_live_')||key.startsWith('rk_live_'))return 'live';
+  if(key.startsWith('sk_test_')||key.startsWith('rk_test_'))return 'test';
   return 'unknown';
 }
 function configured(env){
