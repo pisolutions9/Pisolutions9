@@ -13,7 +13,7 @@ const results=[];
 async function run(user,name,message,judge,history=[]){
   const r=await ask(message,history);
   let useful=false,safe=false,detail='';
-  try({useful,safe,detail=''}=judge(r));catch(e){detail=String(e)}
+  try{({useful,safe,detail=''}=judge(r));}catch(e){detail=String(e)}
   if(!noLeak(r)){safe=false;detail+=' internal-leak';}
   results.push({user,name,status:r.status,truth:r.body?.truth,source:r.body?.source,useful,safe,detail,answer:txt(r).slice(0,450)});
   return r;
