@@ -1,0 +1,27 @@
+name: PI Owner Readiness Round 2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pi/owner-style-live-test-round2.mjs'
+      - '.github/workflows/pi-owner-readiness-round2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PI_CHAT_URL: https://pi-chat.premchandyadlapati.workers.dev/api/chat
+
+jobs:
+  round2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Run harder unseen 10-question production test
+        run: node pi/owner-style-live-test-round2.mjs
