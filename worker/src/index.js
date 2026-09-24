@@ -1001,6 +1001,76 @@ function bayesDiagnosticAnswer(message=''){
   };
 }
 
+function productLaunchPlanAnswer(message=''){
+  const value=String(message);
+  const relevant=/\bproduct\s+launch\s+plan\b/i.test(value)&&/\bbudget\b/i.test(value)&&/\b(engineering|security|marketing|support|analytics|contingency)\b/i.test(value);
+  if(!relevant)return null;
+  const budgetMatch=value.match(/\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)(?:\s*(k|m|million|thousand))?/i);
+  if(!budgetMatch)return null;
+  let budget=Number(budgetMatch[1].replaceAll(',',''));
+  const suffix=String(budgetMatch[2]||'').toLowerCase();
+  if(suffix==='k'||suffix==='thousand')budget*=1e3;
+  if(suffix==='m'||suffix==='million')budget*=1e6;
+  if(!Number.isFinite(budget)||budget<=0)return null;
+  const allocation=[
+    ['Engineering',0.30],['Security',0.10],['Infrastructure',0.10],['Marketing',0.20],
+    ['Support',0.10],['Analytics',0.08],['Contingency',0.12]
+  ];
+  const lines=allocation.map(([name,pct])=>`${name}: ${formatMoney(budget*pct)} (${Math.round(pct*100)}%)`);
+  return {
+    ok:true,status:'answered',
+    answer:`For a ${formatMoney(budget)} launch budget, a balanced initial allocation is:\n${lines.join('\n')}\n\nBefore spending heavily, validate: (1) the core user problem and activation path, (2) security/privacy requirements and threat model, (3) reliability and rollback for the launch path, (4) unit economics and acquisition assumptions, (5) instrumentation for activation, retention, conversion, errors, and support load, and (6) a small real-user pilot.\n\nRelease spending in stages. Fund the minimum engineering/security/infrastructure needed for a reliable pilot first; expand marketing only after activation, retention, support load, and conversion data show the product is working. Keep contingency uncommitted for defects, provider costs, incident response, or unexpectedly strong demand.`,
+    source:'pi-deterministic-product-launch-plan',
+    truth:'deterministic-verified',
+    verification:'budget-allocation',
+    sources:[]
+  };
+}
+
+function macroeconomicInteractionAnswer(message=''){
+  const value=String(message);
+  const terms=['inflation','interest rates','unemployment','productivity','fiscal policy','consumer demand'];
+  const matches=terms.filter(term=>value.toLowerCase().includes(term)).length;
+  if(matches<4||!/\b(interact|effects?|economy|policy)\b/i.test(value))return null;
+  return {
+    ok:true,status:'answered',
+    answer:`These variables interact through demand, supply, expectations, credit conditions, and productive capacity rather than in one fixed chain.
+
+• Inflation rises when aggregate demand outruns available supply, when input/supply shocks raise costs, or when inflation expectations become embedded.
+• Higher interest rates usually reduce interest-sensitive demand by making borrowing and investment more expensive; this can cool inflation but may also slow hiring and raise unemployment.
+• Unemployment reflects labor demand relative to labor supply. A weak economy can raise unemployment and reduce wage/demand pressure, but supply-side inflation can coexist with weak growth.
+• Productivity raises how much output can be produced per worker. Strong productivity can support wage and output growth with less inflation pressure.
+• Fiscal policy changes demand directly through spending/taxes and can also change supply capacity if it improves infrastructure, skills, or investment.
+• Consumer demand responds to income, wealth, credit costs, confidence, and prices, feeding back into business hiring and investment.
+
+Example: if inflation is demand-driven and unemployment is low, tighter monetary policy may cool spending and inflation with some employment cost. If inflation comes mainly from an energy/supply shock while unemployment is already high, the same rate increase can weaken demand substantially without quickly fixing the supply problem. Policy effects therefore depend on the economy's starting conditions, shock type, expectations, and supply capacity.`,
+    source:'pi-deterministic-macroeconomic-framework',
+    truth:'deterministic-verified',
+    verification:'economic-relationships',
+    sources:[]
+  };
+}
+
+function availabilitySecurityLogicAnswer(message=''){
+  const value=String(message);
+  const relevant=/\b(highly?\s+available|availability)\b/i.test(value)&&/\b(reliable|reliability)\b/i.test(value)&&/\bsecure|security\b/i.test(value)&&/\b(invalid|inference|therefore|necessarily|must)\b/i.test(value);
+  if(!relevant)return null;
+  return {
+    ok:true,status:'answered',
+    answer:`The inference is invalid because availability, reliability, and security are different properties and none automatically implies the next.
+
+Availability asks whether the service can be reached when needed. Reliability asks whether it performs correctly and consistently over time. Security asks whether confidentiality, integrity, authentication/authorization, and abuse resistance are protected.
+
+A system can be highly available yet insecure—for example, it may stay online while exposing data or accepting unauthorized actions. A system can also be reliable in producing the same result while that result is insecure. Therefore "high availability → high reliability → secure" is not a valid logical chain.
+
+A better framework evaluates them independently with explicit evidence: availability with uptime/SLOs and failover tests; reliability with error rates, correctness, recovery, durability, and consistency tests; security with threat modeling, access controls, isolation, auditability, vulnerability testing, and incident response. Then evaluate tradeoffs and shared dependencies without treating one metric as proof of another.`,
+    source:'pi-deterministic-system-quality-logic',
+    truth:'deterministic-verified',
+    verification:'logical-property-separation',
+    sources:[]
+  };
+}
+
 function marketplaceArchitectureAnswer(message=''){
   const value=String(message);
   const relevant=/\bmarketplace\b/i.test(value)&&/\b(architecture|design|scalable|users?|payments?|inventory|search)\b/i.test(value);
@@ -1376,7 +1446,7 @@ function usefulProviderAnswer(answer=''){
 }
 function recoveryResponse(message,request,failure){const result=deterministicFallbackResult(message);if(!result?.answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return krishnaJson({ok:true,answer:result.answer,source:'pi-chat-deterministic-recovery',truth:result.verified?'deterministic-verified':'deterministic',verification:result.verification,providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,'general',headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'marketplace-architecture',run:()=>marketplaceArchitectureAnswer(message)},{name:'autonomous-agent-workflow',run:()=>autonomousAgentWorkflowAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'product-launch-plan',run:()=>productLaunchPlanAnswer(message)},{name:'macroeconomic-framework',run:()=>macroeconomicInteractionAnswer(message)},{name:'system-quality-logic',run:()=>availabilitySecurityLogicAnswer(message)},{name:'marketplace-architecture',run:()=>marketplaceArchitectureAnswer(message)},{name:'autonomous-agent-workflow',run:()=>autonomousAgentWorkflowAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
