@@ -36,7 +36,7 @@ const EDGE_MODEL_FALLBACKS = [
   '@cf/nvidia/nemotron-3-120b-a12b'
 ];
 const OPENAI_MODEL_FALLBACKS = ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5'];
-const HARD_REASONING = /\b(calculate|posterior|bayes|probability|optimi[sz]|linear programming|profit-maximi[sz]|cash model|cash flow|runway|break-even|show the math|total costs? become equal|which is cheaper|double (?:its )?operating profit|additional annual gross profit|additional gross profit|constraint|corner points?|binding constraints?|distributed systems?|network partition|cap theorem|exactly.once|no double charges?|duplicate charges?|idempotenc(?:y|e)|payment api|retry strategy|ledger|migration|reconciliation|invariants?|rollback|shard(?:ed|ing)?|25,?000 writes|correlation|causality|causal inference|confound(?:er|ing)|invalid inference|high availability|security framework|scalable (?:marketplace|architecture)|10m users|prove why|show enough calculations|audit the answer)\b/i;
+const HARD_REASONING = /\b(posterior|bayes|probability|optimi[sz]|linear programming|profit-maximi[sz]|cash model|cash flow|runway|break-even|show the math|total costs? become equal|which is cheaper|double (?:its )?operating profit|additional annual gross profit|additional gross profit|constraint|corner points?|binding constraints?|distributed systems?|network partition|cap theorem|exactly.once|no double charges?|duplicate charges?|idempotenc(?:y|e)|payment api|retry strategy|ledger|migration|reconciliation|invariants?|rollback|shard(?:ed|ing)?|25,?000 writes|correlation|causality|causal inference|confound(?:er|ing)|invalid inference|high availability|security framework|scalable (?:marketplace|architecture)|10m users|prove why|show enough calculations|audit the answer)\b/i;
 function requiresHardReasoning(text=''){return HARD_REASONING.test(String(text));}
 const LIVE_EVIDENCE_ALWAYS = /\b(weather|temperature|forecast|stock (?:price|quote)|score|standings|traffic|open now|available now|in stock|available on|buy online|shop for|find (?:me )?(?:a |an |the )?(?:product|item))\b/i;
 const LIVE_EVIDENCE_FRESHNESS = /\b(latest|live|current|currently|now|right now|today|tonight|this (?:morning|afternoon|evening|week|month|year))\b/i;
@@ -141,6 +141,43 @@ function linearCostComparisonAnswer(message=''){
     lines.push(`At ${n} customers: A = ${formatMoney(costA)}; B = ${formatMoney(costB)}; ${cheaper==='equal'?'the costs are equal':cheaper+' is cheaper'}.`);
   }
   return {ok:true,status:'answered',answer:lines.join('\n'),source:'pi-deterministic-linear-cost',truth:'deterministic-verified',verification:'local-calculation',sources:[]};
+}
+
+function operatingProfitAnswer(message=''){
+  const value=String(message);
+  const asks=/\boperating\s+profit\b/i.test(value)&&/\b(?:sales|revenue)\b/i.test(value)&&/\bgross\s+margin\b/i.test(value);
+  if(!asks)return null;
+  const money=(pattern)=>{const match=value.match(pattern);return match?Number(match[1].replaceAll(',','')):null;};
+  const sales=money(/\b(?:monthly\s+)?(?:sales|revenue)(?:\s+(?:of|is|are|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i);
+  const marginMatch=value.match(/\bgross\s+margin(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
+  if(!Number.isFinite(sales)||!marginMatch)return null;
+  const margin=Number(marginMatch[1])/100;
+  if(!Number.isFinite(margin)||margin<0||margin>1)return null;
+  const expensePatterns=[
+    ['payroll',/\bpayroll(?:\s+(?:of|is|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
+    ['rent',/\brent(?:\s+(?:of|is|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
+    ['utilities',/\butilities(?:\s+(?:of|is|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
+    ['other expenses',/\bother\s+expenses?(?:\s+(?:of|is|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i]
+  ];
+  const expenses=[];
+  for(const [label,pattern] of expensePatterns){
+    const amount=money(pattern);
+    if(Number.isFinite(amount))expenses.push([label,amount]);
+  }
+  if(!expenses.length)return null;
+  const grossProfit=sales*margin;
+  const operatingExpenses=expenses.reduce((sum,[,amount])=>sum+amount,0);
+  const operatingProfit=grossProfit-operatingExpenses;
+  const breakdown=expenses.map(([label,amount])=>`${label} ${formatMoney(amount)}`).join(', ');
+  return {
+    ok:true,
+    status:'answered',
+    answer:`Sales ${formatMoney(sales)} × gross margin ${Number((margin*100).toFixed(2))}% = gross profit ${formatMoney(grossProfit)}. Operating expenses: ${breakdown}, totaling ${formatMoney(operatingExpenses)}. Operating profit = ${formatMoney(grossProfit)} - ${formatMoney(operatingExpenses)} = ${formatMoney(operatingProfit)} per month.`,
+    source:'pi-deterministic-operating-profit',
+    truth:'deterministic-verified',
+    verification:'local-calculation',
+    sources:[]
+  };
 }
 
 function runtimeClockAnswer(message='',now=new Date()){
@@ -583,6 +620,7 @@ const HARD_REASONING_INSTRUCTIONS = `${PI_INSTRUCTIONS} This is a high-depth rea
 const REVIEW_INSTRUCTIONS = "You are PI's independent reviewer and corrector. Review the candidate answer against the user's question for material correctness. Check arithmetic, probability, recurrence, feasibility, omitted terms that change the conclusion, unsupported facts presented as known, contradictory guarantees, and unsafe data-integrity claims. A clearly labeled illustrative assumption or scenario is acceptable when the prompt lacks an input needed for an exact answer. If the candidate explicitly says an exact quantity cannot be determined, identifies the missing inputs, calculates what is derivable, and labels any example assumptions, do not reject it merely for using those assumptions. Do not reject for style, verbosity, or a harmless simplification. If there is no material defect, return exactly PASS. If there is a material defect, return CORRECT on the first line followed by a complete corrected self-contained answer that satisfies the original question. Keep the corrected answer under about 650 words. Never return a correction brief without the corrected answer. Do not praise the candidate.";
 const FINAL_VERIFY_INSTRUCTIONS = "You are PI's final independent verifier. Check the proposed corrected answer against the original question for material correctness, arithmetic, feasibility, unsupported facts, contradictory guarantees, and unsafe data-integrity claims. Clearly labeled illustrative assumptions are allowed when exact inputs are missing. Return exactly PASS if no material defect exists. Otherwise return REVISE followed by a compact description of the remaining material defect. Do not rewrite the answer and do not praise it.";
 const COMPACT_RETRY_INSTRUCTIONS = `${PI_INSTRUCTIONS} The previous attempt reached its output limit. Rewrite the answer from the beginning as a complete, self-contained response under 400 words. Cover every requested area briefly rather than expanding any one section. Do not mention the retry or truncation.`;
+const HARD_COMPACT_RETRY_INSTRUCTIONS = `${PI_INSTRUCTIONS} The previous hard-reasoning attempt reached its output limit. Recompute the material conclusions, then rewrite from the beginning as a complete self-contained answer under 350 words. Preserve every requested section, numeric conclusion, invariant, constraint, and materially important caveat, but compress explanation and examples. Do not mention retrying, truncation, token limits, or internal verification.`;
 
 function validateAttachment(value) {
   if (value === undefined || value === null) return null;
@@ -641,7 +679,7 @@ async function callWorkersAI(env,message,history,{preferStrong=false,instruction
     try{
       const compactTimeLeft=deadline?remainingBudget(deadline):EDGE_TIMEOUT_MS;
       if(compactTimeLeft<=0)return {answer,model,incomplete:true};
-      const compactResult=await runEdgeWithTimeout(env,model,message,history,{instructions:instructions===PI_INSTRUCTIONS?COMPACT_RETRY_INSTRUCTIONS:instructions,maxTokens:COMPACT_OUTPUT_TOKENS,timeoutMs:Math.min(compactTimeLeft,EDGE_TIMEOUT_MS),rejectIfBusy});
+      const compactResult=await runEdgeWithTimeout(env,model,message,history,{instructions:instructions===PI_INSTRUCTIONS?COMPACT_RETRY_INSTRUCTIONS:(instructions===HARD_REASONING_INSTRUCTIONS?HARD_COMPACT_RETRY_INSTRUCTIONS:instructions),maxTokens:COMPACT_OUTPUT_TOKENS,timeoutMs:Math.min(compactTimeLeft,EDGE_TIMEOUT_MS),rejectIfBusy});
       const compactAnswer=extractEdgeAnswer(compactResult);
       if(compactAnswer&&!edgeResultIncomplete(compactResult,COMPACT_OUTPUT_TOKENS))return {answer:compactAnswer,model,incomplete:false,recoveredFrom:'output_limit'};
     }catch(error){console.error(`Workers AI compact retry failed: ${model}`,error instanceof Error?error.message:String(error));}
@@ -786,7 +824,7 @@ function usefulProviderAnswer(answer=''){
 }
 function recoveryResponse(message,request,failure){const result=deterministicFallbackResult(message);if(!result?.answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return krishnaJson({ok:true,answer:result.answer,source:'pi-chat-deterministic-recovery',truth:result.verified?'deterministic-verified':'deterministic',verification:result.verification,providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,'general',headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
