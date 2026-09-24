@@ -501,6 +501,20 @@ async function directNewsAnswer(message=''){
   const asksNews=/\b(news|developments?|headlines?)\b/i.test(value)&&/\b(today|current|latest|happening\s+today|right\s+now|now)\b/i.test(value);
   if(!asksNews)return null;
   try{
+    const cacheUrl='https://raw.githubusercontent.com/pisolutions9/Pisolutions9/live-data/data/live-news.json';
+    const response=await fetch(cacheUrl,{headers:{accept:'application/json'}});
+    if(response.ok){
+      const cache=await response.json();
+      const updatedAt=Date.parse(cache?.updatedAt||'');
+      const fresh=Number.isFinite(updatedAt)&&(Date.now()-updatedAt)<=45*60*1000;
+      const items=Array.isArray(cache?.items)?cache.items.filter(item=>item?.title&&/^https:\/\//.test(String(item?.url||''))&&item?.publishedAt).slice(0,3):[];
+      if(fresh&&items.length>=3){
+        const lines=items.map((item,index)=>`${index+1}. ${String(item.title).trim()} — publisher: ${String(item.source||'source').trim()}; published: ${String(item.publishedAt).trim()}.`);
+        return {ok:true,status:'answered',answer:`Three current world-news developments from PI's live news cache (refreshed ${cache.updatedAt}):\n\n${lines.join('\n')}`,source:'pi-news-live-cache',truth:'live-data-response',observedAt:cache.updatedAt,sources:items.map(item=>({url:String(item.url),title:String(item.source||item.title)}))};
+      }
+    }
+  }catch{}
+  try{
     const endpoint='https://news.google.com/home?hl=en-US&gl=US&ceid=US:en';
     const response=await fetch(endpoint,{headers:{accept:'text/html','user-agent':'Mozilla/5.0'}});
     if(response.ok){
