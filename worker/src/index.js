@@ -96,9 +96,12 @@ function deterministicArithmeticAnswer(message=''){
   };
 }
 
-function linearCostComparisonAnswer(message=''){
-  const value=String(message);
-  const relevant=/\b(?:equal|break[- ]?even|which is cheaper|compare)\b/i.test(value)
+function linearCostComparisonAnswer(message='',history=[]){
+  const current=String(message);
+  const priorUser=[...history].reverse().find(item=>item?.role==='user'&&/\bfixed\b/i.test(String(item?.content||''))&&/\bper\b[^.]{0,40}\bcustomer/i.test(String(item?.content||'')))?.content||'';
+  const value=priorUser?String(priorUser):current;
+  const combined=priorUser?value+'\n'+current:current;
+  const relevant=/\b(?:equal|break[- ]?even|which is cheaper|compare|change only|new break[- ]?even)\b/i.test(combined)
     && /\bfixed\b/i.test(value)
     && /\bper\b[^.]{0,40}\bcustomer/i.test(value);
   if(!relevant)return null;
@@ -111,6 +114,10 @@ function linearCostComparisonAnswer(message=''){
   }
   const a=parseChannel('A');
   const b=parseChannel('B');
+  const overrideA=current.match(/Plan\s*A\s+variable\s+cost[^$0-9]{0,20}(?:from\s+\$?[0-9.]+\s+)?to\s+\$?([0-9]+(?:\.[0-9]+)?)/i);
+  const overrideB=current.match(/Plan\s*B\s+variable\s+cost[^$0-9]{0,20}(?:from\s+\$?[0-9.]+\s+)?to\s+\$?([0-9]+(?:\.[0-9]+)?)/i);
+  if(a&&overrideA)a.variable=Number(overrideA[1]);
+  if(b&&overrideB)b.variable=Number(overrideB[1]);
   if(!a||!b||![a.fixed,a.variable,b.fixed,b.variable].every(Number.isFinite))return null;
   if(a.variable===b.variable){
     const relation=a.fixed===b.fixed?'identical at every customer count':a.fixed<b.fixed?'Channel A is always cheaper':'Channel B is always cheaper';
@@ -118,7 +125,7 @@ function linearCostComparisonAnswer(message=''){
   }
   const equalCount=(b.fixed-a.fixed)/(a.variable-b.variable);
   const equalCost=a.fixed+a.variable*equalCount;
-  const checkpoints=[...value.matchAll(/\bat\s+([0-9][0-9,]*)\s+customers?\b/ig)].map(match=>Number(match[1].replaceAll(',','')));
+  const checkpoints=[...current.matchAll(/\bat\s+([0-9][0-9,]*)\s+customers?\b/ig)].map(match=>Number(match[1].replaceAll(',','')));
   if(!checkpoints.length){
     const checkpointMatch=value.match(/\b(?:at|for)\s+([0-9][0-9,]*)\s+(?:and|,)\s+([0-9][0-9,]*)\s+customers?\b/i)
       || value.match(/\bcheaper\s+at\s+([0-9][0-9,]*)\s+and\s+([0-9][0-9,]*)\s+customers?\b/i);
@@ -267,7 +274,7 @@ function falsePrecisionGuardAnswer(message=''){
   if(/\bcalculate|equation|probability|break[- ]?even|operating profit|margin|runway\b/i.test(value))return null;
   return {
     ok:true,status:'answered',
-    answer:`The exact value cannot be determined from the information given. A sales change alone does not reveal exactly how many customers switched to a competitor, and no discount percentage can be guaranteed to bring every customer back.
+    answer:`PI cannot determine the exact value from the information given. A sales change alone does not reveal exactly how many customers switched to a competitor, and no discount percentage can be guaranteed to bring every customer back.
 
 To estimate customer loss, PI would need at least transaction/customer counts before and after, average order value, repeat-customer behavior, and evidence about where lost customers went. To evaluate discounts, use an experiment with defined segments and measure conversion, margin impact, retention, and incremental profit.
 
@@ -926,8 +933,8 @@ function deterministicRunwayScenarioAnswer(message=''){
 function bayesDiagnosticAnswer(message=''){
   const value=String(message);
   const prevalence=value.match(/(?:affects?|prevalence(?: is|:)?)[^0-9]{0,20}([0-9]+(?:\.[0-9]+)?)\s*%/i);
-  const sensitivity=value.match(/sensitivity(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
-  const falsePositive=value.match(/false[- ]positive(?:\s+rate)?(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
+  const sensitivity=value.match(/sensitivity(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i) || value.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s+sensitivity/i);
+  const falsePositive=value.match(/false[- ]positive(?:\s+rate)?(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i) || value.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s+false[- ]positive(?:\s+rate)?/i);
   const asks=/\b(probability|chance|bayes|positive)\b/i.test(value);
   if(!asks||!prevalence||!sensitivity||!falsePositive)return null;
   const p=Number(prevalence[1])/100;
@@ -1252,7 +1259,7 @@ function usefulProviderAnswer(answer=''){
 }
 function recoveryResponse(message,request,failure){const result=deterministicFallbackResult(message);if(!result?.answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return krishnaJson({ok:true,answer:result.answer,source:'pi-chat-deterministic-recovery',truth:result.verified?'deterministic-verified':'deterministic',verification:result.verification,providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,'general',headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
