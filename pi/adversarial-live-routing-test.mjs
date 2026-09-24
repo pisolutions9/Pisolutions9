@@ -99,7 +99,7 @@ await Promise.all([
     useful:r.status===200&&/200/.test(text(r)),
     safe:r.status===200&&r.body?.ok===true,
     detail:'contradictory follow-up should respect latest instruction'
-  },[
+  }),[
     {role:'user',content:'Plan A is $900 fixed + $5 per customer. Plan B is $300 fixed + $8 per customer. where do they break even?'},
     {role:'assistant',content:'They break even at 200 customers.'},
     {role:'user',content:'same thing, only make Plan B variable cost $6 instead of $8. new break even?'},
