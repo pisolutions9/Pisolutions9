@@ -244,8 +244,8 @@ function cashFlowSequenceAnswer(message='',history=[]){
 
   let overrideExpense=null,overrideStart=null;
   if(isFollowup){
-    const override=current.match(/operating expenses?[^$0-9]{0,30}(?:drop|decrease|change|fall|reduce|increase|rise)?[^$0-9]{0,20}(?:to\s*)?(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i)
-      || current.match(/(?:drop|decrease|change|fall|reduce|increase|rise)\s+to\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i);
+    const override=current.match(/(?:operating\s+)?expenses?[^$0-9]{0,30}(?:drop|decrease|change|fall|reduce|cut|increase|rise)?[^$0-9]{0,20}(?:to\s*)?(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i)
+      || current.match(/(?:drop|decrease|change|fall|reduce|cut|increase|rise)(?:\s+expenses?)?\s+to\s*(\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:million|m|thousand|k)?)/i);
     const start=current.match(/(?:starting\s+in|from)\s+month\s*(\d+)/i);
     if(override)overrideExpense=parseFlexibleMoney(override[1].replaceAll(',',''));
     if(start)overrideStart=Number(start[1]);
@@ -473,6 +473,11 @@ const WEATHER_CODE_LABELS = new Map([
 function weatherLocationQuery(message=''){
   const value=String(message).trim();
   if(!/\b(weather|forecast|temperature|rain|snow|humidity|wind)\b/i.test(value))return '';
+  const coarse=value.match(/\b(?:in|around|near)\s+([^,?.!]{2,100})/i);
+  if(coarse?.[1]){
+    const cleaned=coarse[1].split(/\b(?:right\s+now|now|today|tonight|and|for|with|over|during|this|next|leaving|later)\b/i,1)[0].trim();
+    if(cleaned)return cleaned.slice(0,120);
+  }
   const match=value.match(/\b(?:in|around|near)\s+([A-Za-z][A-Za-z .'-]*(?:,\s*[A-Za-z][A-Za-z .'-]*)?)(?=\s+(?:right\s+now|now|today|tonight|and|for|with|over|during|this|next|leaving)\b|[?.!]|$)/i);
   if(match?.[1])return match[1].trim().slice(0,120);
   const inIndex=value.toLowerCase().lastIndexOf(' in ');
@@ -1001,7 +1006,7 @@ function bayesDiagnosticAnswer(message=''){
   const prevalence=value.match(/(?:affects?|prevalence(?: is|:)?)[^0-9]{0,20}([0-9]+(?:\.[0-9]+)?)\s*%/i);
   const oneIn=value.match(/\b1\s+in\s+([0-9]+(?:\.[0-9]+)?)\b/i);
   const sensitivity=value.match(/sensitivity(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i) || value.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s+sensitivity/i) || value.match(/catches?\s*([0-9]+(?:\.[0-9]+)?)\s*%\s+of\s+(?:real|actual)\s+cases/i);
-  const falsePositive=value.match(/false[- ]positive(?:\s+rate)?(?:\s+(?:of|is|are|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i) || value.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s+false[- ]positive(?:\s+rate)?/i);
+  const falsePositive=value.match(/false[- ]positives?(?:\s+rate)?(?:\s+(?:of|is|are|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i) || value.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s+false[- ]positives?(?:\s+rate)?/i);
   const asks=/\b(probability|chance|bayes|positive)\b/i.test(value);
   if(!asks||(!prevalence&&!oneIn)||!sensitivity||!falsePositive)return null;
   const p=prevalence?Number(prevalence[1])/100:1/Number(oneIn[1]);
