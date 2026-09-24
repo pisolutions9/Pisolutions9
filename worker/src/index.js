@@ -148,7 +148,8 @@ function operatingProfitAnswer(message=''){
   const asks=/\boperating\s+profit\b/i.test(value)&&/\b(?:sales|revenue|gross\s+profit)\b/i.test(value);
   if(!asks)return null;
   const money=(pattern)=>{const match=value.match(pattern);return match?Number(match[1].replaceAll(',','')):null;};
-  const sales=money(/\b(?:monthly\s+|daily\s+|today(?:'s)?\s+)?(?:sales|revenue)(?:\s+(?:of|is|are|was|were|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i);
+  const sales=money(/\b(?:monthly\s+|daily\s+|today(?:'s)?\s+)?(?:sales|revenue)(?:\s+(?:of|is|are|was|were|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i)
+    ?? money(/\$?([0-9][0-9,]*(?:\.[0-9]+)?)\s+(?:in\s+)?(?:sales|revenue)\b/i);
   const marginMatch=value.match(/\bgross\s+margin(?:\s+(?:of|is|:))?\s*([0-9]+(?:\.[0-9]+)?)\s*%/i);
   const grossProfitParts=[
     ['fuel gross profit',/\bfuel\s+gross\s+profit(?:\s+(?:of|is|was|:))?\s*\$?([0-9][0-9,]*(?:\.[0-9]+)?)/i],
@@ -250,7 +251,7 @@ function runtimeCapabilities(env={}){
 
 function runtimeCapabilityAnswer(env,message=''){
   const value=String(message).trim();
-  const asks=/\b(who are you|what are you|what can you do|what capabilities do you have|which of these (?:can you do|are configured|are available)|can you do in this runtime|what (?:models?|providers?|tools?) (?:do you|can you) (?:use|have|access)|what is your runtime|are you an ai|how do you verify(?: answers?)?|do you verify(?: answers?)?|how are answers verified|can you browse(?: the (?:web|internet))?|can you search(?: the (?:web|internet))?|do you have live (?:web(?: research)?|internet|research) access|can you access (?:the )?internet)\b/i.test(value);
+  const asks=/\b(who are you|what are you|what can you do|what capabilities do you have|which of these (?:can you do|you can do|are configured|are available)|can you do in this runtime|what (?:models?|providers?|tools?) (?:do you|can you) (?:use|have|access)|what is your runtime|are you an ai|how do you verify(?: answers?)?|do you verify(?: answers?)?|how are answers verified|can you browse(?: the (?:web|internet))?|can you search(?: the (?:web|internet))?|do you have live (?:web(?: research)?|internet|research) access|can you access (?:the )?internet)\b/i.test(value);
   if(!asks)return null;
   const state=runtimeCapabilities(env);
   const providerLabels=[];
@@ -407,6 +408,32 @@ async function directNewsAnswer(message=''){
         observedAt:new Date().toISOString(),
         sources:parsed.map(item=>({url:item.link,title:item.source}))
       };
+    }
+  }catch{}
+  try{
+    const endpoint='https://feeds.bbci.co.uk/news/world/rss.xml';
+    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
+    if(response.ok){
+      const xml=await response.text();
+      const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,8);
+      const parsed=[];
+      for(const match of items){
+        const block=match[1];
+        const title=decodeXml(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
+        const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
+        const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
+        if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:'BBC News'});
+        if(parsed.length===3)break;
+      }
+      if(parsed.length>=3){
+        const lines=parsed.map((item,index)=>`${index+1}. ${item.title} — source: ${item.source}; published: ${item.pubDate}.`);
+        return {
+          ok:true,status:'answered',
+          answer:`Three current world-news developments from the live BBC World feed:\n\n${lines.join('\n')}`,
+          source:'pi-news-bbc-rss',truth:'live-data-response',observedAt:new Date().toISOString(),
+          sources:parsed.map(item=>({url:item.link,title:item.source}))
+        };
+      }
     }
   }catch{}
   try{
@@ -667,6 +694,30 @@ function deterministicRunwayScenarioAnswer(message=''){
   };
 }
 
+function paymentInventoryArchitectureAnswer(message=''){
+  const value=String(message);
+  const relevant=/\b(payment|checkout|charge)\b/i.test(value)&&/\binventory\b/i.test(value)&&/\b(idempotenc(?:y|e)|retry|timeout|duplicate|reconciliation|rollback|network partition|exactly[- ]?once)\b/i.test(value);
+  if(!relevant)return null;
+  return {
+    ok:true,status:'answered',
+    answer:`Use a durable order/payment state machine, not distributed "exactly once" assumptions.
+
+1. Idempotency: create one stable payment key per logical checkout and atomically reserve it with a request fingerprint before calling the payment provider. Matching retries reuse the same key and replay the stored result; mismatched retries are rejected.
+2. Ledger: persist append-only payment/order transitions such as created, payment_pending, paid, inventory_reserved, fulfilled, failed, refund_pending, refunded, reconciliation_required. Store provider transaction IDs and never infer success from a client timeout.
+3. Inventory reservation: reserve scarce inventory with an expiry/lease before fulfillment. Reservation creation must be atomic for each SKU/unit so concurrent checkouts cannot oversell the same stock.
+4. Reconciliation: if payment or inventory outcome is ambiguous, stop new side effects and reconcile against provider records plus the internal ledger. Scheduled reconciliation repairs stuck states.
+5. Rollback/compensation: after external payment succeeds, rollback is not a simple database undo. If inventory later fails, compensate with an explicit refund/release workflow and preserve the audit trail.
+6. Network partitions: true end-to-end exactly-once execution across independent systems cannot be guaranteed. Aim for at-least-once delivery plus idempotent consumers, deduplication, durable state, and reconciliation so the business effect is effectively once.
+7. Invariant: one logical payment key produces at most one successful charge, and one inventory unit cannot be committed to two fulfilled orders.
+
+This design separates payment truth, inventory truth, and reconciliation instead of pretending a single distributed transaction can make remote systems perfectly atomic.`,
+    source:'pi-deterministic-payment-inventory-architecture',
+    truth:'deterministic-verified',
+    verification:'local-invariants',
+    sources:[]
+  };
+}
+
 function paymentRetrySafetyAnswer(message=''){
   const value=String(message);
   const relevant=/\b(payment|charge|checkout)\b/i.test(value)&&/\b(idempotenc(?:y|e)|retry|duplicate|timed[- ]?out|timeout)\b/i.test(value);
@@ -922,7 +973,7 @@ function usefulProviderAnswer(answer=''){
 }
 function recoveryResponse(message,request,failure){const result=deterministicFallbackResult(message);if(!result?.answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return krishnaJson({ok:true,answer:result.answer,source:'pi-chat-deterministic-recovery',truth:result.verified?'deterministic-verified':'deterministic',verification:result.verification,providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,'general',headers);}
 export { PISessionStore };
-export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((env.OPENAI_API_KEY||env.GROQ_API_KEY)?null:directNewsAnswer(message))},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
+export default{async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message)},{name:'news',run:()=>((env.OPENAI_API_KEY||env.GROQ_API_KEY)?null:directNewsAnswer(message))},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
