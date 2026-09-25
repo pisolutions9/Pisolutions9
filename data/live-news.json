@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-25T23:22:43.242Z",
+  "updatedAt": "2026-09-25T23:35:14.443Z",
   "items": [
+    {
+      "title": "Pope Leo XIV warns AI could undermine humanity during France visit",
+      "url": "https://www.aljazeera.com/news/2026/9/25/pope-leo-xiv-warns-ai-could-undermine-humanity-during-france-visit?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 25 Sep 2026 23:21:52 +0000"
+    },
     {
       "title": "Iran to reopen Strait of Hormuz within a week if US agrees to plan",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/25/iran-to-reopen-strait-of-hormuz-within-a-week-if-us-agrees-to-plan?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/25/huge-fire-on-vehicle-ferry-off-mykonos-prompts-mass-evacuation?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 25 Sep 2026 20:46:15 +0000"
-    },
-    {
-      "title": "Afghan taxi drivers defy the Taliban’s music ban",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/25/afghan-taxi-drivers-defy-the-talibans-music-ban?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 25 Sep 2026 20:42:47 +0000"
     }
   ]
 }
