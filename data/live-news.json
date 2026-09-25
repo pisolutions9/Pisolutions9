@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-25T11:52:08.213Z",
+  "updatedAt": "2026-09-25T12:08:32.739Z",
   "items": [
+    {
+      "title": "Protests in UK after arrest of far-right activist Daniel Thomas",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/25/protests-in-uk-after-arrest-of-far-right-activist-daniel-thomas?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 25 Sep 2026 11:49:24 +0000"
+    },
     {
       "title": "Humanitarian crisis worsens in Ceuta as thousands remain stranded",
       "url": "https://www.aljazeera.com/news/2026/9/25/humanitarian-crisis-worsens-in-ceuta-as-thousands-remain-stranded?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/opinions/2026/9/25/switzerlands-neutrality-vote-is-asking-the-wrong-question?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 25 Sep 2026 09:32:58 +0000"
-    },
-    {
-      "title": "Nepal PM says global order is broken in fighting climate crisis",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/25/25-09-sv-nepal-balendra-shah-climate-justice-speech-np?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 25 Sep 2026 09:11:52 +0000"
     }
   ]
 }
