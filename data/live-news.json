@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-25T02:37:33.720Z",
+  "updatedAt": "2026-09-25T02:51:21.581Z",
   "items": [
+    {
+      "title": "NYC police arrest Susan Sarandon, other celebrities protesting Netanyahu",
+      "url": "https://www.aljazeera.com/news/2026/9/25/nyc-police-arrest-susan-sarandon-other-celebrities-protesting-netanyahu?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 25 Sep 2026 02:35:53 +0000"
+    },
     {
       "title": "Contrasting treatment of Israel and Palestine on display at the UN",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/25/contrasting-treatment-of-israel-and-palestine-on-display-at-the-un?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/liveblog/2026/9/25/iran-war-live-tehran-wants-washington-to-re-enter-mou-before-us-midterms?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 25 Sep 2026 00:00:00 +0000"
-    },
-    {
-      "title": "Trump-Xi summit: Four key takeaways from the Washington, DC, meeting",
-      "url": "https://www.aljazeera.com/news/2026/9/24/trump-xi-summit-four-key-takeaways-from-the-washington-dc-meeting?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 24 Sep 2026 23:51:56 +0000"
     }
   ]
 }
