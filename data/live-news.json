@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-25T21:51:37.103Z",
+  "updatedAt": "2026-09-25T22:06:25.145Z",
   "items": [
+    {
+      "title": "Netanyahu calls Al Jazeera a ‘toxic media outlet’",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/25/netanyahu-calls-al-jazeera-a-toxic-media?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 25 Sep 2026 21:37:35 +0000"
+    },
     {
       "title": "Mbappe goal overshadowed by knee injury to mar Zidane debut France win",
       "url": "https://www.aljazeera.com/sports/2026/9/25/mbappe-goal-overshadowed-by-knee-injury-to-mar-zidane-debut-france-win?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/25/jerusalem-daily-what-was-netanyahus-unga-speech-really-about?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 25 Sep 2026 19:48:37 +0000"
-    },
-    {
-      "title": "Pakistan PM calls Houthi threats to Saudi holy sites a ‘red line’",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/25/pakistan-pm-calls-houthi-threats-to-saudi-holy-sites-a-red?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 25 Sep 2026 19:38:21 +0000"
     }
   ]
 }
