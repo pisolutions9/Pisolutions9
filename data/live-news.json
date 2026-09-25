@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-25T17:38:23.107Z",
+  "updatedAt": "2026-09-25T17:52:20.666Z",
   "items": [
+    {
+      "title": "Al Jazeera rejects Netanyahu’s attack on journalists in UN speech",
+      "url": "https://www.aljazeera.com/news/2026/9/25/al-jazeera-rejects-netanyahus-attack-on-journalists-in-un-speech?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 25 Sep 2026 17:34:16 +0000"
+    },
     {
       "title": "Timeline: Man City’s Premier League financial charges to reported verdict",
       "url": "https://www.aljazeera.com/sports/2026/9/25/timeline-man-citys-premier-league-financial-charges-to-reported-verdict?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/25/what-the-trump-xi-meeting-revealed-about-global-power?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 25 Sep 2026 15:26:56 +0000"
-    },
-    {
-      "title": "Trump hails ‘very productive’ talks with China’s Xi",
-      "url": "https://www.aljazeera.com/news/2026/9/25/trump-hails-very-productive-talks-with-chinas-xi?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 25 Sep 2026 15:19:34 +0000"
     }
   ]
 }
