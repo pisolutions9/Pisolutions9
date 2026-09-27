@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-27T14:37:24.182Z",
+  "updatedAt": "2026-09-27T14:50:22.124Z",
   "items": [
+    {
+      "title": "True Crime Reports: The Dosa King’s Deadly Obsession",
+      "url": "https://www.aljazeera.com/video/true-crime-reports/2026/9/27/true-crime-reports-the-dosa-kings-deadly-obsession?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 27 Sep 2026 14:09:23 +0000"
+    },
     {
       "title": "Yemen’s health system could collapse in some areas, minister warns",
       "url": "https://www.aljazeera.com/news/2026/9/27/yemens-health-system-could-collapse-in-some-areas-minister-warns?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/27/no-role-for-unrwa-in-gaza-does-the-board-of-peace-toe-israeli-lines?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 27 Sep 2026 11:04:30 +0000"
-    },
-    {
-      "title": "‘My hands are empty’: Displaced Palestinians struggle to survive",
-      "url": "https://www.aljazeera.com/features/2026/9/27/my-hands-are-empty-displaced-palestinians-struggle-to-survive?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 27 Sep 2026 10:26:21 +0000"
     }
   ]
 }
