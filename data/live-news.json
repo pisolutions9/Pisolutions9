@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-27T21:23:55.532Z",
+  "updatedAt": "2026-09-27T21:37:05.828Z",
   "items": [
+    {
+      "title": "Alleged rape on campus sparks violent protest at Indian university",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/alleged-rape-on-campus-sparks-violent-protest-at-indian-university?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 27 Sep 2026 21:17:05 +0000"
+    },
     {
       "title": "Floods inundate roads in southeastern Algeria",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/floods-inundate-roads-in-southeastern-algeria?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/27/serbian-president-aleksandar-vucic-resigns-amid-prolonged-protests?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 27 Sep 2026 20:29:34 +0000"
-    },
-    {
-      "title": "Israel revokes Dutch diplomats’ status over sanctions on settlements",
-      "url": "https://www.aljazeera.com/news/2026/9/27/israel-revokes-dutch-diplomats-status-over-sanctions-on-settlements?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 27 Sep 2026 20:21:30 +0000"
     }
   ]
 }
