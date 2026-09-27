@@ -1,6 +1,18 @@
 {
-  "updatedAt": "2026-09-27T19:22:37.037Z",
+  "updatedAt": "2026-09-27T19:35:58.637Z",
   "items": [
+    {
+      "title": "Stuck between Israeli military checkpoints",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/stuck-between-israeli-military-checkpoints?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 27 Sep 2026 19:04:21 +0000"
+    },
+    {
+      "title": "Palestine Action protesters arrested in Liverpool",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/aje-onl-nf_palestine-action-protesters-arrested-in-liverpool-270926?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 27 Sep 2026 18:56:27 +0000"
+    },
     {
       "title": "At least 12 dead and dozens missing after a vessel capsizes in DRC",
       "url": "https://www.aljazeera.com/news/2026/9/27/at-least-12-dead-and-dozens-missing-after-a-vessel-capsizes-in-drc?traffic_source=rss",
@@ -48,18 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/jerusalem-daily-israeli-opposition-leaders-unite-to-drive-out-netanyahu?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 27 Sep 2026 16:53:57 +0000"
-    },
-    {
-      "title": "Northern Ireland protesters block Orange Order march into Catholic area",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/aje-onl-nf_northern-ireland-protesters-block-orange-order-270926?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 27 Sep 2026 16:51:15 +0000"
-    },
-    {
-      "title": "Muslims protest planned demolition of ‘600-year-old’ mosque in India",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/muslims-protest-planned-demolition-of-600-year-old-mosque-in-india?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 27 Sep 2026 16:37:59 +0000"
     }
   ]
 }
