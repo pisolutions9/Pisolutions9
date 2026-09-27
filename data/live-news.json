@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-27T10:50:30.609Z",
+  "updatedAt": "2026-09-27T11:06:33.765Z",
   "items": [
+    {
+      "title": "‘My hands are empty’: Displaced Palestinians struggle to survive",
+      "url": "https://www.aljazeera.com/features/2026/9/27/my-hands-are-empty-displaced-palestinians-struggle-to-survive?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 27 Sep 2026 10:26:21 +0000"
+    },
     {
       "title": "Israeli minister Bezalel Smotrich calls for war in occupied West Bank",
       "url": "https://www.aljazeera.com/news/2026/9/27/israeli-minister-bezalel-smotrich-calls-for-war-in-occupied-west-bank?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/suicide-bombing-in-northwest-pakistan-kills-at-least-12?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 27 Sep 2026 08:26:24 +0000"
-    },
-    {
-      "title": "Photos: Pope Leo draws hundreds of thousands for open-air Mass in Paris",
-      "url": "https://www.aljazeera.com/gallery/2026/9/27/photos-pope-leo-draws-hundreds-of-thousands-for-open-air-mass-in-paris?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 27 Sep 2026 08:22:01 +0000"
     }
   ]
 }
