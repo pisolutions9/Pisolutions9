@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-27T05:50:42.532Z",
+  "updatedAt": "2026-09-27T06:08:22.539Z",
   "items": [
+    {
+      "title": "Several killed in South Africa shooting",
+      "url": "https://www.aljazeera.com/news/2026/9/27/several-killed-in-south-africa-shooting?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 27 Sep 2026 05:48:47 +0000"
+    },
     {
       "title": "Huge crowds cheer Pope Leo as he leads open-air Mass in Paris",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/huge-crowds-cheer-pope-leo-as-he-leads-open-air-mass-in-paris?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/27/venezuela-frees-39-political-prisoners-after-post-maduro-talks?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 27 Sep 2026 01:42:46 +0000"
-    },
-    {
-      "title": "EU unlocks humanitarian aid for crises worldwide",
-      "url": "https://www.aljazeera.com/news/2026/9/27/eu-unlocks-humanitarian-aid-for-africa-and-other-crisis-hit-regions?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 27 Sep 2026 01:27:13 +0000"
     }
   ]
 }
