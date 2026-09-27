@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-27T23:06:07.754Z",
+  "updatedAt": "2026-09-27T23:23:13.707Z",
   "items": [
+    {
+      "title": "Powerful storm floods US Northeast, causes power outages",
+      "url": "https://www.aljazeera.com/news/2026/9/27/powerful-storm-floods-us-northeast-causes-power-outages?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 27 Sep 2026 22:51:29 +0000"
+    },
     {
       "title": "Ireland defeats Israel in controversial UEFA Nations League match",
       "url": "https://www.aljazeera.com/sports/2026/9/27/ireland-defeats-israel-in-controversial-uefa-nations-league-match?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/27/three-killed-four-injured-in-shooting-at-detroit-michigan-strip-club?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 27 Sep 2026 20:44:40 +0000"
-    },
-    {
-      "title": "‘Atrocious’ crime: Cuban official decries possibility of US military action",
-      "url": "https://www.aljazeera.com/news/2026/9/27/atrocious-crime-cuban-official-decries-possibility-of-us-military-action?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 27 Sep 2026 20:34:09 +0000"
     }
   ]
 }
