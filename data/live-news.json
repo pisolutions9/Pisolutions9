@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-27T02:25:24.310Z",
+  "updatedAt": "2026-09-27T02:38:59.715Z",
   "items": [
+    {
+      "title": "Powerful storm batters US Northeast disrupting power and travel",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/powerful-storm-batters-us-northeast-disrupting-power-and-travel?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 27 Sep 2026 02:19:34 +0000"
+    },
     {
       "title": "Did the biggest week of diplomacy make headway in ending the US-Iran war?",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/did-the-biggest-week-of-diplomacy-make-headway-in-ending-the-us-iran-war?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/26/deadly-shooting-hits-caribbean-islands-of-saint-vincent-and-the-grenadines?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sat, 26 Sep 2026 22:38:01 +0000"
-    },
-    {
-      "title": "Student protesters disrupt NVIDIA AI climate panel",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/26/student-protesters-disrupt-nvidia-ai-climate-panel?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sat, 26 Sep 2026 22:09:33 +0000"
     }
   ]
 }
