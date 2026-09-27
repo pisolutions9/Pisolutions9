@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-27T06:47:11.740Z",
+  "updatedAt": "2026-09-27T07:06:33.812Z",
   "items": [
+    {
+      "title": "Northern Ireland court allows Orange Order march through Catholic area",
+      "url": "https://www.aljazeera.com/news/2026/9/27/northern-ireland-court-allows-orange-order-march-through-catholic-area?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 27 Sep 2026 06:53:31 +0000"
+    },
     {
       "title": "At least 17 killed in South Africa shooting, police hunt for eight suspects",
       "url": "https://www.aljazeera.com/news/2026/9/27/several-killed-in-south-africa-shooting?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/did-the-biggest-week-of-diplomacy-make-headway-in-ending-the-us-iran-war?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 27 Sep 2026 01:59:17 +0000"
-    },
-    {
-      "title": "Venezuela frees 39 political prisoners after post-Maduro talks",
-      "url": "https://www.aljazeera.com/news/2026/9/27/venezuela-frees-39-political-prisoners-after-post-maduro-talks?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 27 Sep 2026 01:42:46 +0000"
     }
   ]
 }
