@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-27T07:06:33.812Z",
+  "updatedAt": "2026-09-27T07:24:40.096Z",
   "items": [
+    {
+      "title": "Australia summons OpenAI and Anthropic CEOs to appear at AI inquiry",
+      "url": "https://www.aljazeera.com/news/2026/9/27/australia-summons-openai-and-anthropic-ceos-to-appear-at-ai-inquiry?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 27 Sep 2026 07:08:28 +0000"
+    },
     {
       "title": "Northern Ireland court allows Orange Order march through Catholic area",
       "url": "https://www.aljazeera.com/news/2026/9/27/northern-ireland-court-allows-orange-order-march-through-catholic-area?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/powerful-storm-batters-us-northeast-disrupting-power-and-travel?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 27 Sep 2026 02:19:34 +0000"
-    },
-    {
-      "title": "Did the biggest week of diplomacy make headway in ending the US-Iran war?",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/did-the-biggest-week-of-diplomacy-make-headway-in-ending-the-us-iran-war?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 27 Sep 2026 01:59:17 +0000"
     }
   ]
 }
