@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-28T00:34:15.697Z",
+  "updatedAt": "2026-09-28T00:55:43.013Z",
   "items": [
+    {
+      "title": "Refugees in South Africa fear new attacks as September 30 deadline looms",
+      "url": "https://www.aljazeera.com/news/2026/9/28/refugees-in-south-africa-fear-new-attacks-as-september-30-deadline-looms?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 28 Sep 2026 00:29:25 +0000"
+    },
     {
       "title": "Iran war live: Tehran says it’s fully prepared for war amid Hormuz tensions",
       "url": "https://www.aljazeera.com/news/liveblog/2026/9/28/iran-war-live-tehran-warns-its-fully-prepared-for-war-amid-hormuz-tensions?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/deadly-strike-hits-market-in-yemens-taiz?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 27 Sep 2026 21:00:55 +0000"
-    },
-    {
-      "title": "Israeli strikes continue in southern Lebanon despite ceasefire",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/israeli-strikes-continue-in-southern-lebanon-despite-ceasefire?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 27 Sep 2026 20:57:38 +0000"
     }
   ]
 }
