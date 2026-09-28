@@ -1,6 +1,18 @@
 {
-  "updatedAt": "2026-09-28T05:10:55.628Z",
+  "updatedAt": "2026-09-28T05:27:12.328Z",
   "items": [
+    {
+      "title": "Russian strikes kill eight, injure dozens across Ukraine",
+      "url": "https://www.aljazeera.com/news/2026/9/28/russian-strikes-kill-eight-injure-dozens-across-ukraine?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 28 Sep 2026 05:06:11 +0000"
+    },
+    {
+      "title": "Sudanese army impounds dozens of motorcycles in Blue Nile curfew",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/28/sudanese-army-impounds-dozens-of-motorcycles-in-blue-nile-curfew?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 28 Sep 2026 04:56:00 +0000"
+    },
     {
       "title": "Serbia’s president resigns to run for prime minister",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/28/28-09-sv-serbias-vucic-resigns-to-run-for-pm-sb?traffic_source=rss",
@@ -48,18 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/28/ben-gvir-releases-video-threatening-to-kill-senior-hamas-figure-in-jail?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 28 Sep 2026 01:33:52 +0000"
-    },
-    {
-      "title": "Refugees in South Africa fear new attacks as September 30 deadline looms",
-      "url": "https://www.aljazeera.com/news/2026/9/28/refugees-in-south-africa-fear-new-attacks-as-september-30-deadline-looms?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 28 Sep 2026 00:29:25 +0000"
-    },
-    {
-      "title": "South African police discover body of 11th woman near Johannesburg",
-      "url": "https://www.aljazeera.com/news/2026/9/28/south-african-police-discover-body-of-10th-woman-near-johannesburg?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 28 Sep 2026 00:25:12 +0000"
     }
   ]
 }
