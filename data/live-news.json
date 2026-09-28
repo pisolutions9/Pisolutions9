@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-28T13:11:11.371Z",
+  "updatedAt": "2026-09-28T13:29:12.631Z",
   "items": [
+    {
+      "title": "Thai police arrest jet skier after joyride through flooded Bangkok streets",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/28/thai-police-arrest-jet-skier-after-joyride-through-flooded-bangkok-streets?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 28 Sep 2026 13:00:43 +0000"
+    },
     {
       "title": "Police clash with protesters over mosque demolitions in India",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/28/police-clash-with-protesters-over-mosque-demolitions-in-india?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/28/ethiopia-accuses-sudan-egypt-of-backing-tigray-rebels-as-fighting-rages?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 28 Sep 2026 11:00:23 +0000"
-    },
-    {
-      "title": "Palestinians denounce Israeli minister Ben-Gvir’s threats against prisoner",
-      "url": "https://www.aljazeera.com/news/2026/9/28/palestinians-denounce-israeli-minister-ben-gvirs-threats-against-prisoner?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 28 Sep 2026 10:11:28 +0000"
     }
   ]
 }
