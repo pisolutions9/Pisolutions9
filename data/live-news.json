@@ -1,12 +1,6 @@
 {
-  "updatedAt": "2026-09-28T02:53:47.456Z",
+  "updatedAt": "2026-09-28T03:07:13.468Z",
   "items": [
-    {
-      "title": "Venezuelans rally for opposition leader’s return and presidential elections",
-      "url": "https://www.aljazeera.com/news/2026/9/28/venezuelans-rally-for-opposition-leaders-return-and-presidential-elections?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 28 Sep 2026 02:36:00 +0000"
-    },
     {
       "title": "Palestine Action protesters arrested outside UK Labour Party conference",
       "url": "https://www.aljazeera.com/news/2026/9/28/palestine-action-protesters-arrested-outside-uk-labour-party-conference?traffic_source=rss",
@@ -60,6 +54,12 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/27/man-citys-115-charges-the-scandal-the-escape-and-peps-own?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 27 Sep 2026 23:09:48 +0000"
+    },
+    {
+      "title": "Powerful storm floods US Northeast, causes power outages",
+      "url": "https://www.aljazeera.com/news/2026/9/27/powerful-storm-floods-us-northeast-causes-power-outages?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 27 Sep 2026 22:51:29 +0000"
     }
   ]
 }
