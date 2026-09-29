@@ -1,6 +1,18 @@
 {
-  "updatedAt": "2026-09-29T06:32:07.679Z",
+  "updatedAt": "2026-09-29T06:56:58.630Z",
   "items": [
+    {
+      "title": "Australia raises interest rates to 15-year high",
+      "url": "https://www.aljazeera.com/economy/2026/9/29/australia-raises-interest-rates-to-15-year-high?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 29 Sep 2026 06:29:01 +0000"
+    },
+    {
+      "title": "AFCON qualifiers: Wissa guides DR Congo to win, Tunisia held by Botswana",
+      "url": "https://www.aljazeera.com/sports/2026/9/29/africa-cup-of-nations-qualifying-afcon-wissa-dr-congo-tunisia?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 29 Sep 2026 06:18:42 +0000"
+    },
     {
       "title": "Public transport drivers strike in Manila over soaring fuel prices",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/29/public-transport-drivers-strike-in-manila-over-soaring-fuel-prices?traffic_source=rss",
@@ -48,18 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/29/irans-araghchi-meets-qatari-mediators-as-us-insists-on-nuclear-talks?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 29 Sep 2026 02:36:25 +0000"
-    },
-    {
-      "title": "Hungary lifts immunity of Prime Minister Magyar, two Orban-era ministers",
-      "url": "https://www.aljazeera.com/news/2026/9/29/hungary-lifts-immunity-of-prime-minister-magyar-two-orban-era-ministers?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 29 Sep 2026 01:01:38 +0000"
-    },
-    {
-      "title": "OpenAI cancels release of AI model GPT-6.1 Astra, citing safety concerns",
-      "url": "https://www.aljazeera.com/economy/2026/9/29/openai-scraps-release-of-latest-ai-model-over-safety-concerns?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 29 Sep 2026 00:38:06 +0000"
     }
   ]
 }
