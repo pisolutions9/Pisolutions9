@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-28T23:51:40.580Z",
+  "updatedAt": "2026-09-29T00:09:16.840Z",
   "items": [
+    {
+      "title": "Fiery end for SpaceX Starship mission",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/28/fiery-end-for-spacex-starship-mission?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 28 Sep 2026 23:48:48 +0000"
+    },
     {
       "title": "UK: ‘Too soon’ to blame airbase plot on foreign state",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/28/uk-too-soon-to-blame-airbase-plot-on-foreign-state?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/28/aje-onl-nf_slovenias-u-turn-towards-israel-280926?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 28 Sep 2026 20:35:51 +0000"
-    },
-    {
-      "title": "Gaza’s young inventors build robots with what they have",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/28/gazas-young-inventors-build-robots-with-what-they-have?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 28 Sep 2026 20:34:22 +0000"
     }
   ]
 }
