@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-29T04:55:16.682Z",
+  "updatedAt": "2026-09-29T05:06:55.972Z",
   "items": [
+    {
+      "title": "Pope Leo says AI risk concerns not ‘fake news’",
+      "url": "https://www.aljazeera.com/economy/2026/9/29/pope-leo-says-ai-risk-concerns-not-fake-news?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 29 Sep 2026 04:51:46 +0000"
+    },
     {
       "title": "Rubio, Saudi Arabia’s foreign minister hold talks on Yemen, Hormuz Strait",
       "url": "https://www.aljazeera.com/news/2026/9/29/rubio-saudi-arabias-foreign-minister-hold-talks-on-yemen-hormuz-strait?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/29/inside-al-jazeeras-unga-coverage?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 29 Sep 2026 00:10:21 +0000"
-    },
-    {
-      "title": "Iran war live: Trump says he did not offer Tehran sanctions relief",
-      "url": "https://www.aljazeera.com/news/liveblog/2026/9/29/iran-war-live-trump-says-he-did-not-offer-tehran-sanctions-relief?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 29 Sep 2026 00:00:00 +0000"
     }
   ]
 }
