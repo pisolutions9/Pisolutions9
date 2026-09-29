@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-29T18:55:18.778Z",
+  "updatedAt": "2026-09-29T19:07:51.815Z",
   "items": [
+    {
+      "title": "Jerusalem Daily: Israeli worshippers attack Palestinian man",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/29/aje-onl-nf_j_daily_israeli-worshippers-attack-palestinian-man-290926?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 29 Sep 2026 18:51:30 +0000"
+    },
     {
       "title": "Trump unveils new site to simplify access to government services",
       "url": "https://www.aljazeera.com/economy/2026/9/29/trump-unveils-new-site-to-simplify-access-to-government-services?traffic_source=rss",
@@ -14,7 +20,7 @@
       "publishedAt": "Tue, 29 Sep 2026 18:10:37 +0000"
     },
     {
-      "title": "Knife-wielding schoolboy kills teacher, injures two in Slovakia",
+      "title": "Schoolboy kills teacher, injures two in Slovakia school stabbing",
       "url": "https://www.aljazeera.com/news/2026/9/29/slovakia-teacher-killed-in-stabbing-by-student?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 29 Sep 2026 18:03:19 +0000"
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/29/russian-nuclear-capable-bomber-plane-crashes-killing-six-people?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 29 Sep 2026 16:03:39 +0000"
-    },
-    {
-      "title": "LIVE: Spain vs Croatia – Nations League",
-      "url": "https://www.aljazeera.com/sports/liveblog/2026/9/29/live-spain-vs-croatia-nations-league?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 29 Sep 2026 15:59:10 +0000"
     }
   ]
 }
