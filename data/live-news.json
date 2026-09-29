@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-29T17:42:07.418Z",
+  "updatedAt": "2026-09-29T17:55:55.878Z",
   "items": [
+    {
+      "title": "Ethiopia blames regional rivals as risk of conflict spillover rises",
+      "url": "https://www.aljazeera.com/news/2026/9/29/ethiopia-blames-regional-rivals-as-risk-of-conflict-spillover-rises?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 29 Sep 2026 17:25:09 +0000"
+    },
     {
       "title": "Mourners in Gaza bury remains of loved ones killed in 2023 Israeli strike",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/29/mourners-in-gaza-bury-remains-of-loved-ones-killed-in-2023-israeli-strike?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/29/us-iran-talks-in-new-york-whats-the-latest?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 29 Sep 2026 15:09:53 +0000"
-    },
-    {
-      "title": "CDC reports two measles deaths in US as cases hit 35-year high",
-      "url": "https://www.aljazeera.com/news/2026/9/29/cdc-reports-two-measles-deaths-us-as-cases-hit-35-year-high?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 29 Sep 2026 15:08:58 +0000"
     }
   ]
 }
