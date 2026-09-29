@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-29T00:09:16.840Z",
+  "updatedAt": "2026-09-29T00:32:45.988Z",
   "items": [
+    {
+      "title": "Iran war live: Trump says he did not offer Tehran sanctions relief",
+      "url": "https://www.aljazeera.com/news/liveblog/2026/9/29/iran-war-live-trump-says-he-did-not-offer-tehran-sanctions-relief?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 29 Sep 2026 00:00:00 +0000"
+    },
     {
       "title": "Fiery end for SpaceX Starship mission",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/28/fiery-end-for-spacex-starship-mission?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/28/south-sudan-calls-for-sanctions-to-be-lifted-at-unga?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 28 Sep 2026 20:45:52 +0000"
-    },
-    {
-      "title": "Slovenia’s U-turn towards Israel",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/28/aje-onl-nf_slovenias-u-turn-towards-israel-280926?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 28 Sep 2026 20:35:51 +0000"
     }
   ]
 }
