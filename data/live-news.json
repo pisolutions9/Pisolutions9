@@ -1,6 +1,18 @@
 {
-  "updatedAt": "2026-09-29T05:26:15.860Z",
+  "updatedAt": "2026-09-29T05:41:03.570Z",
   "items": [
+    {
+      "title": "Public transport drivers strike in Manila over soaring fuel prices",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/29/public-transport-drivers-strike-in-manila-over-soaring-fuel-prices?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 29 Sep 2026 05:21:50 +0000"
+    },
+    {
+      "title": "More than 80 reported abducted in Nigeria as police find human remains",
+      "url": "https://www.aljazeera.com/news/2026/9/29/more-than-80-reported-abducted-in-nigeria-as-police-find-human-remains?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 29 Sep 2026 05:17:35 +0000"
+    },
     {
       "title": "Pope Leo says AI risk concerns not ‘fake news’",
       "url": "https://www.aljazeera.com/economy/2026/9/29/pope-leo-says-ai-risk-concerns-not-fake-news?traffic_source=rss",
@@ -48,18 +60,6 @@
       "url": "https://www.aljazeera.com/economy/2026/9/29/openai-scraps-release-of-latest-ai-model-over-safety-concerns?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 29 Sep 2026 00:38:06 +0000"
-    },
-    {
-      "title": "Africa’s space ambitions are moving from policy to practice",
-      "url": "https://www.aljazeera.com/news/2026/9/29/africas-space-ambitions-are-moving-from-policy-to-practice?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 29 Sep 2026 00:26:22 +0000"
-    },
-    {
-      "title": "Inside Al Jazeera’s UNGA coverage",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/29/inside-al-jazeeras-unga-coverage?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 29 Sep 2026 00:10:21 +0000"
     }
   ]
 }
