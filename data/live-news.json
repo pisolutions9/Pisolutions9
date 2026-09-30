@@ -1,12 +1,6 @@
 {
-  "updatedAt": "2026-09-30T21:43:39.993Z",
+  "updatedAt": "2026-09-30T21:56:59.501Z",
   "items": [
-    {
-      "title": "Trump administration files complaint against judges over media comments",
-      "url": "https://www.aljazeera.com/news/2026/9/30/trump-administration-files-complaint-against-judges-over-media-comments?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 30 Sep 2026 21:28:43 +0000"
-    },
     {
       "title": "Flydubai passengers arrive in Tel Aviv after pilot stabbing",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/30/flydubai-passengers-arrive-in-tel-aviv-after-pilot-stabbing?traffic_source=rss",
@@ -60,6 +54,12 @@
       "url": "https://www.aljazeera.com/news/2026/9/30/french-court-sentences-13-men-over-deadliest-small-boat-crossing-to-uk?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 30 Sep 2026 19:41:43 +0000"
+    },
+    {
+      "title": "Flydubai FZ1073 timeline: How the Israel-bound flight emergency unfolded",
+      "url": "https://www.aljazeera.com/news/2026/9/30/flydubai-fz1073-timeline-how-the-israel-bound-flight-emergency-unfolded?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 30 Sep 2026 19:39:50 +0000"
     }
   ]
 }
