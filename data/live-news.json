@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-30T23:38:02.400Z",
+  "updatedAt": "2026-09-30T23:51:54.788Z",
   "items": [
+    {
+      "title": "Pennsylvania confirms fifth measles-associated death as US outbreak grows",
+      "url": "https://www.aljazeera.com/news/2026/9/30/pennsylvania-confirms-fifth-measles-associated-death-as-us-outbreak-grows?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 30 Sep 2026 23:31:54 +0000"
+    },
     {
       "title": "US judge approves settlement allowing Paramount to acquire Warner Bros",
       "url": "https://www.aljazeera.com/news/2026/9/30/us-judge-approves-settlement-allowing-paramount-to-acquire-warner-bros?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/30/israeli-attacks-across-gaza-kill-at-least-eight?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 30 Sep 2026 20:12:22 +0000"
-    },
-    {
-      "title": "US judge rules Wisconsin mosque leader Salah Sarsour can be deported",
-      "url": "https://www.aljazeera.com/news/2026/9/30/us-judge-rules-wisconsin-mosque-leader-salah-sarsour-can-be-deported?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 30 Sep 2026 20:00:36 +0000"
     }
   ]
 }
