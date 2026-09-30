@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-30T23:05:51.147Z",
+  "updatedAt": "2026-09-30T23:24:16.878Z",
   "items": [
+    {
+      "title": "US Senate rejects bill targeting AI data centre electricity costs",
+      "url": "https://www.aljazeera.com/news/2026/9/30/us-senate-rejects-bill-targeting-ai-data-centre-electricity-costs?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 30 Sep 2026 22:58:21 +0000"
+    },
     {
       "title": "Hong Kong journalist arrested on sedition charge",
       "url": "https://www.aljazeera.com/news/2026/9/30/hong-kong-journalist-arrested-on-sedition-charge?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/30/netanyahu-praises-indian-pilot-for-saving-lives-on-flydubai-flight?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 30 Sep 2026 19:49:21 +0000"
-    },
-    {
-      "title": "US regulator launches probe into AI companies",
-      "url": "https://www.aljazeera.com/economy/2026/9/30/us-regulator-launches-probe-into-ai-companies?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 30 Sep 2026 19:46:35 +0000"
     }
   ]
 }
