@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-30T10:08:05.622Z",
+  "updatedAt": "2026-09-30T10:28:13.794Z",
   "items": [
+    {
+      "title": "‘I wanted to live’: A Ukrainian orphan’s journey through Russian occupation",
+      "url": "https://www.aljazeera.com/news/2026/9/30/i-wanted-to-live-a-ukrainian-orphans-journey-through-russian-occupation?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 30 Sep 2026 09:54:07 +0000"
+    },
     {
       "title": "Photos: A journalist is crowned king in Uganda",
       "url": "https://www.aljazeera.com/gallery/2026/9/30/photos-a-journalist-is-crowned-king-in-uganda?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/30/gentle-giant-backpack-declared-the-winner-of-alaskas-fat-bear-week?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 30 Sep 2026 06:57:52 +0000"
-    },
-    {
-      "title": "Trump calls Kim Jong Un a ‘friend’ and plays down N Korea’s nuclear arsenal",
-      "url": "https://www.aljazeera.com/news/2026/9/30/trump-calls-kim-jong-un-a-friend-and-plays-down-n-koreas-nuclear-arsenal?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 30 Sep 2026 06:48:09 +0000"
     }
   ]
 }
