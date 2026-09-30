@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-30T13:00:29.924Z",
+  "updatedAt": "2026-09-30T13:29:18.977Z",
   "items": [
+    {
+      "title": "Israeli attacks on Gaza kill seven as ‘ceasefire’ violations continue",
+      "url": "https://www.aljazeera.com/news/2026/9/30/israeli-attacks-on-gaza-kill-several-as-ceasefire-violations-continue?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 30 Sep 2026 12:49:04 +0000"
+    },
     {
       "title": "Settlers closing in on Ramallah",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/30/settlers-closing-in-on-ramallah?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/sports/2026/9/30/ireland-vs-israel-nations-league-match-will-go-ahead-coach-confirms?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 30 Sep 2026 11:36:35 +0000"
-    },
-    {
-      "title": "Russian attacks on Ukraine’s Kyiv region kill four, target power grid",
-      "url": "https://www.aljazeera.com/news/2026/9/30/russian-attacks-on-ukraines-kyiv-region-kill-four-target-power-grid?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 30 Sep 2026 11:32:24 +0000"
     }
   ]
 }
