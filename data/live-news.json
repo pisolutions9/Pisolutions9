@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-30T09:46:10.107Z",
+  "updatedAt": "2026-09-30T10:08:05.622Z",
   "items": [
+    {
+      "title": "Photos: A journalist is crowned king in Uganda",
+      "url": "https://www.aljazeera.com/gallery/2026/9/30/photos-a-journalist-is-crowned-king-in-uganda?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 30 Sep 2026 09:39:00 +0000"
+    },
     {
       "title": "UK‘s PM Burnham sets out plans to reshape public services",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/30/uks-pm-burnham-sets-out-plans-to-reshape-public-services?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/30/trump-calls-kim-jong-un-a-friend-and-plays-down-n-koreas-nuclear-arsenal?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 30 Sep 2026 06:48:09 +0000"
-    },
-    {
-      "title": "OpenAI launches ‘dots,’ personal AI assistant ‘built to handle everything’",
-      "url": "https://www.aljazeera.com/economy/2026/9/30/openai-launches-dots-personal-ai-assistant-built-to-handle-everything?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 30 Sep 2026 06:29:57 +0000"
     }
   ]
 }
