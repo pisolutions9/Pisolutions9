@@ -1,12 +1,6 @@
 {
-  "updatedAt": "2026-09-30T22:27:21.770Z",
+  "updatedAt": "2026-09-30T22:42:15.253Z",
   "items": [
-    {
-      "title": "Russian drone crashes into Kyiv playground without exploding",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/30/aje-onl-nf_russian-drone-crashes-on-kyiv-playground-300926?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 30 Sep 2026 22:13:35 +0000"
-    },
     {
       "title": "It’s the ‘closest thing to an HIV vaccine’, but who gets access?",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/30/its-the-closest-thing-to-an-hiv-vaccine-but-who-gets-access?traffic_source=rss",
@@ -60,6 +54,12 @@
       "url": "https://www.aljazeera.com/economy/2026/9/30/how-does-trumps-white-house-ai-accord-work?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 30 Sep 2026 19:44:42 +0000"
+    },
+    {
+      "title": "Displaced by war, young Sudanese turn to entrepeneurship to survive",
+      "url": "https://www.aljazeera.com/features/2026/9/30/displaced-by-war-young-sudanese-turn-to-entrepeneurship-to-survive?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 30 Sep 2026 19:43:47 +0000"
     }
   ]
 }
