@@ -1,6 +1,18 @@
 {
-  "updatedAt": "2026-09-30T02:26:08.159Z",
+  "updatedAt": "2026-09-30T02:41:04.632Z",
   "items": [
+    {
+      "title": "US Senate blocks resolution seeking report on Americans killed in West Bank",
+      "url": "https://www.aljazeera.com/news/2026/9/30/us-senate-blocks-resolution-seeking-report-on-americans-killed-in-west-bank?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 30 Sep 2026 02:26:20 +0000"
+    },
+    {
+      "title": "Protesters block Orange Order march in Northern Ireland",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/9/30/protesters-block-orange-order-march-in-northern-ireland?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 30 Sep 2026 02:23:09 +0000"
+    },
     {
       "title": "King appoints Morocco’s first female prime minister",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/9/30/king-appoints-moroccos-first-female-prime-minister-2?traffic_source=rss",
@@ -48,18 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/29/jack-smith-defends-investigations-into-trump-during-tense-us-senate-hearing?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 29 Sep 2026 23:28:47 +0000"
-    },
-    {
-      "title": "Venezuelan man shot by ICE officer in Texas is charged with assault",
-      "url": "https://www.aljazeera.com/news/2026/9/29/venezuelan-man-shot-by-ice-officer-in-texas-is-charged-with-assault?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 29 Sep 2026 23:15:35 +0000"
-    },
-    {
-      "title": "Iraq begins high-stakes security balancing act as US troops withdraw",
-      "url": "https://www.aljazeera.com/news/2026/9/29/iraq-begins-high-stakes-security-balancing-act-as-us-troops-withdraw?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 29 Sep 2026 23:06:53 +0000"
     }
   ]
 }
