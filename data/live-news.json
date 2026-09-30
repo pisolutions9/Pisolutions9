@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-09-30T23:24:16.878Z",
+  "updatedAt": "2026-09-30T23:38:02.400Z",
   "items": [
+    {
+      "title": "US judge approves settlement allowing Paramount to acquire Warner Bros",
+      "url": "https://www.aljazeera.com/news/2026/9/30/us-judge-approves-settlement-allowing-paramount-to-acquire-warner-bros?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 30 Sep 2026 23:15:00 +0000"
+    },
     {
       "title": "US Senate rejects bill targeting AI data centre electricity costs",
       "url": "https://www.aljazeera.com/news/2026/9/30/us-senate-rejects-bill-targeting-ai-data-centre-electricity-costs?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/9/30/us-judge-rules-wisconsin-mosque-leader-salah-sarsour-can-be-deported?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 30 Sep 2026 20:00:36 +0000"
-    },
-    {
-      "title": "Netanyahu praises stabbed Indian pilot for saving lives on Flydubai flight",
-      "url": "https://www.aljazeera.com/news/2026/9/30/netanyahu-praises-indian-pilot-for-saving-lives-on-flydubai-flight?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 30 Sep 2026 19:49:21 +0000"
     }
   ]
 }
