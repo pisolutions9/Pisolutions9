@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-01T08:30:59.688Z",
+  "updatedAt": "2026-10-01T08:55:00.429Z",
   "items": [
+    {
+      "title": "The battle for Kordofan: The corridor linking Sudan’s east and west",
+      "url": "https://www.aljazeera.com/news/2026/10/1/the-battle-for-kordofan-the-corridor-linking-sudans-east-and-west?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Thu, 01 Oct 2026 08:23:44 +0000"
+    },
     {
       "title": "Will Democrats move beyond rhetoric on Israel’s illegal settlements?",
       "url": "https://www.aljazeera.com/opinions/2026/10/1/will-democrats-move-beyond-rhetoric-on-israels-illegal-settlements?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/1/execution-of-us-woman-christa-pike-fails-after-botched-lethal-injection?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 01 Oct 2026 04:55:02 +0000"
-    },
-    {
-      "title": "Pakistan says 22 fighters killed in air attacks on Afghanistan",
-      "url": "https://www.aljazeera.com/news/2026/10/1/afghanistan-says-nine-killed-in-pakistani-air-raids-on-kunar-helmand?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 01 Oct 2026 04:16:19 +0000"
     }
   ]
 }
