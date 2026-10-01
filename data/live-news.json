@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-01T20:57:08.621Z",
+  "updatedAt": "2026-10-01T21:09:52.699Z",
   "items": [
+    {
+      "title": "Funeral held for Palestinian man killed in the occupied West Bank",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/1/funeral-held-for-palestinian-man-killed-in-the-occupied-west-bank?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Thu, 01 Oct 2026 20:45:04 +0000"
+    },
     {
       "title": "The filmmaker taking on Kenya’s colonised tea plantations",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/1/the-filmmaker-taking-on-kenyas-colonised-tea-plantations?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/1/after-red-sea-losses-yemens-government-forces-hold-the-line?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 01 Oct 2026 19:05:25 +0000"
-    },
-    {
-      "title": "Saudi-led coalition says power station attacked in Medina, blames Houthis",
-      "url": "https://www.aljazeera.com/news/2026/10/1/saudi-led-coalition-says-power-station-attacked-in-medina-blames-houthis?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 01 Oct 2026 19:03:14 +0000"
     }
   ]
 }
