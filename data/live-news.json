@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-01T07:47:12.599Z",
+  "updatedAt": "2026-10-01T08:08:43.925Z",
   "items": [
+    {
+      "title": "OpenAI ‘reviewing’ report of failed hacking attempt against Canada’s gov’t",
+      "url": "https://www.aljazeera.com/economy/2026/10/1/openai-reviewing-report-of-failed-hacking-attempt-against-canadas-govt?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Thu, 01 Oct 2026 07:56:49 +0000"
+    },
     {
       "title": "Palestinians to bury remains of 105 people killed in Israeli attack on Gaza",
       "url": "https://www.aljazeera.com/news/2026/10/1/palestinians-to-bury-remains-of-105-people-killed-in-israeli-attack-on-gaza?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/economy/2026/10/1/south-koreas-exports-hit-record-high-on-ai-boom?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 01 Oct 2026 04:08:15 +0000"
-    },
-    {
-      "title": "AFCON 2027: East Africa races to get tournament-ready",
-      "url": "https://www.aljazeera.com/news/2026/10/1/afcon-2027-east-africa-races-to-get-tournament-ready?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 01 Oct 2026 03:04:24 +0000"
     }
   ]
 }
