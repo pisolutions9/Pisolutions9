@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-01T12:59:25.407Z",
+  "updatedAt": "2026-10-01T13:19:53.869Z",
   "items": [
+    {
+      "title": "Nigeria charges man accused of faking government agency",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/1/nigeria-charges-man-accused-of-faking-government-agency?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Thu, 01 Oct 2026 12:44:36 +0000"
+    },
     {
       "title": "Zimbabwe businessman Wicknell Chivayo killed in helicopter crash",
       "url": "https://www.aljazeera.com/news/2026/10/1/zimbabwe-businessman-wicknell-chivayo-killed-in-helicopter-crash?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/sports/2026/10/1/alex-eala-loses-asian-games-semifinal-to-chinas-wang-xiyu?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 01 Oct 2026 11:27:56 +0000"
-    },
-    {
-      "title": "Christa Pike execution fails: What next when a lethal injection is botched?",
-      "url": "https://www.aljazeera.com/news/2026/10/1/christa-pike-execution-fails-what-next-when-a-lethal-injection-is-botched?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 01 Oct 2026 10:52:42 +0000"
     }
   ]
 }
