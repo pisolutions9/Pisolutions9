@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-02T03:27:32.994Z",
+  "updatedAt": "2026-10-02T03:44:08.100Z",
   "items": [
+    {
+      "title": "US to send third aircraft carrier towards Iran: US official to Al Jazeera",
+      "url": "https://www.aljazeera.com/news/2026/10/2/us-to-send-third-aircraft-carrier-towards-iran-us-official-to-al-jazeera?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 02 Oct 2026 03:14:47 +0000"
+    },
     {
       "title": "Row between Ukraine, South Korea mounts over North Korean POWs",
       "url": "https://www.aljazeera.com/news/2026/10/2/row-between-ukraine-south-korea-mounts-over-north-korean-pows?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/1/israeli-drone-kills-palestinian-in-gaza-settlers-kill-another-in-west-bank?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 01 Oct 2026 23:44:39 +0000"
-    },
-    {
-      "title": "Brazilian government calls for probe into US funding of far-right causes",
-      "url": "https://www.aljazeera.com/news/2026/10/1/brazilian-government-calls-for-probe-into-us-funding-of-far-right-causes?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 01 Oct 2026 22:48:17 +0000"
     }
   ]
 }
