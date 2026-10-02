@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-02T17:27:38.156Z",
+  "updatedAt": "2026-10-02T17:42:14.224Z",
   "items": [
+    {
+      "title": "Jerusalem Daily: Who gets to run in Israel’s elections?",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/2/jerusalem-daily-who-gets-to-run-in-israels-elections?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 02 Oct 2026 17:30:06 +0000"
+    },
     {
       "title": "How the Banco Master scandal injected chaos into Brazil’s presidential race",
       "url": "https://www.aljazeera.com/features/longform/2026/10/2/how-the-banco-master-scandal-injected-chaos-into-brazils-presidential-race?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/2/trump-says-europe-agrees-to-release-massive-amount-diesel-stockpile?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 02 Oct 2026 14:14:18 +0000"
-    },
-    {
-      "title": "Ethiopia, Eritrea break ties: Does the conflict risk becoming regional war?",
-      "url": "https://www.aljazeera.com/news/2026/10/2/ethiopia-eritrea-break-ties-does-the-conflict-risk-becoming-regional-war?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 02 Oct 2026 13:53:24 +0000"
     }
   ]
 }
