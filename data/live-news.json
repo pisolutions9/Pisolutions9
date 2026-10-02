@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-02T06:32:31.162Z",
+  "updatedAt": "2026-10-02T06:57:48.000Z",
   "items": [
+    {
+      "title": "Miami judge rules federal noncitizen voting law violates US Constitution",
+      "url": "https://www.aljazeera.com/news/2026/10/2/miami-judge-rules-federal-noncitizen-voting-law-violates-us-constitution?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 02 Oct 2026 06:26:48 +0000"
+    },
     {
       "title": "Greece pushes EU to suspend asylum during mass migration surges",
       "url": "https://www.aljazeera.com/news/2026/10/2/greece-pushes-eu-to-suspend-asylum-during-mass-migration-surges?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/2/iran-urges-iraq-to-lift-flight-ban-amid-us-sanctions?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 02 Oct 2026 04:34:33 +0000"
-    },
-    {
-      "title": "FAO official says he lost his job for criticising Israeli policies in Gaza",
-      "url": "https://www.aljazeera.com/news/2026/10/2/fao-official-says-he-lost-his-job-for-criticising-israeli-policies-in-gaza?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 02 Oct 2026 04:02:44 +0000"
     }
   ]
 }
