@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-02T11:26:28.740Z",
+  "updatedAt": "2026-10-02T11:42:06.119Z",
   "items": [
+    {
+      "title": "Explosions reported near military airport in Syria’s Idlib province",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/2/10-2-syria-explosion-clip?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 02 Oct 2026 11:00:20 +0000"
+    },
     {
       "title": "Indian authorities clamp down as ‘cockroach’ movement launches new protests",
       "url": "https://www.aljazeera.com/news/2026/10/2/indian-authorities-clamp-down-as-cockroach-movement-launches-new-protests?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/2/uk-arrests-british-iranian-suspect-over-raf-plot-what-we-know?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 02 Oct 2026 09:03:21 +0000"
-    },
-    {
-      "title": "US delivers F-16V fighter jets to Taiwan as island eyes threat from China",
-      "url": "https://www.aljazeera.com/news/2026/10/2/us-delivers-f-16v-fighter-jets-to-taiwan-as-island-eyes-threat-from-china?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 02 Oct 2026 08:26:22 +0000"
     }
   ]
 }
