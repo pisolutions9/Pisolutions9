@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-02T01:43:29.553Z",
+  "updatedAt": "2026-10-02T01:56:23.494Z",
   "items": [
+    {
+      "title": "Trump says US may ask Europe to release diesel reserves",
+      "url": "https://www.aljazeera.com/news/2026/10/2/trump-says-us-may-ask-europe-to-release-diesel-reserves?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 02 Oct 2026 01:23:35 +0000"
+    },
     {
       "title": "UK-Mauritius Chagos sovereignty deal stalls amid fears of further delays",
       "url": "https://www.aljazeera.com/news/2026/10/2/uk-mauritius-chagos-sovereignty-deal-stalls-amid-fears-of-further-delays?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/1/flydubai-co-pilot-assaulted-captain-before-landing-initial-saudi-probe?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 01 Oct 2026 21:53:16 +0000"
-    },
-    {
-      "title": "Russia’s Putin rules out ceasefire with Ukraine during speech in Moscow",
-      "url": "https://www.aljazeera.com/news/2026/10/1/russias-putin-rules-out-ceasefire-with-ukraine-during-speech-in-moscow?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 01 Oct 2026 21:33:15 +0000"
     }
   ]
 }
