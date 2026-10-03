@@ -1,12 +1,6 @@
 {
-  "updatedAt": "2026-10-03T00:09:04.985Z",
+  "updatedAt": "2026-10-03T00:32:37.892Z",
   "items": [
-    {
-      "title": "Iran war live: Fighting intensifies in Yemen, hundreds killed or injured",
-      "url": "https://www.aljazeera.com/news/liveblog/2026/10/3/iran-war-live-fighting-intensifies-in-yemen-hundreds-killed-or-injured?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sat, 03 Oct 2026 00:00:00 +0000"
-    },
     {
       "title": "North Korea fires ballistic missile towards the sea, South Korea says",
       "url": "https://www.aljazeera.com/news/2026/10/2/north-korea-fires-ballistic-missile-towards-the-sea-south-korea-says?traffic_source=rss",
@@ -60,6 +54,12 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/2/bosnias-elections-explained?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 02 Oct 2026 21:21:47 +0000"
+    },
+    {
+      "title": "Israeli general: Gaza captives could have been freed a year earlier",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/2/israeli-general-gaza-captives-could-have-been-freed-a-year-earlier?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 02 Oct 2026 21:15:58 +0000"
     }
   ]
 }
