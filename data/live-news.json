@@ -1,11 +1,17 @@
 {
-  "updatedAt": "2026-10-03T05:54:54.037Z",
+  "updatedAt": "2026-10-03T06:13:40.772Z",
   "items": [
+    {
+      "title": "Gaza voters want jobs and security as Palestinian elections approach",
+      "url": "https://www.aljazeera.com/news/2026/10/3/gaza-voters-want-jobs-and-security-as-palestinian-elections-approach?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sat, 03 Oct 2026 05:39:29 +0000"
+    },
     {
       "title": "India vs Pakistan live: Asian Games cricket final",
       "url": "https://www.aljazeera.com/sports/liveblog/2026/10/3/india-vs-pakistan-live-asian-games-cricket-final?traffic_source=rss",
       "source": "Al Jazeera",
-      "publishedAt": "Sat, 03 Oct 2026 05:09:31 +0000"
+      "publishedAt": "Sat, 03 Oct 2026 05:35:31 +0000"
     },
     {
       "title": "New claims that Netanyahu rejected Hamas offer to release captives",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/sports/2026/10/3/dominican-republic-bans-haiti-from-its-stadiums-after-football-fans-clash?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sat, 03 Oct 2026 02:42:26 +0000"
-    },
-    {
-      "title": "Israeli air attack on Gaza City apartment kills at least five",
-      "url": "https://www.aljazeera.com/news/2026/10/3/israeli-air-attack-on-gaza-city-apartment-kills-at-least-five?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sat, 03 Oct 2026 02:25:23 +0000"
     }
   ]
 }
