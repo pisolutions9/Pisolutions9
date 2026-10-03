@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-03T00:56:21.450Z",
+  "updatedAt": "2026-10-03T01:09:22.163Z",
   "items": [
+    {
+      "title": "US and Australia suspend diplomatic operations in Brazil before election",
+      "url": "https://www.aljazeera.com/news/2026/10/3/us-and-australia-suspend-diplomatic-operations-in-brazil-before-election?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sat, 03 Oct 2026 00:46:10 +0000"
+    },
     {
       "title": "Iran war live: Fighting intensifies in Yemen, hundreds killed or injured",
       "url": "https://www.aljazeera.com/news/liveblog/2026/10/3/iran-war-live-fighting-intensifies-in-yemen-hundreds-killed-or-injured?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/sports/2026/10/2/france-held-by-italy-in-zidanes-homecoming-after-olise-stunner?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 02 Oct 2026 21:24:24 +0000"
-    },
-    {
-      "title": "Bosnia’s elections explained",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/2/bosnias-elections-explained?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 02 Oct 2026 21:21:47 +0000"
     }
   ]
 }
