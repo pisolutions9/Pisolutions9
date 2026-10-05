@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-05T23:24:03.330Z",
+  "updatedAt": "2026-10-05T23:37:22.973Z",
   "items": [
+    {
+      "title": "Whistleblower warns that humans don’t control AI",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/5/whistleblower-warns-that-humans-dont-control-ai?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 05 Oct 2026 23:23:47 +0000"
+    },
     {
       "title": "Trump’s approval hits new low among Hispanic voters ahead of midterms",
       "url": "https://www.aljazeera.com/news/2026/10/5/trumps-approval-hits-new-low-among-hispanic-voters-ahead-of-midterms?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/5/israeli-forces-kill-one-injure-several-in-occupied-west-bank?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 05 Oct 2026 20:49:35 +0000"
-    },
-    {
-      "title": "Turkiye, Pakistan agree to military deployment to Saudi Arabia",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/5/turkiye-pakistan-agree-to-military-deployment-to-saudi-arabia?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 05 Oct 2026 20:17:35 +0000"
     }
   ]
 }
