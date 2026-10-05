@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-05T11:28:47.918Z",
+  "updatedAt": "2026-10-05T11:47:43.639Z",
   "items": [
+    {
+      "title": "Growing outrage in Japan after US Marine arrested in woman’s killing",
+      "url": "https://www.aljazeera.com/news/2026/10/5/growing-outrage-in-japan-after-us-marine-arrested-in-womans-killing?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 05 Oct 2026 11:25:45 +0000"
+    },
     {
       "title": "US abruptly withdraws bombers from UK’s RAF Fairford",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/5/us-abruptly-withdraws-bombers-from-uks-raf-fairford?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/sports/2026/10/5/formula-one-to-probe-software-bug-behind-bahrain-gp-chaos-in-sepang?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 05 Oct 2026 09:02:06 +0000"
-    },
-    {
-      "title": "‘If I didn’t write what moved me, it’d be like putting myself in prison’",
-      "url": "https://www.aljazeera.com/video/talk-to-al-jazeera/2026/10/5/if-i-didnt-write-what-moved-me-itd-be-like-putting-myself-in-prison?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 05 Oct 2026 09:00:00 +0000"
     }
   ]
 }
