@@ -1,6 +1,18 @@
 {
-  "updatedAt": "2026-10-05T17:07:06.710Z",
+  "updatedAt": "2026-10-05T17:27:21.177Z",
   "items": [
+    {
+      "title": "Jerusalem Daily: Netanyahu gives voters dramatic ultimatum",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/5/jerusalem-daily-netanyahu-gives-voters-dramatic-ultimatum?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 05 Oct 2026 17:05:46 +0000"
+    },
+    {
+      "title": "DR Congo boat collision kills at least 30, dozens missing",
+      "url": "https://www.aljazeera.com/news/2026/10/5/dr-congo-boat-collision-kills-at-least-30-dozens-missing?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 05 Oct 2026 16:47:50 +0000"
+    },
     {
       "title": "Rohingya activist says it’s unfair to send refugees back to Myanmar",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/5/rohingya-activist-says-its-unfair-to-send-refugees-back-to-myanmar?traffic_source=rss",
@@ -48,18 +60,6 @@
       "url": "https://www.aljazeera.com/sports/2026/10/5/what-happened-between-ireland-and-israel-in-their-nations-league-match?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 05 Oct 2026 15:28:16 +0000"
-    },
-    {
-      "title": "A drive through the West Bank",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/5/a-drive-through-the-west-bank?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 05 Oct 2026 15:22:10 +0000"
-    },
-    {
-      "title": "Latest US military strike on alleged drug boat kills four in Caribbean",
-      "url": "https://www.aljazeera.com/news/2026/10/5/latest-us-military-strike-on-alleged-drug-boat-kills-four-in-caribbean?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 05 Oct 2026 14:58:02 +0000"
     }
   ]
 }
