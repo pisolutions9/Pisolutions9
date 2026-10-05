@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-05T08:33:25.375Z",
+  "updatedAt": "2026-10-05T08:56:26.061Z",
   "items": [
+    {
+      "title": "Pakistan installs fishing nets at security outposts to block drone attacks",
+      "url": "https://www.aljazeera.com/news/2026/10/5/pakistan-installs-fishing-nets-at-security-outposts-to-block-drone-attacks?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 05 Oct 2026 08:20:34 +0000"
+    },
     {
       "title": "France vs Belgium: UEFA Nations League – Olise, De Bruyne, teams and format",
       "url": "https://www.aljazeera.com/sports/2026/10/5/france-belgium-uefa-nations-league-olise-de-bruyne-tielemans-teams-format?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/5/fbi-arrests-chinese-foreign-agent-for-spying-on-taiwan-presidents-son?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 05 Oct 2026 04:13:20 +0000"
-    },
-    {
-      "title": "Russian lab worker dies of suspected plague in Siberia; US monitoring case",
-      "url": "https://www.aljazeera.com/news/2026/10/5/russian-lab-worker-dies-of-suspected-plague-in-siberia-us-monitoring-case?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 05 Oct 2026 04:07:51 +0000"
     }
   ]
 }
