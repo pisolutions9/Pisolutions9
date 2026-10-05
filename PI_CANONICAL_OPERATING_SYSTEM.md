@@ -51,7 +51,7 @@ Labs output is EXPERIMENTAL until promoted through Engineering verification.
 | **Garuda** | Perception / research | information need | fresh external/internal signals and source material | make final release decisions |
 | **Dhanvantari** | Diagnosis / recovery | failure evidence | root cause class, bounded retry/rollback/alternative | repeat identical failed path without new evidence |
 | **Nandi** | Independent verification | candidate result/change | PASS/FAIL + tests/evidence + regression guard | implement the same change being independently certified |
-| **Evan** | Unassigned | — | — | no authority until Owner explicitly defines the role |
+| **Evan** | Executive control / WIP discipline | active missions, priorities, interruption requests | one-now decision, WIP-limit enforcement, defer/continue decision | create work, execute tools, override Owner/Krishna, or interrupt a higher-priority mission without evidence |
 
 ## 4. One work protocol
 
@@ -97,7 +97,7 @@ Priority order:
 6. release hardening;
 7. Labs research.
 
-New ideas go to backlog/Labs unless they outrank the current mission by this rule.
+New ideas go to the Idea Vault/Labs review unless they outrank the current mission by this rule. Evan enforces the one-primary-mission rule: a new idea does not become active work merely because it is exciting.
 
 ## 7. Completion law
 
