@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-05T08:56:26.061Z",
+  "updatedAt": "2026-10-05T09:11:51.097Z",
   "items": [
+    {
+      "title": "Spain’s PM Pedro Sanchez calls snap election amid housing crisis",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/5/spains-pm-pedro-sanchez-calls-snap-election-amid-housing-crisis?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 05 Oct 2026 08:55:21 +0000"
+    },
     {
       "title": "Pakistan installs fishing nets at security outposts to block drone attacks",
       "url": "https://www.aljazeera.com/news/2026/10/5/pakistan-installs-fishing-nets-at-security-outposts-to-block-drone-attacks?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/5/bolsonaro-beats-expectations-in-brazil-vote-faces-lula-in-runoff?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 05 Oct 2026 05:08:23 +0000"
-    },
-    {
-      "title": "FBI arrests ‘Chinese foreign agent’ for spying on Taiwan president’s son",
-      "url": "https://www.aljazeera.com/news/2026/10/5/fbi-arrests-chinese-foreign-agent-for-spying-on-taiwan-presidents-son?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 05 Oct 2026 04:13:20 +0000"
     }
   ]
 }
