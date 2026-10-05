@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-05T01:55:44.041Z",
+  "updatedAt": "2026-10-05T02:07:30.634Z",
   "items": [
+    {
+      "title": "Can the KKK find a new foothold in the US?",
+      "url": "https://www.aljazeera.com/news/2026/10/5/can-the-kkk-find-a-new-foothold-in-the-us?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 05 Oct 2026 01:47:13 +0000"
+    },
     {
       "title": "Nearly 1,500 migrants arrive in Myanmar from Malaysia despite UN warnings",
       "url": "https://www.aljazeera.com/news/2026/10/5/nearly-1500-migrants-arrive-in-myanmar-from-malaysia-despite-un-warnings?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/4/mans-miraculous-catch-saves-child-after-balcony-fall-in-egypt?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 04 Oct 2026 22:47:18 +0000"
-    },
-    {
-      "title": "Nicaragua says it will withdraw from Central American Parliament",
-      "url": "https://www.aljazeera.com/news/2026/10/4/nicaragua-says-it-will-withdraw-from-central-american-parliament?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 04 Oct 2026 22:36:54 +0000"
     }
   ]
 }
