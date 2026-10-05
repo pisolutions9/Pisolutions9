@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-05T07:04:51.678Z",
+  "updatedAt": "2026-10-05T07:31:07.862Z",
   "items": [
+    {
+      "title": "World Space Week: Which countries have sent people to space?",
+      "url": "https://www.aljazeera.com/news/2026/10/5/world-space-week-which-countries-have-sent-people-to-space?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 05 Oct 2026 07:06:18 +0000"
+    },
     {
       "title": "Djokovic defeats top seed Zverev to reach China Open semifinals",
       "url": "https://www.aljazeera.com/sports/2026/10/5/djokovic-defeats-top-seed-zverev-to-reach-china-open-semifinals?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/5/bosnian-serb-nationalist-claims-party-victory-in-bosnia-elections?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 05 Oct 2026 03:36:13 +0000"
-    },
-    {
-      "title": "US coastguard suspends search for six on board crashed medical jet",
-      "url": "https://www.aljazeera.com/news/2026/10/5/us-coastguard-suspends-search-for-six-on-board-crashed-medical-jet?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 05 Oct 2026 03:22:32 +0000"
     }
   ]
 }
