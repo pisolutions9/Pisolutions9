@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-06T13:34:08.879Z",
+  "updatedAt": "2026-10-06T13:56:19.364Z",
   "items": [
+    {
+      "title": "Demonstrators clash with riot police in France as education protests mount",
+      "url": "https://www.aljazeera.com/news/2026/10/6/demonstrators-clash-with-riot-police-in-france-as-education-protests-mount?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 06 Oct 2026 13:28:54 +0000"
+    },
     {
       "title": "Former German spy chief arrested on suspicion of treason and espionage",
       "url": "https://www.aljazeera.com/news/2026/10/6/former-german-spy-chief-arrested-on-suspicion-of-treason-and-espionage?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/6/how-palestinian-reporters-defied-israels-genocide-to-redefine-journalism?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 06 Oct 2026 11:47:03 +0000"
-    },
-    {
-      "title": "Russia plague quarantine following lab death: Should we be worried?",
-      "url": "https://www.aljazeera.com/news/2026/10/6/russia-plague-quarantine-following-lab-death-should-we-be-worried?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 06 Oct 2026 11:40:00 +0000"
     }
   ]
 }
