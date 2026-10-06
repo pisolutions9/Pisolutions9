@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-06T17:08:32.283Z",
+  "updatedAt": "2026-10-06T17:26:14.022Z",
   "items": [
+    {
+      "title": "Kenya confirms first Ebola case as man dies in Nairobi after DRC return",
+      "url": "https://www.aljazeera.com/news/2026/10/6/kenya-confirms-first-ebola-case-after-patient-from-dr-congo-dies-in-nairobi?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 06 Oct 2026 17:00:52 +0000"
+    },
     {
       "title": "Djokovic wins China Open after de Minaur retires, Alcaraz wins Japan Open",
       "url": "https://www.aljazeera.com/sports/2026/10/6/djokovic-wins-china-open-after-de-minaur-retires-alcaraz-wins-japan-open?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/6/bulgaria-says-two-commercial-vessels-were-hit-in-drone-attack-in-its-waters?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 06 Oct 2026 14:50:01 +0000"
-    },
-    {
-      "title": "‘Not the act of a friend’: Israel’s deadline to close UK consulate nears",
-      "url": "https://www.aljazeera.com/news/2026/10/6/its-not-the-act-of-a-friend-or-ally-israel-moves-to-shut-uk-consulate?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 06 Oct 2026 14:47:39 +0000"
     }
   ]
 }
