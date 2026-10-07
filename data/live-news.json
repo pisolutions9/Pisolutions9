@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-07T03:46:17.781Z",
+  "updatedAt": "2026-10-07T04:07:40.463Z",
   "items": [
+    {
+      "title": "US stock market hits all-time high as investors bet big on AI",
+      "url": "https://www.aljazeera.com/economy/2026/10/7/us-stock-market-hits-all-time-high-as-investors-bet-big-on-ai?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 07 Oct 2026 03:27:20 +0000"
+    },
     {
       "title": "Oman evacuates injured crew from attacked tanker in Strait of Hormuz",
       "url": "https://www.aljazeera.com/news/2026/10/7/oman-evacuates-injured-crew-from-attacked-tanker-in-strait-of-hormuz?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/7/whats-behind-israels-growing-shift-to-the-right?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 07 Oct 2026 00:58:21 +0000"
-    },
-    {
-      "title": "Yemeni forces launch offensive to retake Houthi-held al-Waziiya in Taiz",
-      "url": "https://www.aljazeera.com/news/2026/10/7/yemeni-forces-launch-offensive-to-retake-houthi-held-al-waziiya-in-taiz?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 07 Oct 2026 00:35:57 +0000"
     }
   ]
 }
