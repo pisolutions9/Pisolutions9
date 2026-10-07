@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-07T04:48:46.342Z",
+  "updatedAt": "2026-10-07T05:08:19.603Z",
   "items": [
+    {
+      "title": "Israelis pause to mark October 7 Hamas-attack anniversary",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/7/israelis-pause-to-mark-october-7-hamas-attack-anniversary?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 07 Oct 2026 04:43:02 +0000"
+    },
     {
       "title": "Tree nearly as old as US torn down to expand Mexico border wall",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/7/tree-nearly-as-old-as-us-torn-down-to-expand-mexico-border-wall?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/7/two-houthi-missiles-target-yemens-aden-international-airport?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 07 Oct 2026 01:59:15 +0000"
-    },
-    {
-      "title": "Syrian embassy returns seized passport after 43 years",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/7/syrian-embassy-returns-seized-passport-after-43-years?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 07 Oct 2026 01:20:11 +0000"
     }
   ]
 }
