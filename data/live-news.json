@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-07T01:57:38.098Z",
+  "updatedAt": "2026-10-07T02:12:30.013Z",
   "items": [
+    {
+      "title": "Two Houthi missiles target Yemen’s Aden International Airport",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/7/two-houthi-missiles-target-yemens-aden-international-airport?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 07 Oct 2026 01:59:15 +0000"
+    },
     {
       "title": "Syrian embassy returns seized passport after 43 years",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/7/syrian-embassy-returns-seized-passport-after-43-years?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/6/10-7-ev-blowsup-turkiye-clip-mp4?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 06 Oct 2026 23:33:33 +0000"
-    },
-    {
-      "title": "‘We are desperate’: Venezuela’s power cuts fuel growing public anger",
-      "url": "https://www.aljazeera.com/news/longform/2026/10/6/we-are-desperate-venezuelas-power-cuts-fuel-growing-public-anger?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 06 Oct 2026 23:05:38 +0000"
     }
   ]
 }
