@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-07T17:29:20.223Z",
+  "updatedAt": "2026-10-07T17:46:51.557Z",
   "items": [
+    {
+      "title": "US mortgage rates hit their highest level in three years",
+      "url": "https://www.aljazeera.com/economy/2026/10/7/us-mortgage-rates-hit-their-highest-level-in-three-years?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 07 Oct 2026 17:05:10 +0000"
+    },
     {
       "title": "UEFA football leaders meet to shape strategy to oust FIFA’s Infantino",
       "url": "https://www.aljazeera.com/sports/2026/10/7/uefa-football-leaders-meet-to-shape-strategy-to-oust-fifas-infantino?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/sports/2026/10/7/south-korea-signals-military-exemption-cuts-for-gold-medallists-after-backlash-at-athletes-asian-games-comments?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 07 Oct 2026 13:38:14 +0000"
-    },
-    {
-      "title": "Okinawa governor urges Japan action after US Marine arrested over killing",
-      "url": "https://www.aljazeera.com/news/2026/10/7/okinawa-governor-urges-japan-action-after-us-marine-arrested-over-killing?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 07 Oct 2026 13:31:18 +0000"
     }
   ]
 }
