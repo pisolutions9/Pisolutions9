@@ -1,6 +1,6 @@
 const FRESHNESS_PATTERNS = [
-  /\b(?:now|right\s+now|today|tonight|current|currently|latest|live|breaking|this\s+(?:hour|morning|afternoon|evening|week))\b/i,
-  /\b(?:ippudu|ivala|ee\s+roju|kotha|latest)\b/i
+  /\b(?:right\s+now|current|currently|latest|live|breaking|up[-\s]?to[-\s]?date|as\s+of\s+now|newest|most\s+recent)\b/i,
+  /\b(?:ippudu|latest)\b/i
 ];
 
 const TOPIC_RESET_PATTERNS = [
