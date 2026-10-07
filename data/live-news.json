@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-07T09:49:16.511Z",
+  "updatedAt": "2026-10-07T10:09:06.337Z",
   "items": [
+    {
+      "title": "France halts police use of stun grenades at student protests",
+      "url": "https://www.aljazeera.com/news/2026/10/7/france-halts-police-use-of-stun-grenades-at-student-protests?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 07 Oct 2026 09:41:42 +0000"
+    },
     {
       "title": "What does a year-long ceasefire in Gaza look like?",
       "url": "https://www.aljazeera.com/video/by-the-numbers-3/2026/10/7/what-does-a-year-long-ceasefire-in-gaza-look-like?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/7/myanmars-min-aung-hlaing-visits-malaysia-amid-concerns-over-repatriations?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 07 Oct 2026 07:49:52 +0000"
-    },
-    {
-      "title": "Yemen’s Houthis attack Aden airport; Saudi forces down missile near Riyadh",
-      "url": "https://www.aljazeera.com/news/2026/10/7/yemens-houthis-attack-aden-airport-saudi-forces-down-missile-near-riyadh?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 07 Oct 2026 06:41:11 +0000"
     }
   ]
 }
