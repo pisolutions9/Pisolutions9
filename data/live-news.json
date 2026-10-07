@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-07T05:08:19.603Z",
+  "updatedAt": "2026-10-07T05:28:47.125Z",
   "items": [
+    {
+      "title": "Three years of Israel’s genocide in Gaza: In numbers",
+      "url": "https://www.aljazeera.com/news/2026/10/7/three-years-of-israels-genocide-in-gaza-in-numbers?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 07 Oct 2026 05:02:04 +0000"
+    },
     {
       "title": "Israelis pause to mark October 7 Hamas-attack anniversary",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/7/israelis-pause-to-mark-october-7-hamas-attack-anniversary?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/7/australia-top-court-rules-against-coal-mine-expansion-citing-climate-harm?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 07 Oct 2026 02:17:07 +0000"
-    },
-    {
-      "title": "Two Houthi missiles target Yemen’s Aden International Airport",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/7/two-houthi-missiles-target-yemens-aden-international-airport?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 07 Oct 2026 01:59:15 +0000"
     }
   ]
 }
