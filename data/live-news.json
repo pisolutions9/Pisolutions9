@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-07T20:58:14.343Z",
+  "updatedAt": "2026-10-07T21:13:12.275Z",
   "items": [
+    {
+      "title": "Inside SpaceX’s new look for AI data centres in orbit",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/7/inside-spacexs-new-look-for-ai-data-centres-in-orbit?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Wed, 07 Oct 2026 20:54:43 +0000"
+    },
     {
       "title": "US Republicans, independents express low trust in election integrity: Poll",
       "url": "https://www.aljazeera.com/news/2026/10/7/us-republicans-independents-express-low-trust-in-election-integrity-poll?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/7/kenya-on-high-alert-amid-concern-over-screening-after-first-ebola-death?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 07 Oct 2026 18:31:57 +0000"
-    },
-    {
-      "title": "Saudi Arabia says Houthi attacks on airports killed three foreign nationals",
-      "url": "https://www.aljazeera.com/news/2026/10/7/saudi-arabia-says-three-foreign-nationals-killed-in-attacks-on-airports?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 07 Oct 2026 18:29:34 +0000"
     }
   ]
 }
