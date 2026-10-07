@@ -1,3 +1,6 @@
+import { buildTaskContract } from './task-contract.mjs';
+import { evaluateTaskPolicy } from './policy-engine.mjs';
+
 const LEGACY_MARKERS = [
   /^\s*classification\s*:/i,
   /\bi recognized this as an informational question\b/i,
@@ -32,32 +35,63 @@ export async function decideKrishnaRoute({
   requiresHardReasoning = () => false
 } = {}) {
   const trace = [];
+  const task = buildTaskContract({ message, history, attachmentInfo });
+  const policy = evaluateTaskPolicy(task);
+
+  trace.push({
+    step: 'task_contract',
+    schema: task.schema,
+    capability: task.capability,
+    freshnessRequired: task.freshnessRequired,
+    historyDependent: task.historyDependent,
+    explicitTopicReset: task.explicitTopicReset,
+    risk: task.risk
+  });
+  trace.push({
+    step: 'policy',
+    schema: policy.schema,
+    requiresApproval: policy.requiresApproval,
+    requiresLiveEvidence: policy.requiresLiveEvidence,
+    maxAutonomy: policy.maxAutonomy,
+    reason: policy.reason
+  });
+
   if (!attachmentInfo) {
-    const recalled = simpleHistoryRecall(message, history);
-    if (recalled) {
-      trace.push({ step: 'conversation_grounding', matched: true });
-      return { route: 'direct', result: recalled, trace };
+    if (!task.explicitTopicReset) {
+      const recalled = simpleHistoryRecall(message, history);
+      if (recalled) {
+        trace.push({ step: 'conversation_grounding', matched: true });
+        return { route: 'direct', result: recalled, task, policy, trace };
+      }
     }
+
     for (const tool of directTools) {
       if (!tool || typeof tool.run !== 'function') continue;
+      if (Array.isArray(tool.capabilities) && tool.capabilities.length > 0 && !tool.capabilities.includes(task.capability)) {
+        trace.push({ step: 'direct_tool', name: tool.name || 'unnamed', matched: false, skipped: 'capability_mismatch' });
+        continue;
+      }
       const result = await tool.run();
       trace.push({ step: 'direct_tool', name: tool.name || 'unnamed', matched: Boolean(result) });
-      if (result) return { route: 'direct', result, trace };
+      if (result) return { route: 'direct', result, task, policy, trace };
     }
   }
-  if (requiresLiveEvidence(history, message)) {
-    trace.push({ step: 'route', route: 'live' });
-    return { route: 'live', trace };
+
+  if (policy.requiresLiveEvidence || requiresLiveEvidence(history, message)) {
+    trace.push({ step: 'route', route: 'live', reason: policy.requiresLiveEvidence ? 'task_policy' : 'legacy_live_detector' });
+    return { route: 'live', task, policy, trace };
   }
+
   if (requiresHardReasoning(message)) {
     trace.push({ step: 'route', route: 'hard' });
-    return { route: 'hard', trace };
+    return { route: 'hard', task, policy, trace };
   }
+
   trace.push({ step: 'route', route: 'general' });
-  return { route: 'general', trace };
+  return { route: 'general', task, policy, trace };
 }
 
-export function validateKrishnaAnswer(payload = {}, { route = 'general' } = {}) {
+export function validateKrishnaAnswer(payload = {}, { route = 'general', task = null, policy = null } = {}) {
   if (!payload || typeof payload !== 'object') return { ok: false, reason: 'answer_not_object' };
   if (payload.ok === false) return { ok: true, reason: 'explicit_failure' };
   const answer = typeof payload.answer === 'string' ? payload.answer.trim() : '';
@@ -65,12 +99,19 @@ export function validateKrishnaAnswer(payload = {}, { route = 'general' } = {}) 
   if (LEGACY_MARKERS.some(pattern => pattern.test(answer))) {
     return { ok: false, reason: 'internal_planner_leakage' };
   }
-  if (route === 'live') {
+
+  const effectiveLiveRequirement = Boolean(policy?.requiresLiveEvidence || task?.freshnessRequired || route === 'live');
+  if (effectiveLiveRequirement) {
     const sources = Array.isArray(payload.sources) ? payload.sources.filter(source => source && source.url) : [];
     const acceptable = payload.truth === 'live-data-response' || payload.truth === 'web-grounded-model-response' || payload.truth === 'retailer-search-link';
     if (!acceptable) return { ok: false, reason: 'live_route_without_live_truth' };
     if (payload.truth !== 'retailer-search-link' && sources.length === 0) return { ok: false, reason: 'live_route_without_sources' };
   }
+
+  if (policy?.requiresApproval && payload.status === 'completed' && payload.sideEffect === true) {
+    return { ok: false, reason: 'consequential_action_without_approval_proof' };
+  }
+
   if (payload.truth === 'verified-model-response' && payload.verification !== 'independent-pass') {
     return { ok: false, reason: 'verified_claim_without_independent_pass' };
   }
