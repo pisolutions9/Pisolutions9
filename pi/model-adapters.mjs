@@ -61,3 +61,57 @@ export function createOpenAIResponsesProvider({
     }
   });
 }
+
+export function createAnthropicMessagesProvider({
+  name = 'anthropic-haiku-5-5',
+  apiKey = process.env.ANTHROPIC_API_KEY,
+  model = process.env.PI_ANTHROPIC_MODEL || 'claude-haiku-5-5',
+  baseUrl = process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1',
+  effort = process.env.PI_ANTHROPIC_EFFORT || 'low',
+  maxTokens = Number(process.env.PI_ANTHROPIC_MAX_TOKENS || 1600),
+  enabled = true
+} = {}) {
+  if (!enabled) return null;
+
+  return createConfiguredModelProvider({
+    name,
+    capabilities: ['text', 'routing', 'classification', 'extraction', 'compaction', 'subagent'],
+    run: async input => {
+      if (!apiKey) throw new Error('anthropic_api_key_missing');
+      const response = await fetch(`${baseUrl.replace(/\/$/, '')}/messages`, {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: Number.isFinite(maxTokens) && maxTokens > 0 ? Math.floor(maxTokens) : 1600,
+          output_config: { effort },
+          system: 'You are a low-cost PI specialist. Return only JSON with keys truth, completed, evidence, nextAction, uncertainty. Never claim an external action is completed without evidence.',
+          messages: [
+            {
+              role: 'user',
+              content: JSON.stringify(input ?? {})
+            }
+          ]
+        })
+      });
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(`anthropic_http_${response.status}:${detail.slice(0, 500)}`);
+      }
+      const payload = await response.json();
+      const text = Array.isArray(payload.content)
+        ? payload.content.filter(item => item?.type === 'text').map(item => item.text || '').join('')
+        : '';
+      if (!text) throw new Error('anthropic_empty_response');
+      try {
+        return JSON.parse(text);
+      } catch {
+        throw new Error('anthropic_non_json_response');
+      }
+    }
+  });
+}
