@@ -1,6 +1,18 @@
 {
-  "updatedAt": "2026-10-08T04:29:02.067Z",
+  "updatedAt": "2026-10-08T04:47:18.288Z",
   "items": [
+    {
+      "title": "Trump interrupted by protesters at Texas rally",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/8/trump-interrupted-by-protesters-at-texas-rally?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Thu, 08 Oct 2026 04:30:57 +0000"
+    },
+    {
+      "title": "South Korea pledges legal action over alleged fuel exports to Russia",
+      "url": "https://www.aljazeera.com/news/2026/10/8/south-korea-pledges-legal-action-over-alleged-fuel-exports-to-russia?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Thu, 08 Oct 2026 04:14:11 +0000"
+    },
     {
       "title": "Global protests mark October 7 attack with calls for Gaza ceasefire",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/8/global-protests-mark-october-7-attack-with-calls-for-gaza-ceasefire?traffic_source=rss",
@@ -48,18 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/8/how-kidnappings-are-hitting-nigerias-borno-families-hard?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 08 Oct 2026 00:47:32 +0000"
-    },
-    {
-      "title": "US stocks slide as oil prices fluctuate over renewed Iran war fears",
-      "url": "https://www.aljazeera.com/news/2026/10/8/us-stocks-slide-as-oil-prices-fluctuate-over-renewed-iran-war-fears?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 08 Oct 2026 00:33:03 +0000"
-    },
-    {
-      "title": "Russia dismisses reports of second plague case as ‘false information’",
-      "url": "https://www.aljazeera.com/news/2026/10/8/russia-dismisses-reports-of-second-plague-case-as-false-information?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 08 Oct 2026 00:16:41 +0000"
     }
   ]
 }
