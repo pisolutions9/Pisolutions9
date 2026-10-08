@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-08T22:44:58.568Z",
+  "updatedAt": "2026-10-08T22:58:49.116Z",
   "items": [
+    {
+      "title": "Putin pledges Russia’s support to end US-led war on Iran",
+      "url": "https://www.aljazeera.com/news/2026/10/8/putin-pledges-russias-support-to-end-us-led-war-on-iran?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Thu, 08 Oct 2026 22:30:37 +0000"
+    },
     {
       "title": "French giants Bordeaux relegated to sixth tier for financial irregularities",
       "url": "https://www.aljazeera.com/sports/2026/10/8/bordeaux-relegated-to-french-sixth-tier-for-financial-irregularities?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/8/israel-shuts-down-british-consulate-in-occupied-east-jerusalem?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 08 Oct 2026 20:34:00 +0000"
-    },
-    {
-      "title": "How much worse can Yemen’s humanitarian crisis become?",
-      "url": "https://www.aljazeera.com/video/inside-story/2026/10/8/how-much-worse-can-yemens-humanitarian-crisis-become?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 08 Oct 2026 20:06:08 +0000"
     }
   ]
 }
