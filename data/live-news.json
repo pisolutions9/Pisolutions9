@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-08T10:12:27.852Z",
+  "updatedAt": "2026-10-08T10:33:31.118Z",
   "items": [
+    {
+      "title": "How much does France spend on education compared with the rest of Europe?",
+      "url": "https://www.aljazeera.com/news/2026/10/8/how-much-does-france-spend-on-education-compared-with-the-rest-of-europe?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Thu, 08 Oct 2026 10:00:21 +0000"
+    },
     {
       "title": "UK police charge Royal Navy member accused of working with foreign power",
       "url": "https://www.aljazeera.com/news/2026/10/8/uk-police-charge-royal-navy-member-accused-of-working-with-foreign-power?traffic_source=rss",
@@ -26,7 +32,7 @@
       "publishedAt": "Thu, 08 Oct 2026 08:37:15 +0000"
     },
     {
-      "title": "How Gaza war sped up India’s shift towards Israel under Modi",
+      "title": "Gaza war sped up India’s shift towards Israel under Modi",
       "url": "https://www.aljazeera.com/news/2026/10/8/how-gaza-war-sped-up-indias-shift-towards-israel-under-modi?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 08 Oct 2026 08:31:44 +0000"
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/8/india-defends-satellite-internet-approval-process-after-elon-musk-jab?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 08 Oct 2026 08:15:45 +0000"
-    },
-    {
-      "title": "Southampton manager Eckert can stay on despite role in ‘spygate’ scandal",
-      "url": "https://www.aljazeera.com/sports/2026/10/8/southampton-manager-eckert-can-stay-on-despite-role-in-spygate-scandal?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 08 Oct 2026 07:49:46 +0000"
     }
   ]
 }
