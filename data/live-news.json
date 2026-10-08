@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-08T03:28:39.549Z",
+  "updatedAt": "2026-10-08T03:47:24.239Z",
   "items": [
+    {
+      "title": "Global protests mark October 7 attack with calls for Gaza ceasefire",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/8/global-protests-mark-october-7-attack-with-calls-for-gaza-ceasefire?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Thu, 08 Oct 2026 03:25:47 +0000"
+    },
     {
       "title": "US bars Fiji-based man over corruption tied to China",
       "url": "https://www.aljazeera.com/news/2026/10/8/us-bars-fiji-based-man-over-corruption-tied-to-china?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/8/russia-dismisses-reports-of-second-plague-case-as-false-information?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 08 Oct 2026 00:16:41 +0000"
-    },
-    {
-      "title": "Saudi Arabia confirms three dead in Houthi strikes on its airports",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/8/saudi-arabia-confirms-three-dead-in-houthi-strikes-on-its-airports?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 08 Oct 2026 00:16:25 +0000"
     }
   ]
 }
