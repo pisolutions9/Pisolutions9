@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-09T03:30:42.630Z",
+  "updatedAt": "2026-10-09T03:56:21.667Z",
   "items": [
+    {
+      "title": "ICE agent shoots man in car with five-year-old child in New York: Mayor",
+      "url": "https://www.aljazeera.com/news/2026/10/9/ice-agent-shoots-man-in-car-with-five-year-old-child-in-new-york-mayor?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 09 Oct 2026 03:25:33 +0000"
+    },
     {
       "title": "Christa Pike case underscores prevalence of botched executions in US",
       "url": "https://www.aljazeera.com/news/2026/10/9/christa-pike-case-underscores-prevalence-of-botched-executions-in-us?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/liveblog/2026/10/9/iran-war-live-iranian-media-reports-massive-explosions-in-hormuz-strait?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 09 Oct 2026 00:00:21 +0000"
-    },
-    {
-      "title": "Kenyan patient suspected of Ebola infection tests negative",
-      "url": "https://www.aljazeera.com/news/2026/10/8/kenyan-patient-suspected-of-ebola-infection-tests-negative?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 08 Oct 2026 23:53:42 +0000"
     }
   ]
 }
