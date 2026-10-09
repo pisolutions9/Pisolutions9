@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-09T17:27:06.823Z",
+  "updatedAt": "2026-10-09T17:43:05.815Z",
   "items": [
+    {
+      "title": "Drone strike kills 30 people in Sudan’s Blue Nile region",
+      "url": "https://www.aljazeera.com/news/2026/10/9/drone-strike-kills-30-people-in-sudans-blue-nile-region?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 09 Oct 2026 17:19:43 +0000"
+    },
     {
       "title": "Palestinians seek protection from violent settlers during olive harvest",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/9/palestinians-seek-protection-from-violent-settlers-during-olive-harvest?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/9/hurricane-isaias-strengthens-into-category-3-storm-with-us-in-its-sights?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 09 Oct 2026 15:25:27 +0000"
-    },
-    {
-      "title": "Man City charges: How Premier League reacted – United, Arsenal, Liverpool",
-      "url": "https://www.aljazeera.com/sports/2026/10/9/man-city-charges-how-premier-league-reacted-man-utd-arsenal-liverpool?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 09 Oct 2026 15:09:51 +0000"
     }
   ]
 }
