@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-09T18:12:16.189Z",
+  "updatedAt": "2026-10-09T18:32:36.107Z",
   "items": [
+    {
+      "title": "‘An attack against sovereign states’: ICC President slams US sanctions",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/9/an-attack-against-sovereign-states-icc-president-slams-us-sanctions?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 09 Oct 2026 18:06:48 +0000"
+    },
     {
       "title": "Jerusalem Daily: US charity to use AI to monitor Gaza classrooms",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/9/jerusalem-daily-us-charity-to-use-ai-to-monitor-gaza-classrooms?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/9/rogue-court-us-sanctions-icc-hours-after-ex-judge-wins-nobel-prize?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 09 Oct 2026 15:59:04 +0000"
-    },
-    {
-      "title": "Israeli settler attacks target Palestinian olive harvest in West Bank",
-      "url": "https://www.aljazeera.com/news/2026/10/9/israeli-settler-attacks-target-palestinian-olive-harvest-in-west-bank?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 09 Oct 2026 15:28:10 +0000"
     }
   ]
 }
