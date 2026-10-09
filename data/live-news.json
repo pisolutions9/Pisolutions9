@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-09T17:56:59.156Z",
+  "updatedAt": "2026-10-09T18:12:16.189Z",
   "items": [
+    {
+      "title": "Jerusalem Daily: US charity to use AI to monitor Gaza classrooms",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/9/jerusalem-daily-us-charity-to-use-ai-to-monitor-gaza-classrooms?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 09 Oct 2026 17:37:05 +0000"
+    },
     {
       "title": "Drone strike kills 30 people in Sudan’s Blue Nile region",
       "url": "https://www.aljazeera.com/news/2026/10/9/drone-strike-kills-30-people-in-sudans-blue-nile-region?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/9/israeli-settler-attacks-target-palestinian-olive-harvest-in-west-bank?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 09 Oct 2026 15:28:10 +0000"
-    },
-    {
-      "title": "Hurricane Isaias strengthens into Category 3 storm with US in its sights",
-      "url": "https://www.aljazeera.com/news/2026/10/9/hurricane-isaias-strengthens-into-category-3-storm-with-us-in-its-sights?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 09 Oct 2026 15:25:27 +0000"
     }
   ]
 }
