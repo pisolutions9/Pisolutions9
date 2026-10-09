@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-09T15:57:13.554Z",
+  "updatedAt": "2026-10-09T16:12:25.979Z",
   "items": [
+    {
+      "title": "Israeli settler attacks target Palestinian olive harvest in West Bank",
+      "url": "https://www.aljazeera.com/news/2026/10/9/israeli-settler-attacks-target-palestinian-olive-harvest-in-west-bank?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 09 Oct 2026 15:28:10 +0000"
+    },
     {
       "title": "Hurricane Isaias strengthens into Category 3 storm with US in its sights",
       "url": "https://www.aljazeera.com/news/2026/10/9/hurricane-isaias-strengthens-into-category-3-storm-with-us-in-its-sights?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/9/ethiopia-and-eritrea-accuse-one-another-of-launching-war?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 09 Oct 2026 14:11:50 +0000"
-    },
-    {
-      "title": "Bangladesh’s mango diplomacy with India has reached its limits",
-      "url": "https://www.aljazeera.com/opinions/2026/10/9/bangladeshs-mango-diplomacy-with-india-has-reached-its-limits?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 09 Oct 2026 14:09:16 +0000"
     }
   ]
 }
