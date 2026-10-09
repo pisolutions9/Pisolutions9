@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-09T20:44:23.045Z",
+  "updatedAt": "2026-10-09T20:58:51.570Z",
   "items": [
+    {
+      "title": "How will Spain’s housing crisis affect elections?",
+      "url": "https://www.aljazeera.com/video/inside-story/2026/10/9/how-will-spains-housing-crisis-impact-elections?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 09 Oct 2026 20:39:11 +0000"
+    },
     {
       "title": "Human rights veteran Navi Pillay wins 2026 Nobel Peace Prize",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/9/human-rights-veteran-navi-pillay-wins-2026-nobel-peace-prize?traffic_source=rss",
@@ -32,7 +38,7 @@
       "publishedAt": "Fri, 09 Oct 2026 19:32:13 +0000"
     },
     {
-      "title": "Tsunami warnings across Latin America after 7.7 magnitude earthquake hits",
+      "title": "Panama earthquake: Tsunami warnings issued after magnitude 7.7 quake",
       "url": "https://www.aljazeera.com/news/2026/10/9/tsunami-warnings-across-latin-america-after-7-7-magnitude-earthquake-hits?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 09 Oct 2026 19:22:56 +0000"
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/9/barbaric-us-lawmakers-condemn-plan-to-livestream-nidal-hasans-execution?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 09 Oct 2026 18:30:58 +0000"
-    },
-    {
-      "title": "AI deepfake ads grow more popular in US midterm campaigns, blurring truth",
-      "url": "https://www.aljazeera.com/economy/2026/10/9/ai-deepfake-ads-grow-more-popular-in-us-midterm-campaigns-blurring-truth?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 09 Oct 2026 18:23:43 +0000"
     }
   ]
 }
