@@ -1,12 +1,6 @@
 {
-  "updatedAt": "2026-10-09T09:12:25.612Z",
+  "updatedAt": "2026-10-09T09:32:36.798Z",
   "items": [
-    {
-      "title": "2026 Nobel Peace Prize awarded to Navi Pillay",
-      "url": "https://www.aljazeera.com/news/2026/10/9/2026-nobel-peace-prize-awarded-to-navi-pillay?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 09 Oct 2026 09:06:43 +0000"
-    },
     {
       "title": "NBA star Wembanyama to French students: ‘I hear you’",
       "url": "https://www.aljazeera.com/sports/2026/10/9/nba-star-wembanyama-to-french-students-i-hear-you?traffic_source=rss",
@@ -60,6 +54,12 @@
       "url": "https://www.aljazeera.com/news/2026/10/9/afghanistans-emerald-miners-struggle-with-tools-but-attract-global-buyers?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 09 Oct 2026 06:36:48 +0000"
+    },
+    {
+      "title": "Trump says US will not strike Iran before midterm elections",
+      "url": "https://www.aljazeera.com/news/2026/10/9/trump-says-us-will-not-strike-iran-before-midterm-elections?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 09 Oct 2026 06:22:07 +0000"
     }
   ]
 }
