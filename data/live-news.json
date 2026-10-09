@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-09T20:07:27.255Z",
+  "updatedAt": "2026-10-09T20:26:40.705Z",
   "items": [
+    {
+      "title": "Trump announces Russian diesel deal amid soaring US fuel prices",
+      "url": "https://www.aljazeera.com/economy/2026/10/9/trump-announces-russian-diesel-deal-amid-soaring-us-fuel-prices?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 09 Oct 2026 19:47:33 +0000"
+    },
     {
       "title": "European states, Canada, Japan and UN back ICC against US sanctions",
       "url": "https://www.aljazeera.com/news/2026/10/9/european-states-canada-japan-and-un-back-icc-against-us-sanctions?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/9/jerusalem-daily-us-charity-to-use-ai-to-monitor-gaza-classrooms?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 09 Oct 2026 17:37:05 +0000"
-    },
-    {
-      "title": "Drone strike kills 30 people in Sudan’s Blue Nile region",
-      "url": "https://www.aljazeera.com/news/2026/10/9/drone-strike-kills-30-people-in-sudans-blue-nile-region?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 09 Oct 2026 17:19:43 +0000"
     }
   ]
 }
