@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-09T00:41:07.594Z",
+  "updatedAt": "2026-10-09T01:04:48.670Z",
   "items": [
+    {
+      "title": "USS Lincoln returns to US after long deployment supporting war on Iran",
+      "url": "https://www.aljazeera.com/news/2026/10/9/uss-lincoln-returns-to-us-after-long-deployment-supporting-war-on-iran?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Fri, 09 Oct 2026 00:39:20 +0000"
+    },
     {
       "title": "A father’s agony after an Israeli air strike hits Gaza apartment",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/9/a-fathers-agony-after-an-israeli-air-strike-hits-gaza-apartment?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/sports/2026/10/8/bordeaux-relegated-to-french-sixth-tier-for-financial-irregularities?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Thu, 08 Oct 2026 22:10:53 +0000"
-    },
-    {
-      "title": "Four astronauts return to earth after an eight-month space mission",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/8/four-astronauts-return-to-earth-after-an-eight-month-space-mission?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Thu, 08 Oct 2026 21:55:29 +0000"
     }
   ]
 }
