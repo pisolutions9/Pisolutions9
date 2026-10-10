@@ -34,4 +34,3 @@ function walk(dir){
 walk(root);
 assert.deepEqual(findings,[],`Potential committed secrets detected: ${JSON.stringify(findings)}`);
 console.log('PI static secret-safety scan passed.');
-
