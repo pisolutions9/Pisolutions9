@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-10T15:41:15.677Z",
+  "updatedAt": "2026-10-10T15:54:04.216Z",
   "items": [
+    {
+      "title": "Trump Accounts: Free money, but who gets a say?",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/10/trump-accounts-free-money-but-who-gets-a-say?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sat, 10 Oct 2026 15:21:39 +0000"
+    },
     {
       "title": "With or without Hamas",
       "url": "https://www.aljazeera.com/opinions/2026/10/10/with-or-without-hamas?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/10/has-yemen-returned-to-full-scale-war?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sat, 10 Oct 2026 14:10:24 +0000"
-    },
-    {
-      "title": "When streets become a workplace: Gaza workers convert tents into offices",
-      "url": "https://www.aljazeera.com/features/2026/10/10/when-streets-become-a-workplace-gaza-workers-convert-tents-into-offices?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sat, 10 Oct 2026 13:50:05 +0000"
     }
   ]
 }
