@@ -146,6 +146,9 @@ try {
   assert.equal(ecommerce.source,'pi-deterministic-ecommerce-reliability');
   assert.equal(ecommerce.truth,'deterministic-verified');
   assert.match(ecommerce.answer,/idempotency/i);
+  assert.match(ecommerce.answer,/inventory reservation/i);
+  assert.match(ecommerce.answer,/ledger/i);
+  assert.match(ecommerce.answer,/reconciliation/i);
   assert.match(ecommerce.answer,/overselling/i);
   assert.match(ecommerce.answer,/acceptance test/i);
 
@@ -239,3 +242,4 @@ try {
 } finally {
   globalThis.fetch = originalFetch;
 }
+
