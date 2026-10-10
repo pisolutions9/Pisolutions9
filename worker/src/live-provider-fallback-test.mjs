@@ -274,6 +274,8 @@ try {
   assert.equal(body.ok, true);
   assert.equal(body.answer, 'OpenRouter free multi-provider fallback answered.');
   assert.match(body.source, /^pi-chat-openrouter:openrouter\/free$/);
+  assert.equal(body.truth, 'provisional-model-response');
+  assert.equal(body.verification, 'not-completed');
   assert.equal(openRouterCalls.filter(x => x.url.startsWith('https://api.openai.com/')).length, 1);
   assert.equal(openRouterCalls.filter(x => x.url === 'https://api.groq.com/openai/v1/chat/completions').length, 1);
   assert.equal(openRouterCalls.filter(x => x.url === 'https://openrouter.ai/api/v1/chat/completions').length, 1);
@@ -282,3 +284,4 @@ try {
 } finally {
   globalThis.fetch = originalFetchOpenRouter;
 }
+
