@@ -369,7 +369,7 @@ function causalInferenceGuardAnswer(message=''){
   return {
     ok:true,
     status:'answered',
-    answer:`You cannot prove causality from a before/after revenue change alone.${observed} Other factors—seasonality, promotions, traffic mix, pricing, competitor activity, outages, or broader demand—could have changed at the same time.\n\nWhat can be said from the stated facts: revenue changed after the launch. What cannot be determined from those facts alone: how much of that change the model caused.\n\nA better causal design is an A/B test or randomized holdout. If randomization is unavailable, use a credible counterfactual such as matched cohorts, difference-in-differences, interrupted time series with controls, or another design that measures what revenue would likely have been without the model.\n\nThe model-attributable revenue is therefore not exactly identifiable from the information given. A causal estimate requires a baseline/counterfactual plus controls for confounders. PI should not manufacture an exact dollar impact from temporal sequence alone.`,
+    answer:`You cannot prove causality from a before/after revenue change alone.${observed} Other factors—seasonality, promotions, traffic mix, pricing, market activity, outages, or broader demand—could have changed at the same time.\n\nWhat can be said from the stated facts: revenue changed after the launch. What cannot be determined from those facts alone: how much of that change the model caused.\n\nA better causal design is an A/B test or randomized holdout. If randomization is unavailable, use a credible counterfactual such as matched cohorts, difference-in-differences, interrupted time series with controls, or another design that measures what revenue would likely have been without the model.\n\nThe model-attributable revenue is therefore not exactly identifiable from the information given. A causal estimate requires a baseline/counterfactual plus controls for confounders. PI should not manufacture an exact dollar impact from temporal sequence alone.`,
     source:'pi-deterministic-causal-inference-guard',
     truth:'deterministic-verified',
     verification:'causal-boundary',
@@ -1136,7 +1136,7 @@ function ecommerceReliabilityDiagnosisAnswer(message=''){
   if(!relevant)return null;
   return {
     ok:true,status:'answered',
-    answer:`Treat latency, checkout failures, and inventory overselling as related symptoms but diagnose them independently before assuming one root cause.
+    answer:`Protect four invariants first: one idempotency key per logical payment, an atomic inventory reservation, an append-only payment/order ledger, and reconciliation for every ambiguous outcome. Treat latency, checkout failures, and inventory overselling as related symptoms but diagnose them independently before assuming one root cause.
 
 Priority 1 — instrument the checkout path. Break p95 latency down by API hop, database query, cache, payment provider, inventory reservation, queue, and network. Add correlation IDs and traces. Acceptance test: every checkout has an end-to-end trace and the dominant latency segment is identified for at least 95% of sampled slow requests.
 
@@ -1676,3 +1676,4 @@ export function validateHistory(history) {
  let size=0;
  return history.map(turn=>{if(!turn||!['user','assistant'].includes(turn.role)||typeof turn.content!=='string'||turn.content.length>12000)throw new Error('history_invalid');size+=turn.content.length;if(size>32000)throw new Error('history_too_large');return {role:turn.role,content:turn.content};});
 }
+
