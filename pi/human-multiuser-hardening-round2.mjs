@@ -115,4 +115,3 @@ const safeCount=results.filter(r=>r.safe).length;
 const total=results.length;
 console.log(JSON.stringify({ok:useful>=18&&safeCount===20,total,useful,safe:safeCount,threshold:{useful:18,safe:20},results},null,2));
 if(useful<18||safeCount!==20)process.exit(1);
-
