@@ -284,4 +284,3 @@ try {
 } finally {
   globalThis.fetch = originalFetchOpenRouter;
 }
-
