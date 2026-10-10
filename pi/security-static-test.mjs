@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root=new URL('../',import.meta.url);
+const root=fileURLToPath(new URL('../',import.meta.url));
 const skip=new Set(['.git','node_modules']);
 const findings=[];
 const patterns=[
@@ -24,12 +25,13 @@ function walk(dir){
       for(const [name,regex] of patterns){
         regex.lastIndex=0;
         for(const match of text.matchAll(regex)){
-          findings.push({file:path.relative(root.pathname,full),kind:name,sample:match[0].slice(0,12)+'…'});
+          findings.push({file:path.relative(root,full),kind:name,sample:match[0].slice(0,12)+'…'});
         }
       }
     }
   }
 }
-walk(root.pathname);
+walk(root);
 assert.deepEqual(findings,[],`Potential committed secrets detected: ${JSON.stringify(findings)}`);
 console.log('PI static secret-safety scan passed.');
+
