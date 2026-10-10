@@ -1,5 +1,4 @@
-// The adversarial test must reject unsupported causal attribution without
-// rejecting a legitimate mention of competitors as possible confounders.
+// Test-only assertion helper: do not confuse confounders with causal claims.
 export function hasUnsupportedCampaignAttribution(answer = '') {
   const value = String(answer);
   return [
