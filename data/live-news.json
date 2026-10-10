@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-10T04:27:41.860Z",
+  "updatedAt": "2026-10-10T04:46:06.544Z",
   "items": [
+    {
+      "title": "India deploys police and restricts transport ahead of mass protest in Delhi",
+      "url": "https://www.aljazeera.com/news/2026/10/10/india-deploys-police-and-restricts-transport-ahead-of-mass-protest-in-delhi?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sat, 10 Oct 2026 04:07:30 +0000"
+    },
     {
       "title": "CCTV footage shows ICE shooting in New York",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/10/10-10-ice-shooting-update-sv?traffic_source=rss",
@@ -44,7 +50,7 @@
       "publishedAt": "Sat, 10 Oct 2026 00:01:32 +0000"
     },
     {
-      "title": "Iran war live: Kremlin says Trump welcomed Russia’s effort in Iran deal",
+      "title": "Iran war live: Trump vows to quickly ‘settle or win’ Iran and Ukraine wars",
       "url": "https://www.aljazeera.com/news/liveblog/2026/10/10/iran-war-live-kremlin-says-trump-welcomed-russia-effort-in-iran-deal?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sat, 10 Oct 2026 00:00:00 +0000"
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/9/mexico-investigates-video-said-to-show-cartel-members-fighting-for-ukraine?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 09 Oct 2026 22:50:15 +0000"
-    },
-    {
-      "title": "Trump confirms Fort Hood shooter’s execution will be by firing squad",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/9/trump-confirms-fort-hood-shooters-execution-will-be-by-firing-squad?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 09 Oct 2026 21:53:01 +0000"
     }
   ]
 }
