@@ -1676,4 +1676,3 @@ export function validateHistory(history) {
  let size=0;
  return history.map(turn=>{if(!turn||!['user','assistant'].includes(turn.role)||typeof turn.content!=='string'||turn.content.length>12000)throw new Error('history_invalid');size+=turn.content.length;if(size>32000)throw new Error('history_too_large');return {role:turn.role,content:turn.content};});
 }
-
