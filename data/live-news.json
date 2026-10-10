@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-10T00:38:59.733Z",
+  "updatedAt": "2026-10-10T01:02:28.707Z",
   "items": [
+    {
+      "title": "Israeli drone attack wounds six in Lebanon near Syria border",
+      "url": "https://www.aljazeera.com/news/2026/10/10/israeli-drone-attack-wounds-six-in-lebanon-near-syria-border?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sat, 10 Oct 2026 00:22:52 +0000"
+    },
     {
       "title": "Intercommunal clashes kill 71 people in South Sudan",
       "url": "https://www.aljazeera.com/news/2026/10/10/intercommunal-clashes-kill-71-people-in-south-sudan?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/inside-story/2026/10/9/how-will-spains-housing-crisis-impact-elections?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Fri, 09 Oct 2026 20:39:11 +0000"
-    },
-    {
-      "title": "Human rights veteran Navi Pillay wins 2026 Nobel Peace Prize",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/9/human-rights-veteran-navi-pillay-wins-2026-nobel-peace-prize?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Fri, 09 Oct 2026 20:29:30 +0000"
     }
   ]
 }
