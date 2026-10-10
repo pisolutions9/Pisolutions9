@@ -4,16 +4,16 @@
   "version": "V1.02",
   "generated_date": "2026-10-10",
   "timezone": "America/Chicago",
-  "status": "LOCAL_CANDIDATE_READY_PRODUCTION_BLOCKED",
-  "baseline_commit": "9d5f539cad8eacb8ca9c767de500bfd46427fecd",
-  "branch": "fix/v102-provider-truth-20261009",
+  "status": "CORE_PRODUCTION_RELEASE_READY_DEPLOYED",
+  "baseline_commit": "3415b6e5cc077b9e812bb3da14d7e0a1503f48e8",
+  "branch": "main",
   "release_test_invocations": 74,
   "unique_test_files": 71,
   "local_release_gate": "PASS",
-  "production_deployment": "NOT_RUN",
-  "live_browser_e2e": "NOT_RUN",
-  "rollback_rehearsal": "NOT_RUN",
-  "independent_review": "NOT_RUN",
+  "production_deployment": "PASS",
+  "live_browser_e2e": "PASS",
+  "rollback_rehearsal": "PLAN_VERIFIED_PRODUCTION_EXERCISE_NOT_RUN",
+  "independent_review": "AUTOMATED_GATES_PASS_HUMAN_CERTIFICATION_NOT_CLAIMED",
   "live_charging": "NOT_AUTHORIZED",
   "files": [
     {
@@ -273,8 +273,8 @@
     },
     {
       "path": "PI_V102_RELEASE_CANDIDATE_REPORT.md",
-      "bytes": 4437,
-      "sha256": "83e849edd75a8def28a1f32d602a69b9691eaa25e2354aa860e6021735dec8b1"
+      "bytes": 4194,
+      "sha256": "6e1177abccb28c2903d406e08d50255aed569ea811082e059d85bbbcb84449d1"
     },
     {
       "path": "PI_V2_RELEASE_PLAN.md",
@@ -1063,8 +1063,8 @@
     },
     {
       "path": "worker/src/deterministic-capability-test.mjs",
-      "bytes": 13518,
-      "sha256": "62ace33373bb6fba00684cfbf2019dcd38d7e03c992c6e585a4bea9b1c250dac"
+      "bytes": 13676,
+      "sha256": "a4c6c48fca542d23d44cbff3985749d5994c6836a57ecfd587a288cdc8acf821"
     },
     {
       "path": "worker/src/deterministic-fallback-test.mjs",
@@ -1093,8 +1093,8 @@
     },
     {
       "path": "worker/src/index.js",
-      "bytes": 133761,
-      "sha256": "54dfe10d49dc6b77fa21ddc417d11d55f1bb5a482ab58f346a72b7ad32b2f8b6"
+      "bytes": 133947,
+      "sha256": "3479283ff8a61e936f55bd17ad335eedda010b1256372e16cdf52e096f21080a"
     },
     {
       "path": "worker/src/inventory.mjs",
