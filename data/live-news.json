@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-10T06:58:01.588Z",
+  "updatedAt": "2026-10-10T07:12:57.289Z",
   "items": [
+    {
+      "title": "Trump slams Norway for not awarding him Nobel Peace Prize",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/10/trump-slams-norway-for-not-awarding-him-nobel-peace-prize?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sat, 10 Oct 2026 06:47:10 +0000"
+    },
     {
       "title": "Yemen’s Taiz under siege again as food and fuel prices rise",
       "url": "https://www.aljazeera.com/news/2026/10/10/yemens-taiz-under-siege-again-as-food-and-fuel-prices-rise?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/10/india-deploys-police-and-restricts-transport-ahead-of-mass-protest-in-delhi?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sat, 10 Oct 2026 04:07:30 +0000"
-    },
-    {
-      "title": "CCTV footage shows ICE shooting in New York",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/10/10-10-ice-shooting-update-sv?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sat, 10 Oct 2026 03:38:05 +0000"
     }
   ]
 }
