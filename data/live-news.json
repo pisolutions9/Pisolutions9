@@ -1,6 +1,18 @@
 {
-  "updatedAt": "2026-10-11T01:26:45.948Z",
+  "updatedAt": "2026-10-11T01:43:03.849Z",
   "items": [
+    {
+      "title": "Man dies after entering tiger enclosure at England wildlife park",
+      "url": "https://www.aljazeera.com/news/2026/10/11/man-dies-after-entering-tiger-enclosure-at-england-wildlife-park?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 11 Oct 2026 01:16:18 +0000"
+    },
+    {
+      "title": "Global pro-Palestinian protests one year after Gaza ‘ceasefire’",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/11-10-sv-global-protests-for-gaza-solidarity-uk?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 11 Oct 2026 01:11:10 +0000"
+    },
     {
       "title": "Twelve killed, more than 300 injured in Riyadh airport attack",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/11-10-reported-latest-attack-on-riyadh-king-khalid-airport-houthis?traffic_source=rss",
@@ -48,18 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/10/hundreds-of-doctors-demand-world-medical-association-suspend-israel?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sat, 10 Oct 2026 21:12:04 +0000"
-    },
-    {
-      "title": "Malawi motorists queue for days as fuel shortage bites",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/10/malawi-motorists-queue-for-days-as-fuel-shortage-bites?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sat, 10 Oct 2026 21:10:38 +0000"
-    },
-    {
-      "title": "Hurricane Simon strengthens to Category 4 off Mexico’s Pacific coast",
-      "url": "https://www.aljazeera.com/news/2026/10/10/hurricane-simon-strengthens-to-category-4-off-mexicos-pacific-coast?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sat, 10 Oct 2026 21:10:06 +0000"
     }
   ]
 }
