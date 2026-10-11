@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-11T02:44:20.440Z",
+  "updatedAt": "2026-10-11T02:58:17.340Z",
   "items": [
+    {
+      "title": "World condemns deadly Houthi attack on Saudi Arabia’s Riyadh airport",
+      "url": "https://www.aljazeera.com/news/2026/10/11/world-condemns-deadly-houthi-attack-on-saudi-arabias-riyadh-airport?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 11 Oct 2026 02:12:07 +0000"
+    },
     {
       "title": "Trump ‘may’ join Saudi strikes on Houthis after Riyadh airport attack",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/10-10-clip-trump-weighs-joining-saudi-strikes-on-houthis-us?traffic_source=rss",
@@ -32,7 +38,7 @@
       "publishedAt": "Sun, 11 Oct 2026 00:23:50 +0000"
     },
     {
-      "title": "Iran war live: 12 killed in Riyadh, US weighs joining fight against Houthis",
+      "title": "Iran war live: 12 killed in Riyadh, Trump to speak with Saudi Arabia’s MBS",
       "url": "https://www.aljazeera.com/news/liveblog/2026/10/11/iran-war-live-12-killed-in-riyadh-us-weighs-joining-fight-against-houthis?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 11 Oct 2026 00:00:13 +0000"
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/10/yemeni-governments-military-says-its-forces-advancing-against-houthis?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sat, 10 Oct 2026 22:12:25 +0000"
-    },
-    {
-      "title": "Real Madrid beat Villarreal 1-0 but Vinicius sent off for hair pull",
-      "url": "https://www.aljazeera.com/sports/2026/10/10/real-madrid-beat-villarreal-but-vinicius-sent-off-for-hair-pull?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sat, 10 Oct 2026 21:40:20 +0000"
     }
   ]
 }
