@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-11T01:01:39.548Z",
+  "updatedAt": "2026-10-11T01:26:45.948Z",
   "items": [
+    {
+      "title": "Twelve killed, more than 300 injured in Riyadh airport attack",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/11-10-reported-latest-attack-on-riyadh-king-khalid-airport-houthis?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 11 Oct 2026 01:02:07 +0000"
+    },
     {
       "title": "Ebola spreads in eastern DRC as Kenya confirms imported case",
       "url": "https://www.aljazeera.com/news/2026/10/11/ebola-spreads-in-eastern-drc-as-kenya-confirms-imported-case?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/10/hurricane-simon-strengthens-to-category-4-off-mexicos-pacific-coast?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sat, 10 Oct 2026 21:10:06 +0000"
-    },
-    {
-      "title": "Yemen’s Houthis release video of drone attacks on gov’t forces",
-      "url": "https://www.aljazeera.com/video/2026/10/10/yemens-houthis-release-video-of-drone-attacks-on-govt-forces?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sat, 10 Oct 2026 21:02:49 +0000"
     }
   ]
 }
