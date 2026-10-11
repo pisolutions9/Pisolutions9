@@ -1,6 +1,18 @@
 {
-  "updatedAt": "2026-10-11T11:26:07.038Z",
+  "updatedAt": "2026-10-11T11:41:12.345Z",
   "items": [
+    {
+      "title": "The scramble to rewrite Biden’s record on Gaza",
+      "url": "https://www.aljazeera.com/video/the-listening-post/2026/10/11/the-scramble-to-rewrite-bidens-record-on-gaza?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 11 Oct 2026 11:29:48 +0000"
+    },
+    {
+      "title": "Liverpool vs Man City live: Premier League",
+      "url": "https://www.aljazeera.com/sports/liveblog/2026/10/11/live-liverpool-vs-manchester-city-premier-league-football?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 11 Oct 2026 11:22:30 +0000"
+    },
     {
       "title": "Mohamed Salah sets Turkish Super Lig record for Trabzonspor",
       "url": "https://www.aljazeera.com/sports/2026/10/11/mohamed-salah-sets-turkish-super-lig-record-for-trabzonspor?traffic_source=rss",
@@ -48,18 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/11/russias-yandex-says-data-centre-in-vladimir-shut-down-after-drone-attack?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 11 Oct 2026 09:33:03 +0000"
-    },
-    {
-      "title": "What can Man City expect against Liverpool at Anfield on Sunday?",
-      "url": "https://www.aljazeera.com/sports/2026/10/11/manchester-city-financial-breach-liverpool-fans-anfield?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 08:46:10 +0000"
-    },
-    {
-      "title": "Trump calls for Ukraine election, says Zelenskyy failed to end war",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/trump-calls-for-ukraine-election-says-zelenskyy-failed-to-end-war?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 08:43:52 +0000"
     }
   ]
 }
