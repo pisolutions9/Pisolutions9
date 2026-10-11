@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-11T06:33:26.336Z",
+  "updatedAt": "2026-10-11T06:59:15.088Z",
   "items": [
+    {
+      "title": "Flash flood sweeps away buildings in Nepal",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/flash-flood-sweeps-away-buildings-in-nepal?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 11 Oct 2026 06:34:31 +0000"
+    },
     {
       "title": "Vinicius apologises for hair-pull red card but could miss El Clasico",
       "url": "https://www.aljazeera.com/sports/2026/10/11/vinicius-apologises-for-hair-pull-red-card-but-could-miss-el-clasico?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/10-10-clip-trump-weighs-joining-saudi-strikes-on-houthis-us?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 11 Oct 2026 01:59:02 +0000"
-    },
-    {
-      "title": "Man dies after entering tiger enclosure at England wildlife park",
-      "url": "https://www.aljazeera.com/news/2026/10/11/man-dies-after-entering-tiger-enclosure-at-england-wildlife-park?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 01:16:18 +0000"
     }
   ]
 }
