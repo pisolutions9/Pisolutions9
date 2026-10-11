@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-11T09:54:31.087Z",
+  "updatedAt": "2026-10-11T10:06:57.073Z",
   "items": [
+    {
+      "title": "Russia’s Yandex says data centre in Vladimir shut down after drone attack",
+      "url": "https://www.aljazeera.com/news/2026/10/11/russias-yandex-says-data-centre-in-vladimir-shut-down-after-drone-attack?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 11 Oct 2026 09:33:03 +0000"
+    },
     {
       "title": "What can Man City expect against Liverpool at Anfield on Sunday?",
       "url": "https://www.aljazeera.com/sports/2026/10/11/manchester-city-financial-breach-liverpool-fans-anfield?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news-analysis/2026/10/11/how-genocidal-war-on-gaza-is-shaping-israels-election?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 11 Oct 2026 05:35:09 +0000"
-    },
-    {
-      "title": "US opens antitrust probe into TV networks for halting Trump coverage",
-      "url": "https://www.aljazeera.com/news/2026/10/11/us-opens-antitrust-probe-into-tv-networks-halting-trump-coverage?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 04:30:10 +0000"
     }
   ]
 }
