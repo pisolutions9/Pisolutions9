@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-11T20:26:27.670Z",
+  "updatedAt": "2026-10-11T20:43:02.416Z",
   "items": [
+    {
+      "title": "Pakistan suspends Imran Khan’s party-led provincial government",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/pakistan-suspends-imran-khans-party-led-provincial-government?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 11 Oct 2026 20:21:13 +0000"
+    },
     {
       "title": "Saudi health minister visits survivors of deadly Riyadh airport attack",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/saudi-health-minister-visits-survivors-of-deadly-riyadh-airport-attack?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/is-the-yemen-war-entering-a-new-phase?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 11 Oct 2026 17:30:55 +0000"
-    },
-    {
-      "title": "Israel pushes its ‘Yellow Line’ deeper into Gaza",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/israel-pushes-its-yellow-line-deeper-into-gaza?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 17:14:50 +0000"
     }
   ]
 }
