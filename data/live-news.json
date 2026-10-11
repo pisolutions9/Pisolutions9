@@ -1,6 +1,18 @@
 {
-  "updatedAt": "2026-10-11T04:46:03.857Z",
+  "updatedAt": "2026-10-11T05:07:28.903Z",
   "items": [
+    {
+      "title": "US opens antitrust probe into TV networks halting Trump coverage",
+      "url": "https://www.aljazeera.com/news/2026/10/11/us-opens-antitrust-probe-into-tv-networks-halting-trump-coverage?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 11 Oct 2026 04:30:10 +0000"
+    },
+    {
+      "title": "Hurricane Isaias kills four, leaves 650,000 without power in Florida",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/10-10-clip-isaias-is-here-us?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 11 Oct 2026 04:28:51 +0000"
+    },
     {
       "title": "ICE agent in New York shooting also involved in assault of pregnant woman",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/ice-agent-in-new-york-shooting-also-involved-in-assault-of-pregnant-woman?traffic_source=rss",
@@ -48,18 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/11-10-reported-latest-attack-on-riyadh-king-khalid-airport-houthis?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 11 Oct 2026 01:02:07 +0000"
-    },
-    {
-      "title": "Ebola spreads in eastern DRC as Kenya confirms imported case",
-      "url": "https://www.aljazeera.com/news/2026/10/11/ebola-spreads-in-eastern-drc-as-kenya-confirms-imported-case?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 00:23:50 +0000"
-    },
-    {
-      "title": "Iran war live: 12 killed in Riyadh, Trump to speak with Saudi Arabia’s MBS",
-      "url": "https://www.aljazeera.com/news/liveblog/2026/10/11/iran-war-live-12-killed-in-riyadh-us-weighs-joining-fight-against-houthis?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 00:00:13 +0000"
     }
   ]
 }
