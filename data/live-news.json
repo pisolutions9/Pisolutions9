@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-11T18:29:33.797Z",
+  "updatedAt": "2026-10-11T18:49:44.322Z",
   "items": [
+    {
+      "title": "Jerusalem Daily: Panicked Palestinians flee Israeli attacks on Gaza",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/jerusalem-daily-panicked-palestinians-flee-israeli-attacks-on-gaza?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Sun, 11 Oct 2026 18:25:42 +0000"
+    },
     {
       "title": "Lebanon’s first electric train hopes to revive railway system",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/lebanons-first-electric-train-hopes-to-revive-railway-system?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/11/at-least-five-people-missing-as-flash-floods-in-nepal-sweep-away-houses?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 11 Oct 2026 16:00:48 +0000"
-    },
-    {
-      "title": "Tour bus crash in Turkiye leaves at least 11 dead",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/tour-bus-crash-in-turkiye-leaves-at-least-11-dead?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 15:52:29 +0000"
     }
   ]
 }
