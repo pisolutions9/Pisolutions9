@@ -1,6 +1,24 @@
 {
-  "updatedAt": "2026-10-12T00:10:51.836Z",
+  "updatedAt": "2026-10-12T00:41:08.325Z",
   "items": [
+    {
+      "title": "Hurricane Isaias leaves trail of destruction across the US Gulf Coast",
+      "url": "https://www.aljazeera.com/gallery/2026/10/12/hurricane-isaias-leaves-trail-of-destruction-across-the-us-gulf-coast?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 12 Oct 2026 00:21:46 +0000"
+    },
+    {
+      "title": "Ceuta or Sebta? Why one city has two names and a disputed status",
+      "url": "https://www.aljazeera.com/news/2026/10/12/ceuta-or-sebta-why-one-city-has-two-names-and-a-disputed-status?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 12 Oct 2026 00:14:46 +0000"
+    },
+    {
+      "title": "Iran war live: Riyadh airport hit again; Tehran says US reply ‘inadequate’",
+      "url": "https://www.aljazeera.com/news/liveblog/2026/10/12/iran-war-live-riyadh-airport-hit-again-tehran-says-us-reply-inadequate?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 12 Oct 2026 00:00:00 +0000"
+    },
     {
       "title": "Pakistani national killed in second Houthi strike on Riyadh airport",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/pakistani-national-killed-second-houthi-strike-riyadh-airport?traffic_source=rss",
@@ -42,24 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/11/two-killed-near-israeli-occupied-area-in-south-lebanon?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 11 Oct 2026 20:46:45 +0000"
-    },
-    {
-      "title": "Deadly air strike kills dozens at Sudan gold mine near Egypt border",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/deadly-air-strike-kills-dozens-at-sudan-gold-mine-near-egypt-border?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 20:44:17 +0000"
-    },
-    {
-      "title": "How Man City beat Liverpool after guilty verdict",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/how-man-city-beat-liverpool-after-guilty-verdict?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 20:41:09 +0000"
-    },
-    {
-      "title": "Zelenskyy welcomes US-announced energy ceasefire",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/zelenskyy-welcomes-us-announced-energy-ceasefire?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 20:28:46 +0000"
     }
   ]
 }
