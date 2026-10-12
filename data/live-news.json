@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-12T03:59:35.037Z",
+  "updatedAt": "2026-10-12T04:18:22.645Z",
   "items": [
+    {
+      "title": "Ethiopian troops enter Adigrat in Tigray, near the Eritrean border",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/12/11-10-reported-ethiopia-hamza-mohammad-report-abiy-ahmed-ep?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 12 Oct 2026 04:00:56 +0000"
+    },
     {
       "title": "North Korea fires multiple ballistic missiles towards the sea",
       "url": "https://www.aljazeera.com/news/2026/10/12/north-korea-fires-multiple-ballistic-missiles-towards-the-sea?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/liveblog/2026/10/12/iran-war-live-riyadh-airport-hit-again-tehran-says-us-reply-inadequate?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 12 Oct 2026 00:00:00 +0000"
-    },
-    {
-      "title": "Pakistani national killed in second Houthi strike on Riyadh airport",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/pakistani-national-killed-second-houthi-strike-riyadh-airport?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 23:20:46 +0000"
     }
   ]
 }
