@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-12T02:12:01.683Z",
+  "updatedAt": "2026-10-12T02:31:22.187Z",
   "items": [
+    {
+      "title": "Saudi Arabia says 1 dead, 11 injured in latest attack on Riyadh airport",
+      "url": "https://www.aljazeera.com/news/2026/10/12/saudi-arabia-says-1-dead-11-injured-in-latest-attack-on-riyadh-airport?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 12 Oct 2026 02:11:21 +0000"
+    },
     {
       "title": "Bridge washed away by torrent of water in Nepal",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/12/11-10-clip-nepal-bridgewashesaway-np?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/footage-shows-moment-russian-strike-hits-ukrainian-grocery-store?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 11 Oct 2026 22:49:23 +0000"
-    },
-    {
-      "title": "CCTV shows moment of deadly Houthi strike on Riyadh airport",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/houthi-strike-riyadh-international-airport-cctv-footage?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 22:24:07 +0000"
     }
   ]
 }
