@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-12T17:09:46.882Z",
+  "updatedAt": "2026-10-12T17:30:05.901Z",
   "items": [
+    {
+      "title": "‘Totally unfair’: Navi Pillay slams US sanctions against ICC",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/12/totally-unfair-navi-pillay-slams-us-sanctions-against-icc?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 12 Oct 2026 17:07:50 +0000"
+    },
     {
       "title": "Blast kills teenager, injures dozens in northern Israel",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/12/blast-kills-teenager-injures-dozens-in-northern-israel?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/opinions/2026/10/12/will-ukraine-survive-the-winter?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 12 Oct 2026 15:04:08 +0000"
-    },
-    {
-      "title": "US agents search home of Ilhan Omar, Trump critic and Congress member",
-      "url": "https://www.aljazeera.com/news/2026/10/12/trump-critic-democratic-rep-ilhan-omars-home-searched-by-federal-agents?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 12 Oct 2026 14:59:53 +0000"
     }
   ]
 }
