@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-12T08:34:59.264Z",
+  "updatedAt": "2026-10-12T08:59:31.937Z",
   "items": [
+    {
+      "title": "Steve Smith breaks Test fielding record as Australia dominate South Africa",
+      "url": "https://www.aljazeera.com/sports/2026/10/12/steve-smith-breaks-test-fielding-record-as-australia-dominate-south-africa?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 12 Oct 2026 08:17:50 +0000"
+    },
     {
       "title": "India opposition plans New Delhi protest to demand election chief resign",
       "url": "https://www.aljazeera.com/news/2026/10/12/india-opposition-plans-new-delhi-protest-to-demand-election-chief-resign?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/12/11-10-reported-ethiopia-hamza-mohammad-report-abiy-ahmed-ep?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 12 Oct 2026 04:00:56 +0000"
-    },
-    {
-      "title": "North Korea fires multiple ballistic missiles towards the sea",
-      "url": "https://www.aljazeera.com/news/2026/10/12/north-korea-fires-multiple-ballistic-missiles-towards-the-sea?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 12 Oct 2026 03:37:12 +0000"
     }
   ]
 }
