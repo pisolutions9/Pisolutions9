@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-12T03:34:22.616Z",
+  "updatedAt": "2026-10-12T03:59:35.037Z",
   "items": [
+    {
+      "title": "North Korea fires multiple ballistic missiles towards the sea",
+      "url": "https://www.aljazeera.com/news/2026/10/12/north-korea-fires-multiple-ballistic-missiles-towards-the-sea?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Mon, 12 Oct 2026 03:37:12 +0000"
+    },
     {
       "title": "At least 139 dead as migrant boat from Djibouti to Yemen capsizes",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/12/at-least-139-dead-as-migrant-boat-from-djibouti-to-yemen-capsizes?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/11/pakistani-national-killed-second-houthi-strike-riyadh-airport?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Sun, 11 Oct 2026 23:20:46 +0000"
-    },
-    {
-      "title": "US Homeland Security secretary sees no ‘risk’ from livestreamed execution",
-      "url": "https://www.aljazeera.com/news/2026/10/11/us-homeland-security-secretary-sees-no-risk-from-livestreamed-execution?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Sun, 11 Oct 2026 23:17:05 +0000"
     }
   ]
 }
