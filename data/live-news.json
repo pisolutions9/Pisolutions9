@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-13T16:45:34.640Z",
+  "updatedAt": "2026-10-13T17:09:18.667Z",
   "items": [
+    {
+      "title": "Jerusalem Daily: Israeli forces raid NGOs in Ramallah",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/13/jerusalem-daily-israeli-forces-raid-ngos-in-ramallah?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 13 Oct 2026 16:38:45 +0000"
+    },
     {
       "title": "Drivers queue for hours in Bali amid fuel shortage",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/13/drivers-queue-for-hours-in-bali-amid-fuel-shortage?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/13/block-blunt-break-whats-in-natos-new-russia-war-plan?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 13 Oct 2026 14:52:22 +0000"
-    },
-    {
-      "title": "Spain’s King Felipe makes first visit to Ceuta amid migrant crisis",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/13/spains-king-felipe-makes-first-visit-to-ceuta-amid-migrant-crisis?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 13 Oct 2026 14:41:15 +0000"
     }
   ]
 }
