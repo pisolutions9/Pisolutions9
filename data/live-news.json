@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-13T17:09:18.667Z",
+  "updatedAt": "2026-10-13T17:29:51.345Z",
   "items": [
+    {
+      "title": "Floods submerge cars, homes and hospitals in Libya’s Tripoli",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/13/floods-submerge-cars-homes-and-hospitals-in-libyas-tripoli?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 13 Oct 2026 16:49:54 +0000"
+    },
     {
       "title": "Jerusalem Daily: Israeli forces raid NGOs in Ramallah",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/13/jerusalem-daily-israeli-forces-raid-ngos-in-ramallah?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/sports/liveblog/2026/10/13/atletico-madrid-vs-manchester-united-live-champions-league?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 13 Oct 2026 15:00:00 +0000"
-    },
-    {
-      "title": "‘Block, blunt, break’: What’s in NATO’s new Russia war plan?",
-      "url": "https://www.aljazeera.com/news/2026/10/13/block-blunt-break-whats-in-natos-new-russia-war-plan?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 13 Oct 2026 14:52:22 +0000"
     }
   ]
 }
