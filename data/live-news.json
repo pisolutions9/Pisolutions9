@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-13T02:57:04.947Z",
+  "updatedAt": "2026-10-13T03:12:19.071Z",
   "items": [
+    {
+      "title": "‘Unprecedented’ cyberattack hits French supermarkets, causing food losses",
+      "url": "https://www.aljazeera.com/news/2026/10/13/unprecedented-cyberattack-hits-french-supermarkets-causing-food-losses?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 13 Oct 2026 02:37:10 +0000"
+    },
     {
       "title": "Ethiopia’s Tigray war: Where do the UAE and Saudi Arabia stand?",
       "url": "https://www.aljazeera.com/news/2026/10/13/ethiopias-tigray-war-where-do-the-uae-and-saudi-arabia-stand?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/12/conflict-drought-increasing-risk-of-famine-in-sudan-monitor?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Mon, 12 Oct 2026 21:27:42 +0000"
-    },
-    {
-      "title": "Why do Iran’s oil ‘intermediaries’ owe the government billions?",
-      "url": "https://www.aljazeera.com/news/2026/10/12/why-do-irans-oil-intermediaries-owe-the-government-billions?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Mon, 12 Oct 2026 21:16:58 +0000"
     }
   ]
 }
