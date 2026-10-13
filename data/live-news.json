@@ -1,12 +1,6 @@
 {
-  "updatedAt": "2026-10-13T15:58:46.109Z",
+  "updatedAt": "2026-10-13T16:17:11.488Z",
   "items": [
-    {
-      "title": "France seizes tanker suspected of belonging to Russia’s shadow fleet",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/13/france-seizes-tanker-suspected-of-belonging-to-russias-shadow-fleet?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 13 Oct 2026 15:44:44 +0000"
-    },
     {
       "title": "US ambassador to Greece resigns amid misconduct allegations",
       "url": "https://www.aljazeera.com/news/2026/10/13/trumps-ambassador-to-greece-asked-to-resign-amid-misconduct-allegations?traffic_source=rss",
@@ -60,6 +54,12 @@
       "url": "https://www.aljazeera.com/news/2026/10/13/yemeni-government-launches-air-strikes-on-houthi-positions?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 13 Oct 2026 13:47:14 +0000"
+    },
+    {
+      "title": "F1 set to return to Africa for first time in three decades",
+      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/13/f1-set-to-return-to-africa-for-first-time-in-three-decades?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 13 Oct 2026 13:29:10 +0000"
     }
   ]
 }
