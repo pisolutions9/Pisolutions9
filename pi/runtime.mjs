@@ -79,8 +79,21 @@ export function createRuntime({ execute = async () => ({ completed: [], evidence
       const declaredAction = mission.context?.action;
       if (declaredAction) {
         const actionCheck = policy.checkAction({ ...declaredAction, approved: declaredAction.approved === true || mission.context?.humanApproved === true });
+        observer.emit({
+          missionId: mission.id,
+          step: 'tool_risk_gate',
+          status: actionCheck.ok ? 'allowed' : 'blocked',
+          truth: 'verified',
+          message: actionCheck.ok ? (actionCheck.risk?.ownerRequired ? 'owner_approved_action' : 'safe_action') : actionCheck.reason,
+          risk: actionCheck.risk,
+          authorization: actionCheck.authorization ? {
+            principalId: actionCheck.authorization.principalId,
+            requiredScopes: actionCheck.authorization.requiredScopes,
+            missingScopes: actionCheck.authorization.missingScopes,
+            decision: actionCheck.authorization.reason
+          } : null
+        });
         if (!actionCheck.ok) throw new Error(actionCheck.reason);
-        observer.emit({ missionId: mission.id, step: 'tool_risk_gate', status: 'allowed', truth: 'verified', message: actionCheck.risk?.ownerRequired ? 'owner_approved_action' : 'safe_action', risk: actionCheck.risk });
       }
       const boundary = missionGuard.boundary(mission.objective);
       if (!boundary.trusted) throw new Error('untrusted_instruction_boundary');
@@ -142,7 +155,7 @@ export function createRuntime({ execute = async () => ({ completed: [], evidence
         const blocker = classifyBlocker(error);
         const declaredAction = mission.context?.action;
         const recoveryPolicy = declaredAction ? policy.recoveryPolicy(declaredAction) : null;
-        const humanGate = !blocker.safeToReroute || Boolean(learningError) || String(error?.message || '').includes('human_approval_required') || recoveryPolicy?.reason === 'protected_action';
+        const humanGate = !blocker.safeToReroute || Boolean(learningError) || String(error?.message || '').includes('human_approval_required') || String(error?.message || '').includes('principal_required') || String(error?.message || '').includes('capability_not_granted') || recoveryPolicy?.reason === 'protected_action';
         mission = humanGate ? await state.save({ ...mission, status: 'blocked' }) : markFailure(mission, error);
         const nextAction = humanGate ? 'owner_required' : null;
         if (mission.status === 'retrying') {
@@ -179,5 +192,5 @@ export function createRuntime({ execute = async () => ({ completed: [], evidence
     };
   }
 
-  return { submit, resumeUnfinished, cycle, runCycles, queue, cost: guard, guardrails: missionGuard, deadLetters, policy, state, netra, recovery };
+  return Object.freeze({ submit, cycle, runCycles, resumeUnfinished, getMission: id => state.load(id), listMissions: () => state.list(), clear: () => state.clear(), deadLetters, observer });
 }
