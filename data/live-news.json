@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-13T10:59:10.901Z",
+  "updatedAt": "2026-10-13T11:17:33.689Z",
   "items": [
+    {
+      "title": "A look at the country’s local, regional and global initiatives",
+      "url": "https://www.aljazeera.com/video/centre-stage/2026/10/13/a-look-at-the-countrys-local-regional-and-global-initiatives?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Tue, 13 Oct 2026 10:42:30 +0000"
+    },
     {
       "title": "Trump Protester punched at Trump rally as they’re mocked by the president",
       "url": "https://www.aljazeera.com/video/newsfeed/2026/10/13/trump-protester-punched-at-trump-rally-as-theyre-mocked-by-the-president?traffic_source=rss",
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/news/2026/10/13/former-dr-congo-president-kabila-joins-m23-rebels-in-a-new-coalition?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Tue, 13 Oct 2026 08:50:49 +0000"
-    },
-    {
-      "title": "The escalation in Yemen is a turning point",
-      "url": "https://www.aljazeera.com/opinions/2026/10/13/the-escalation-in-yemen-is-a-turning-point?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Tue, 13 Oct 2026 08:42:55 +0000"
     }
   ]
 }
