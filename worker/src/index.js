@@ -1375,7 +1375,7 @@ function withAttachment(message, context) {
 }
 
 function corsHeaders(origin) {
-  return {'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff',...(origin===ALLOWED_ORIGIN?{'access-control-allow-origin':ALLOWED_ORIGIN}:{}),'access-control-allow-methods':'POST,OPTIONS','access-control-allow-headers':'content-type','access-control-max-age':'600',vary:'Origin'};
+  return {'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff',...(origin===ALLOWED_ORIGIN?{'access-control-allow-origin':ALLOWED_ORIGIN,'access-control-expose-headers':'x-pi-request-id, server-timing'}:{}),'access-control-allow-methods':'POST,OPTIONS','access-control-allow-headers':'content-type','access-control-max-age':'600',vary:'Origin'};
 }
 function json(body,status,request,extraHeaders={}){const origin=request.headers.get('Origin')||'';return new Response(JSON.stringify(body),{status,headers:{...corsHeaders(origin),...extraHeaders}});}
 function krishnaJson(body,status,request,route='general',extraHeaders={}){if(status>=200&&status<300&&body?.ok!==false){const check=validateKrishnaAnswer(body,{route});if(!check.ok)return json({ok:false,status:'answer_contract_failed',error:check.reason,answer:'PI blocked an invalid answer before it reached the customer.',truth:'unknown'},503,request,extraHeaders);}return json(body,status,request,extraHeaders);}
@@ -1702,8 +1702,27 @@ function chatDeadlineResponse(request,payload){
 export default{
   async fetch(request,env){
     if(new URL(request.url).pathname!=='/api/chat')return piWorker.fetch(request,env);
+    const requestId=crypto.randomUUID();
+    const startedAt=Date.now();
+    console.log(JSON.stringify({event:'pi_chat_ingress',requestId}));
     let payload={};
     request.clone().json().then(value=>{payload=value;}).catch(()=>{});
-    return withResponseDeadline(piWorker.fetch(request,env),CHAT_REQUEST_BUDGET_MS-500,()=>chatDeadlineResponse(request,payload));
+    let outcome='response';
+    let response;
+    try{
+      response=await withResponseDeadline(piWorker.fetch(request,env),CHAT_REQUEST_BUDGET_MS-500,()=>{
+        outcome='deadline';
+        return chatDeadlineResponse(request,payload);
+      });
+    }catch{
+      outcome='unhandled_error';
+      response=json({ok:false,status:'service_unavailable',error:'customer_request_failed',answer:'PI could not complete this request. Please try again.',truth:'unknown'},503,request);
+    }
+    const durationMs=Date.now()-startedAt;
+    response.headers.set('x-pi-request-id',requestId);
+    response.headers.set('server-timing',`pi_chat;dur=${durationMs}`);
+    console.log(JSON.stringify({event:'pi_chat_boundary',requestId,durationMs,status:response.status,outcome}));
+    return response;
   }
 };
+
