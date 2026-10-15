@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-10-15T00:16:20.594Z",
+  "updatedAt": "2026-10-15T01:05:34.022Z",
   "items": [
+    {
+      "title": "Costa Rica opens mega-prison as Bukele model embraced across Latin America",
+      "url": "https://www.aljazeera.com/news/2026/10/15/costa-rica-opens-mega-prison-as-bukele-model-embraced-across-latin-america?traffic_source=rss",
+      "source": "Al Jazeera",
+      "publishedAt": "Thu, 15 Oct 2026 00:24:03 +0000"
+    },
     {
       "title": "Mexican court closes case against official over 2023 detention centre fire",
       "url": "https://www.aljazeera.com/news/2026/10/15/mexican-court-closes-case-against-official-over-2023-detention-centre-fire?traffic_source=rss",
@@ -26,7 +32,7 @@
       "publishedAt": "Wed, 14 Oct 2026 23:03:10 +0000"
     },
     {
-      "title": "ICE pushes back on report suggesting body cameras that automatically record",
+      "title": "ICE rejects recommendation for body cameras that automatically record",
       "url": "https://www.aljazeera.com/news/2026/10/14/ice-pushes-back-on-report-suggesting-body-cameras-that-automatically-record?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 14 Oct 2026 22:57:13 +0000"
@@ -54,12 +60,6 @@
       "url": "https://www.aljazeera.com/sports/2026/10/14/west-indies-beat-india-to-level-series-as-hope-continues-record-run?traffic_source=rss",
       "source": "Al Jazeera",
       "publishedAt": "Wed, 14 Oct 2026 20:52:25 +0000"
-    },
-    {
-      "title": "Israeli quadcopter drone drops bomb in Lebanon",
-      "url": "https://www.aljazeera.com/video/newsfeed/2026/10/14/israeli-quadcopter-drone-drops-bomb-in-lebanon?traffic_source=rss",
-      "source": "Al Jazeera",
-      "publishedAt": "Wed, 14 Oct 2026 20:47:46 +0000"
     }
   ]
 }
