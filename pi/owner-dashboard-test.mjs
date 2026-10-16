@@ -52,6 +52,19 @@ assert.equal(history.backfill?.unavailableFields?.additions,null,'unknown_additi
 assert.equal(history.backfill?.unavailableFields?.deletions,null,'unknown_deletions_must_not_be_faked');
 assert.equal(history.backfill?.unavailableFields?.filesChanged,null,'unknown_files_changed_must_not_be_faked');
 assert.ok(history.daily.every((row)=>Object.hasOwn(row,'additions') && Object.hasOwn(row,'deletions') && Object.hasOwn(row,'filesChanged')),'daily_code_volume_unknowns_must_be_explicit');
-assert.equal(history.daily.at(-1).snapshotPartialDay,true,'current_snapshot_must_be_marked_partial');
+const latestHistoryRow=history.daily.at(-1);
+const todayUtc=new Date().toISOString().slice(0,10);
+const finalizedThrough=String(history.backfill?.autoUpdate?.finalizedThrough||'');
+function assertLatestHistoryCoverage(row, today, finalized) {
+  if(row.date===today) assert.equal(row.snapshotPartialDay,true,'current_snapshot_must_be_marked_partial');
+  else if(row.snapshotPartialDay===true) assert.ok(row.date>finalized,'partial_snapshot_must_not_be_finalized');
+  else assert.ok(row.date<=finalized,'non_partial_history_must_have_finalization_evidence');
+}
+assertLatestHistoryCoverage(latestHistoryRow,todayUtc,finalizedThrough);
+assertLatestHistoryCoverage({date:finalizedThrough},todayUtc,finalizedThrough);
+assertLatestHistoryCoverage({date:todayUtc,snapshotPartialDay:true},todayUtc,finalizedThrough);
+assert.throws(()=>assertLatestHistoryCoverage({date:todayUtc},todayUtc,finalizedThrough),/current_snapshot_must_be_marked_partial/);
+assert.throws(()=>assertLatestHistoryCoverage({date:'9999-12-31'},todayUtc,finalizedThrough),/non_partial_history_must_have_finalization_evidence/);
+assert.throws(()=>assertLatestHistoryCoverage({date:finalizedThrough,snapshotPartialDay:true},todayUtc,finalizedThrough),/partial_snapshot_must_not_be_finalized/);
 
 console.log('PI owner privacy and Day 1 history contract tests passed.');
