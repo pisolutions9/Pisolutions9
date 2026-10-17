@@ -52,6 +52,16 @@ assert.equal(history.backfill?.unavailableFields?.additions,null,'unknown_additi
 assert.equal(history.backfill?.unavailableFields?.deletions,null,'unknown_deletions_must_not_be_faked');
 assert.equal(history.backfill?.unavailableFields?.filesChanged,null,'unknown_files_changed_must_not_be_faked');
 assert.ok(history.daily.every((row)=>Object.hasOwn(row,'additions') && Object.hasOwn(row,'deletions') && Object.hasOwn(row,'filesChanged')),'daily_code_volume_unknowns_must_be_explicit');
-assert.equal(history.daily.at(-1).snapshotPartialDay,true,'current_snapshot_must_be_marked_partial');
+function historySnapshotStatusValid(rows, finalizedThrough) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(finalizedThrough||'')) &&
+    rows.every((row)=>row.date<=finalizedThrough || row.snapshotPartialDay===true);
+}
+const finalizedThrough=history.backfill?.autoUpdate?.finalizedThrough;
+assert.ok(historySnapshotStatusValid(history.daily,finalizedThrough),'unfinalized_history_rows_must_be_marked_partial');
+const nextDay=new Date(Date.parse(history.daily.at(-1).date+'T00:00:00Z')+86400000).toISOString().slice(0,10);
+assert.equal(historySnapshotStatusValid([...history.daily,{date:nextDay}],nextDay),true,'finalized_row_must_not_require_partial_flag');
+assert.equal(historySnapshotStatusValid([...history.daily,{date:nextDay}],finalizedThrough),false,'unfinalized_row_without_partial_flag_must_fail');
+assert.equal(historySnapshotStatusValid([...history.daily,{date:nextDay,snapshotPartialDay:true}],finalizedThrough),true,'unfinalized_partial_row_must_pass');
+assert.equal(historySnapshotStatusValid(history.daily,undefined),false,'missing_finalization_evidence_must_fail');
 
 console.log('PI owner privacy and Day 1 history contract tests passed.');
