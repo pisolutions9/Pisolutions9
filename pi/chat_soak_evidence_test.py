@@ -32,8 +32,13 @@ PROMPT='private-prompt-marker: explain the water cycle'
 case=(0,1,PROMPT)
 def run(path): return soak.ask(case,base+path,max_time=2)
 def no_content_leak(detail):
-    blob=json.dumps(detail.get('transport_evidence'))+json.dumps(detail.get('stall_phase'))
-    assert 'private-prompt-marker' not in blob and 'guidance' not in blob, blob
+    blob=json.dumps(detail,sort_keys=True)
+    assert 'private-prompt-marker' not in blob and 'private-model-output-marker' not in blob and 'verified customer guidance' not in blob, blob
+
+# Workflow failure logs print classification details. No response or answer snippets may enter them.
+private='private-model-output-marker'
+for raw in (private,private+'\n200',json.dumps({**READY,'answer':private+' '+READY['answer']})+'\n200',json.dumps({**READY,'source':private,'status':private,'truth':private})+'\n200'):
+    no_content_leak(soak.classify(case,0,raw,'',0.1)[2])
 
 # Contract fixtures still hold (same expression the workflow evaluates).
 valid_fixture=READY; timeout_fixture=TIMEOUT
@@ -94,3 +99,4 @@ assert summary['transport_failure_phase']=={'awaiting_first_byte':1} and summary
 assert 'private-prompt-marker' not in json.dumps(summary)
 server.shutdown()
 print('PI chat soak evidence passed')
+

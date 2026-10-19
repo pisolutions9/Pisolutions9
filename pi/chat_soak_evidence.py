@@ -13,6 +13,8 @@ import json, subprocess, time
 
 legacy_markers=('classification:','i recognized this as an informational question','temporarily operating in verified recovery mode','live model execution is currently unavailable')
 readiness_truth={'model-response','verified-model-response','deterministic-verified'}
+log_truth=readiness_truth|{'provisional-model-response','deterministic','unknown'}
+log_status={'provider_timeout','verification_failed','service_unavailable'}
 def valid_answer(status,data):
     answer=data.get('answer','') if isinstance(data,dict) else ''; low=answer.lower() if isinstance(answer,str) else ''
     return status=='200' and isinstance(data,dict) and data.get('ok') is True and data.get('truth') in readiness_truth and data.get('source','').startswith(('pi-chat-cloudflare-ai:','pi-chat-openai:','pi-chat-fallback','pi-chat-deterministic-recovery','pi-deterministic-')) and isinstance(answer,str) and len(answer.strip())>=120 and not low.lstrip().startswith('classification:') and not any(marker in low for marker in legacy_markers[1:])
@@ -78,14 +80,16 @@ def classify(case,returncode,stdout,stderr,elapsed,https=True):
     evidence={'transport_evidence':transport}
     if transport: evidence['stall_phase']=stall_phase(transport.pop('raw_timing_s'),https)
     if returncode!=0:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':f'curl:{returncode}','zero_byte':not stdout.strip() or stdout.strip()=='000','stderr':stderr[-240:],**evidence}
-    if '\n' not in stdout:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'missing-http-status','zero_byte':not stdout.strip(),'prefix':stdout[:120],**evidence}
+    if '\n' not in stdout:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'missing-http-status','zero_byte':not stdout.strip(),**evidence}
     body,status=stdout.rsplit('\n',1)
     if not body:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'empty-response-body','zero_byte':True,'http':status,**evidence}
     try:d=json.loads(body)
-    except Exception:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'invalid-json','http':status,'body_prefix':body[:240],**evidence}
+    except Exception:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'invalid-json','http':status,**evidence}
     ans=d.get('answer','') if isinstance(d,dict) else ''; ready=valid_answer(status,d)
     safe=ready or provisional_answer(status,d) or safe_refusal(status,d) or honest_timeout(status,d) or safe_recovery(status,d)
-    return ready,elapsed,{'round':round_i+1,'question':q_i,'http':status,'ok':d.get('ok') if isinstance(d,dict) else None,'status':d.get('status') if isinstance(d,dict) else None,'length':len(ans) if isinstance(ans,str) else 0,'truth':d.get('truth') if isinstance(d,dict) else None,'source':d.get('source') if isinstance(d,dict) else None,'safe':safe,'verificationReason':d.get('verificationReason') if isinstance(d,dict) else None,'prefix':ans[:120] if isinstance(ans,str) else '',**evidence}
+    truth=d.get('truth') if isinstance(d,dict) else None
+    response_status=d.get('status') if isinstance(d,dict) else None
+    return ready,elapsed,{'round':round_i+1,'question':q_i,'http':status,'ok':d.get('ok') is True if isinstance(d,dict) else False,'status':response_status if isinstance(response_status,str) and response_status in log_status else 'other','length':len(ans) if isinstance(ans,str) else 0,'truth':truth if isinstance(truth,str) and truth in log_truth else 'other','safe':safe,**evidence}
 
 def ask(case,url,max_time=22):
     _round_i,_q_i,q=case
@@ -106,3 +110,4 @@ def transport_summary(details):
         st=d['transport_evidence'].get('server_timing')
         if st and st.get('inflight'): inflight[st['inflight']]=inflight.get(st['inflight'],0)+1
     return {'requests':len(details),'with_transport_evidence':len(with_evidence),'with_request_id':sum(1 for d in with_evidence if d['transport_evidence'].get('request_id')),'first_byte_ms_p50':pct(first_byte,.5),'first_byte_ms_p95':pct(first_byte,.95),'first_byte_ms_max':pct(first_byte,1),'transport_failures':len(failed),'transport_failure_phase':phases,'worker_inflight_stage':inflight}
+
