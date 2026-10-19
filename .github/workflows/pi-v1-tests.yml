@@ -36,6 +36,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Full regression gate
         run: npm test
+      - name: Soak evidence classification (provider-free)
+        run: python3 pi/chat_soak_evidence_test.py
       - name: Stress customer interface with complex questions
         shell: bash
         run: |
@@ -60,23 +62,11 @@ jobs:
           PY
 
           python - <<'PY'
-          import json, subprocess, time, concurrent.futures, os
+          import json, subprocess, time, concurrent.futures, os, sys
+          sys.path.insert(0,'pi')
           url=os.environ['PI_CHAT_URL']; questions=json.load(open('/tmp/questions.json')); rounds=int(os.environ['STRESS_ROUNDS']); cases=[(round_i,q_i,q) for round_i in range(rounds) for q_i,q in enumerate(questions,1)]
           print(f"Running {len(cases)} customer questions ({rounds} rounds x {len(questions)} complex prompts; {'deep soak' if rounds >= 100 else 'release sample'})")
-          legacy_markers=('classification:','i recognized this as an informational question','temporarily operating in verified recovery mode','live model execution is currently unavailable')
-          readiness_truth={'model-response','verified-model-response','deterministic-verified'}
-          def valid_answer(status,data):
-              answer=data.get('answer','') if isinstance(data,dict) else ''; low=answer.lower() if isinstance(answer,str) else ''
-              return status=='200' and isinstance(data,dict) and data.get('ok') is True and data.get('truth') in readiness_truth and data.get('source','').startswith(('pi-chat-cloudflare-ai:','pi-chat-openai:','pi-chat-fallback','pi-chat-deterministic-recovery','pi-deterministic-')) and isinstance(answer,str) and len(answer.strip())>=120 and not low.lstrip().startswith('classification:') and not any(marker in low for marker in legacy_markers[1:])
-          def provisional_answer(status,data):
-              answer=data.get('answer','') if isinstance(data,dict) else ''
-              return status=='200' and isinstance(data,dict) and data.get('ok') is True and data.get('truth')=='provisional-model-response' and isinstance(answer,str) and bool(answer.strip())
-          def safe_refusal(status,data):
-              return status=='503' and isinstance(data,dict) and data.get('ok') is False and data.get('status')=='verification_failed' and data.get('error')=='hard_reasoning_not_verified' and data.get('truth')=='unknown' and isinstance(data.get('answer'),str) and bool(data['answer'].strip())
-          def honest_timeout(status,data):
-              return status=='503' and isinstance(data,dict) and data.get('ok') is False and data.get('status')=='provider_timeout' and data.get('error')=='customer_request_deadline_exceeded' and data.get('truth')=='unknown' and isinstance(data.get('answer'),str) and bool(data['answer'].strip())
-          def safe_recovery(status,data):
-              return status=='200' and isinstance(data,dict) and data.get('ok') is True and data.get('truth') in ('deterministic','deterministic-verified') and data.get('source')=='pi-chat-deterministic-recovery' and isinstance(data.get('answer'),str) and bool(data['answer'].strip())
+          from chat_soak_evidence import valid_answer, provisional_answer, safe_refusal, honest_timeout, safe_recovery, ask as ask_with_evidence, transport_summary
           valid_fixture={'ok':True,'truth':'model-response','source':'pi-chat-cloudflare-ai:test','answer':'Prioritized Remediation Plan: '+('verified customer guidance '*8)}
           provisional_fixture={'ok':True,'truth':'provisional-model-response','source':'pi-chat-cloudflare-ai:test','answer':'Useful but explicitly provisional reasoning. '+('bounded guidance '*10)}
           refusal_fixture={'ok':False,'status':'verification_failed','error':'hard_reasoning_not_verified','truth':'unknown','answer':'I could not independently verify this high-depth answer, so I will not present an unverified result as reliable.'}
@@ -85,22 +75,12 @@ jobs:
           legacy_fixture={'ok':True,'truth':'model-response','source':'pi-chat-cloudflare-ai:test','answer':'Classification: BUSINESS_OBJECTIVE\n\nPlan:\n'+('internal routing output '*8)}
           if not valid_answer('200',valid_fixture) or not provisional_answer('200',provisional_fixture) or not safe_refusal('503',refusal_fixture) or not honest_timeout('503',timeout_fixture) or valid_answer('503',timeout_fixture) or not safe_recovery('200',recovery_fixture) or valid_answer('200',legacy_fixture): raise SystemExit('customer answer contract regression')
           def ask(case):
-              round_i,q_i,q=case
-              payload=json.dumps({'message':q}); t=time.time(); p=subprocess.run(['curl','--silent','--show-error','--connect-timeout','5','--max-time','22','-H','content-type: application/json','-H','origin: https://pisolutions9.github.io','-d',payload,'-w','\n%{http_code}',url],capture_output=True,text=True); elapsed=time.time()-t
-              if p.returncode!=0:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':f'curl:{p.returncode}','zero_byte':not p.stdout.strip() or p.stdout.strip()=='000','stderr':p.stderr[-240:]}
-              if '\n' not in p.stdout:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'missing-http-status','zero_byte':not p.stdout.strip(),'prefix':p.stdout[:120]}
-              body,status=p.stdout.rsplit('\n',1)
-              if not body:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'empty-response-body','zero_byte':True,'http':status}
-              try:d=json.loads(body)
-              except Exception:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'invalid-json','http':status,'body_prefix':body[:240]}
-              ans=d.get('answer','') if isinstance(d,dict) else ''; ready=valid_answer(status,d)
-              safe=ready or provisional_answer(status,d) or safe_refusal(status,d) or honest_timeout(status,d) or safe_recovery(status,d)
-              return ready,elapsed,{'round':round_i+1,'question':q_i,'http':status,'ok':d.get('ok') if isinstance(d,dict) else None,'status':d.get('status') if isinstance(d,dict) else None,'length':len(ans) if isinstance(ans,str) else 0,'truth':d.get('truth') if isinstance(d,dict) else None,'source':d.get('source') if isinstance(d,dict) else None,'safe':safe,'verificationReason':d.get('verificationReason') if isinstance(d,dict) else None,'prefix':ans[:120] if isinstance(ans,str) else ''}
-          unsafe_failures=[]; zero_byte_failures=[]; degraded=[]; latencies=[]; truth_counts={}; ready_count=0
+              return ask_with_evidence(case,url)
+          unsafe_failures=[]; zero_byte_failures=[]; degraded=[]; latencies=[]; truth_counts={}; ready_count=0; details=[]
           with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
               futs=[ex.submit(ask,q) for q in cases]
               for i,f in enumerate(concurrent.futures.as_completed(futs),1):
-                  ready,lat,detail=f.result(); latencies.append(lat); truth_counts[detail.get('truth')]=truth_counts.get(detail.get('truth'),0)+1
+                  ready,lat,detail=f.result(); details.append(detail); latencies.append(lat); truth_counts[detail.get('truth')]=truth_counts.get(detail.get('truth'),0)+1
                   if ready:
                       ready_count+=1
                   elif detail.get('safe') is True:
@@ -112,6 +92,7 @@ jobs:
                   if i%100==0:print(f'completed={i} unsafe={len(unsafe_failures)} degraded={len(degraded)}')
           ready_rate=ready_count/len(cases)
           latencies.sort(); print(f'total={len(cases)} ready={ready_count} ready_rate={ready_rate:.3f} degraded={len(degraded)} unsafe={len(unsafe_failures)} zero_byte={len(zero_byte_failures)} p50={latencies[len(latencies)//2]:.2f}s p95={latencies[int(len(latencies)*.95)-1]:.2f}s max={max(latencies):.2f}s truth={truth_counts}')
+          print('transport evidence:',json.dumps(transport_summary(details),sort_keys=True))
           if zero_byte_failures:
               print('zero-byte failures:',zero_byte_failures[:20]); raise SystemExit(1)
           if unsafe_failures:
