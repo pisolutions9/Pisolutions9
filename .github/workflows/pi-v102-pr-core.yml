@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'worker/**'
+      - 'pi/chat_soak_evidence.py'
+      - 'pi/chat_soak_evidence_test.py'
       - 'package.json'
       - '.github/workflows/pi-v102-pr-core.yml'
 
@@ -26,3 +28,5 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Run V1.02 core regression suite
         run: npm run test:v1.02
+      - name: Verify chat soak transport evidence without providers
+        run: python3 pi/chat_soak_evidence_test.py
