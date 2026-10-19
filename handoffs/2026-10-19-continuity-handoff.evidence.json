@@ -1,0 +1,248 @@
+{
+  "generated_at": "2026-10-19T14:56:29Z",
+  "author": "Claude Code session (cloud container), fork PrEM21032/Pisolutions9",
+  "goal": "Advance the PI Continuity Engine with one reversible, provider-free step per session, reporting only what fresh evidence proves.",
+  "repo": {
+    "name": "https://github.com/pisolutions9/Pisolutions9",
+    "ref": "main",
+    "sha": "13c0c943cf75ddbf61fc568971426610e61e1985",
+    "work_branch": "PrEM21032/Pisolutions9:claude/practical-johnson-hy0vob"
+  },
+  "items": [
+    {
+      "id": "canonical-main",
+      "claim": "Canonical upstream main head is 13c0c94 (merge of #212); fork main is identical",
+      "status": "verified",
+      "scope": "source",
+      "evidence": [
+        {
+          "kind": "commit",
+          "ref": "13c0c943cf75ddbf61fc568971426610e61e1985",
+          "url": "https://github.com/pisolutions9/Pisolutions9/commit/13c0c943cf75ddbf61fc568971426610e61e1985",
+          "observed_at": "2026-10-19T14:55:04Z",
+          "observed_by": "git ls-remote"
+        }
+      ]
+    },
+    {
+      "id": "continuity-protocol-doc",
+      "claim": "docs/PI_CONTINUITY_ENGINE.md exists on coordination/continuity-engine-v1 (proposal, not on main)",
+      "status": "verified",
+      "scope": "source",
+      "evidence": [
+        {
+          "kind": "commit",
+          "ref": "8a99ee4032bfda07d3c0b0856ea4008f93084817",
+          "url": "https://github.com/pisolutions9/Pisolutions9/blob/coordination/continuity-engine-v1/docs/PI_CONTINUITY_ENGINE.md",
+          "observed_at": "2026-10-19T13:50:00Z",
+          "observed_by": "git fetch + git show"
+        }
+      ]
+    },
+    {
+      "id": "continuity-handoff-builder-tests",
+      "claim": "Handoff builder test passes locally incl. regressions: artifact symlink escape blocked (file and directory links) while ordinary and in-repo-symlink artifacts still match; ci_run completed/success; future observed_at rejected; live/session never VERIFIED",
+      "status": "verified",
+      "scope": "test",
+      "evidence": [
+        {
+          "kind": "test_run",
+          "ref": "node pi/continuity-handoff-test.mjs",
+          "exit_code": 0,
+          "observed_at": "2026-10-19T14:56:29Z",
+          "observed_by": "claude-code session (this container)"
+        }
+      ]
+    },
+    {
+      "id": "pr-214-215-timing",
+      "claim": "Chat stage timing instrumentation for #213 exists in two alternatives: #214 (head 821202d) and #215 (head 793c1ff). Codex owns the comparison.",
+      "status": "in_progress",
+      "evidence": [
+        {
+          "kind": "pr",
+          "ref": "#214@821202d",
+          "url": "https://github.com/pisolutions9/Pisolutions9/pull/214",
+          "observed_at": "2026-10-19T13:50:00Z",
+          "observed_by": "claude-code session (this container)"
+        },
+        {
+          "kind": "pr",
+          "ref": "#215@793c1ff",
+          "url": "https://github.com/pisolutions9/Pisolutions9/pull/215",
+          "observed_at": "2026-10-19T13:50:00Z",
+          "observed_by": "claude-code session (this container)"
+        }
+      ]
+    },
+    {
+      "id": "pr-217-config-validation",
+      "claim": "Offline deploy-configuration validator for #216 exists as PR #217 (head 9ec0def, +97 lines, 4 files)",
+      "status": "in_progress",
+      "evidence": [
+        {
+          "kind": "pr",
+          "ref": "#217@9ec0def",
+          "url": "https://github.com/pisolutions9/Pisolutions9/pull/217",
+          "observed_at": "2026-10-19T13:50:00Z",
+          "observed_by": "claude-code session (this container)"
+        }
+      ]
+    },
+    {
+      "id": "continuity-handoff-builder",
+      "claim": "Continuity handoff builder on fork branch claude/practical-johnson-hy0vob (draft PR #218, not merged). Cycle 4 adds the artifact symlink-escape fix on top of 53a7157 (fast-forward).",
+      "status": "in_progress",
+      "evidence": [
+        {
+          "kind": "branch",
+          "ref": "PrEM21032/Pisolutions9:claude/practical-johnson-hy0vob",
+          "url": "https://github.com/PrEM21032/Pisolutions9/tree/claude/practical-johnson-hy0vob",
+          "observed_by": "claude-code session (this container)"
+        },
+        {
+          "kind": "pr",
+          "ref": "#218@53a7157 (head before this cycle's push)",
+          "url": "https://github.com/pisolutions9/Pisolutions9/pull/218",
+          "observed_at": "2026-10-19T14:55:04Z",
+          "observed_by": "git ls-remote refs/pull/218/head"
+        }
+      ]
+    },
+    {
+      "id": "old-false-verification-risk",
+      "claim": "False-verification risk existed in 6d8ee2f: a live_probe/session_probe with only ref:'trust me' (or a free-text commit ref) classified VERIFIED. Reproduced by running this cycle's tests against 6d8ee2f's module: failed with live_deployment_ref_only_probe_accepted (expected failure)",
+      "status": "verified",
+      "scope": "source",
+      "evidence": [
+        {
+          "kind": "commit",
+          "ref": "6d8ee2f5625377cb7f802ebfd3fff49bb804d770",
+          "url": "https://github.com/PrEM21032/Pisolutions9/commit/6d8ee2f5625377cb7f802ebfd3fff49bb804d770",
+          "observed_at": "2026-10-19T14:25:00Z",
+          "observed_by": "claude-code session (this container)"
+        }
+      ]
+    },
+    {
+      "id": "ci-and-future-defects",
+      "claim": "Defects in 7663b38 (reported by Codex, reproduced here): fresh linked ci_run with conclusion action_required and jobs 0, or with no conclusion, classified VERIFIED; observed_at in 2027 classified fresh. New regression cases fail on 7663b38's module (ci_action_required_no_jobs_verified, f1_future_observed_at_accepted)",
+      "status": "verified",
+      "scope": "source",
+      "evidence": [
+        {
+          "kind": "commit",
+          "ref": "7663b388480cac6c4e6a875d6b222b4f0ad946e4",
+          "url": "https://github.com/PrEM21032/Pisolutions9/commit/7663b388480cac6c4e6a875d6b222b4f0ad946e4",
+          "observed_at": "2026-10-19T14:40:11Z",
+          "observed_by": "claude-code session (this container)"
+        }
+      ]
+    },
+    {
+      "id": "artifact-symlink-escape",
+      "claim": "Defect in 53a7157: checkArtifact's lexical check let handoffs/<name> be a symlink to a file outside the repo; the default reader read and hashed it (artifact_sha256_matches). Reproduced with a temporary dummy file only; the new regression fails on 53a7157 with escape-file_symlink_escape_read",
+      "status": "verified",
+      "scope": "source",
+      "evidence": [
+        {
+          "kind": "commit",
+          "ref": "53a715737d47426887bbea076a733e08a12fa2c7",
+          "url": "https://github.com/PrEM21032/Pisolutions9/commit/53a715737d47426887bbea076a733e08a12fa2c7",
+          "observed_at": "2026-10-19T14:55:04Z",
+          "observed_by": "claude-code session (this container)"
+        }
+      ]
+    },
+    {
+      "id": "issues-213-216-state",
+      "claim": "Current text/state of issues #213 and #216 not read: upstream GitHub API is not enabled for this session",
+      "status": "blocked",
+      "evidence": [
+        {
+          "kind": "issue",
+          "ref": "#213",
+          "url": "https://github.com/pisolutions9/Pisolutions9/issues/213",
+          "observed_by": "claude-code session (this container)"
+        },
+        {
+          "kind": "issue",
+          "ref": "#216",
+          "url": "https://github.com/pisolutions9/Pisolutions9/issues/216",
+          "observed_by": "claude-code session (this container)"
+        }
+      ]
+    },
+    {
+      "id": "live-worker-deployment",
+      "claim": "Production Worker / customer chat health \u2014 not probed in this session; no live evidence",
+      "status": "unproven",
+      "evidence": []
+    },
+    {
+      "id": "agent-sessions-running",
+      "claim": "Whether any Codex/ChatGPT/Claude session is currently running on this work \u2014 no session probe available; assume NOT running",
+      "status": "unproven",
+      "evidence": []
+    },
+    {
+      "id": "pr-218-ci",
+      "claim": "CI on #218: Codex reported PR Core / PR Gate / V1.02 Gate green on 6d8ee2f; no CI observed in this session for 7663b38, 53a7157 or this cycle's commit",
+      "status": "unproven",
+      "evidence": [
+        {
+          "kind": "pr",
+          "ref": "#218",
+          "url": "https://github.com/pisolutions9/Pisolutions9/pull/218",
+          "observed_by": "Codex (relayed by owner)"
+        }
+      ]
+    },
+    {
+      "id": "pr-218-draft-state",
+      "claim": "PR #218 draft flag/reviews not observed here (only its git head ref was)",
+      "status": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "codex-comment-218",
+      "claim": "Codex's #218 comment 6269851482 not readable from this session (API 403); defect description taken from the owner's relay",
+      "status": "blocked",
+      "evidence": [
+        {
+          "kind": "issue",
+          "ref": "#218 comment 6269851482",
+          "url": "https://github.com/pisolutions9/Pisolutions9/pull/218#issuecomment-6269851482",
+          "observed_by": "claude-code session (this container)"
+        }
+      ]
+    }
+  ],
+  "next_action": {
+    "task": "With upstream API read access, record CI for #218 on its new head as ci_run entries (status, conclusion, jobs, head_sha, url, observed_at) and let the builder classify them. With owner approval, reply on #218 summarising cycles 3-4 (CI completion, future timestamps, artifact symlink escape) with commits and regression names.",
+    "acceptance": [
+      "#218 head sha re-checked; each check run recorded with all ci_run fields, or marked BLOCKED",
+      "Builder classifies an action_required/zero-job run as UNPROVEN and a completed/success run as VERIFIED on real records",
+      "npm run test:continuity passes with the regenerated prompt committed"
+    ],
+    "avoid": [
+      "Do not touch #217, the F4 branch claude/pr217-f4-cli-guard, PI City (Codex), #214/#215 or workflow gates",
+      "No pushes to other branches; no merge"
+    ]
+  },
+  "safety": [
+    "No merge, deploy, secret read/write, billing/Stripe change, paid model/provider call, purchase or hardware motion without separate explicit owner approval",
+    "Do not weaken or skip any gate or test",
+    "A green suite or merged PR is not live success; live/session claims need a direct probe entry",
+    "If an agent is not dispatched, say so; never describe a halted session as running"
+  ],
+  "rollback": [
+    "Cycle 4 changes only pi/continuity-handoff.mjs, pi/continuity-handoff-test.mjs, docs/PI_CONTINUITY_HANDOFF.md and handoffs/2026-10-19-continuity-handoff.*",
+    "Revert with: git revert <cycle 4 commit> on claude/practical-johnson-hy0vob (returns to 53a7157); nothing deployed or configured"
+  ],
+  "next_inspect": [
+    "git ls-remote https://github.com/pisolutions9/Pisolutions9 main refs/pull/218/head refs/pull/217/head \u2014 compare with shas above",
+    "PR #218: check runs on its current head (all ci_run fields), draft flag, Codex's comment thread",
+    "#217 and the F4 branch status (read-only), Codex's City work and #214 vs #215 outcome (do not duplicate)"
+  ]
+}
