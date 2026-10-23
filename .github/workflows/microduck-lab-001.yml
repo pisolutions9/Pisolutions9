@@ -1,11 +1,9 @@
 name: Microduck lab experiment 001
 
+# The proof run is linked in the lab report. Future runs require an explicit PR label.
 on:
   pull_request:
-    types: [synchronize]
-    paths:
-      - ".github/workflows/microduck-lab-001.yml"
-      - "pi/labs/microduck/runtime_probe.py"
+    types: [labeled]
 
 permissions:
   contents: read
@@ -16,7 +14,7 @@ concurrency:
 
 jobs:
   headless:
-    if: github.event.pull_request.number == 219
+    if: github.event.pull_request.number == 219 && github.event.label.name == 'run-microduck-lab-001'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
