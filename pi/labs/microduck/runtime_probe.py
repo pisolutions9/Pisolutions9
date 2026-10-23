@@ -104,8 +104,31 @@ def main():
         report["blockers"].append(f"probe_exception: {type(e).__name__}: {e}")
     finally:
         report["cleanup"] = cmd(str(sim), "down", env=env, timeout=90)
+        def healthy(name):
+            try:
+                return json.loads(report["upstream_health"][name]["stdout"])["robot"]["healthy"]
+            except (KeyError, ValueError, TypeError):
+                return None
+
+        rate = report["independent_observation"].get("body_rate", {}).get("sim_per_wall", 0)
+        checks = {
+            "startup": report.get("startup", {}).get("exit_code") == 0,
+            "baseline_health": healthy("baseline") is True,
+            "body_realtime": rate >= 0.95,
+            "body_port_closed": report["faults"].get("body_disconnect", {}).get("port_closed") is True,
+            "robotd_survived": report["independent_observation"].get("robotd_alive_after_disconnect") is True,
+            "disconnect_reported_unhealthy": healthy("after_disconnect") is False,
+            "body_port_reopened": report["faults"].get("body_reconnect", {}).get("port_reopened") is True,
+            "reconnect_reported_healthy": healthy("after_reconnect") is True,
+            "bad_policy_rejected": report["faults"].get("malformed_policy", {}).get("load_attempt", {}).get("exit_code") not in (None, 0),
+            "bad_policy_preserved_health": healthy("after_malformed_policy") is True,
+            "cleanup": report["cleanup"]["exit_code"] == 0,
+        }
+        report["verification"] = {"checks": checks, "passed": not report["blockers"] and all(checks.values())}
         Path("runtime_probe-result.json").write_text(json.dumps(report, indent=2) + "\n")
         print(Path("runtime_probe-result.json").read_text())
+        if not report["verification"]["passed"]:
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":
