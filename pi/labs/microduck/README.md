@@ -73,9 +73,35 @@ The test reads the committed raw report and a snapshot of the workflow metadata 
 
 The run metadata proves the referenced workflow completed successfully; the committed raw JSON was added later and has no signed or content-addressed link to the job log. This gate detects inconsistent fields, not a determined author rewriting every field. It must not be used to certify physical robot operation or to complete a PI mission.
 
-## Next gates
+## Loaded headless rerun and digest binding (2026-10-23)
 
-1. Record SHA-256 for every downloaded official ONNX policy file in a fresh run, then bind the report to the run artifact or job output by digest.
-2. Add an external control-tick timestamp sample to measure loop periods, jitter, and missed deadlines independently of `robotctl`.
-3. Repeat the no-cost headless run under a defined load and compare failure/recovery distribution, keeping run-level raw evidence.
-4. Consider a production adapter only after separate owner review of provenance, safety scope, and permissions. This draft adds no production route.
+The [scoped Linux workflow run](https://github.com/pisolutions9/Pisolutions9/actions/runs/40014087452) checked out branch head `d6531484095c4bff7f244166f89f6b5edb33609a` and the same two pinned official upstream commits. The job completed successfully on a standard public Ubuntu runner. The probe wrote [raw JSON](runtime_probe-result-loaded.json), and the job log printed its SHA-256: `1bc96b4f13ac8834a1bbee3999ed14c3fe0dfd7ce7db65aebec4f03ba443ea0f`. The committed file was read back and its bytes match that digest. Its `workflow.run_id` and `workflow.head_sha` also identify the run and tested branch head. The digest is in the job log, so a later edit to the committed result is detectable. This is a run-to-report binding, not a signature or physical-device attestation.
+
+The official seed script downloaded ten public v8 ONNX files. The raw report lists each relative filename, byte count, and SHA-256, including the stand, walk, sitstand, ground-pick, kick, roller, and roulade policies. It also retains the malformed fixture hash separately. No credentials were used.
+
+An external `tcpdump` capture on loopback observed JSON `read` requests sent to the simulated body. The probe recorded every inter-request interval in the raw JSON and recomputed summaries independently of `robotctl`:
+
+| Capture | Read packets | Observed rate | Median interval | p95 | p99 | Max | Intervals >30 ms |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Baseline, six seconds | 309 | 49.995 Hz | 19.999 ms | 20.763 ms | 20.891 ms | 21.006 ms | 0 |
+| One CPU-bound worker, six seconds | 307 | 50.001 Hz | 19.907 ms | 20.852 ms | 20.925 ms | 20.977 ms | 0 |
+
+The load was one Python busy-loop worker under the default Linux scheduler. It consumed 6.51 CPU seconds during a 6.52-second sample; the worker remained active through body disconnect/reconnect and malformed-policy injection. During that load, the verified body PID was terminated, the port closed, `robotd` remained alive, upstream health became false with bus read errors, restarting only the body reopened the port and restored health, and the malformed ONNX fixture was rejected with exit code 5 while health stayed true. The runner's 14 probe checks passed, and the independently recomputed [loaded evidence gate](evidence-gate-loaded.mjs) passed its 12 checks. This is one observed run under one defined CPU load, not a claim about broader load tolerance.
+
+Reproduce locally with the pinned upstream checkouts and dependencies described above:
+
+```sh
+python pi/labs/microduck/runtime_probe_test.py
+node pi/labs/microduck/evidence-gate-loaded-test.mjs
+python pi/labs/microduck/runtime_probe.py <microduck-checkout> <microduck_rl-checkout> /tmp/duck-sim-exp001
+sha256sum runtime_probe-result.json
+```
+
+The full runner setup and no-cost scope are in [`microduck-lab-001.yml`](../../../.github/workflows/microduck-lab-001.yml). The probe needs Linux, `tcpdump`, passwordless runner `sudo`, Python 3.12, the RL environment, and Rust for the official runtime build. The deterministic parser tests passed 2/2 on Python 3.13.5; the loaded evidence test passed on Node 24.22.1, rejecting a failed workflow and altered interval trace. The workflow metadata was fetched independently through GitHub's run API when interpreting the result.
+
+## Remaining gates
+
+1. **Packet-source preservation — not verified.** The loopback pcap was summarized into raw intervals but was not retained as an artifact. A separate reviewer can recompute the statistics from those intervals, but cannot replay the original packets.
+2. **Other loads and repeatability — not verified.** A single CPU worker for one run does not test memory pressure, multiple workers, long duration, or run-to-run variation.
+3. **Physical behavior — not verified.** The simulator omits real motor bus timing, encoders, power, and safety response. No hardware was purchased or connected.
+4. **PI production use — not approved.** The lab evidence gate is isolated; no production adapter, mission completion, deployment, or merge was made.
