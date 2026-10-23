@@ -1,6 +1,6 @@
 # PI Labs Microduck experiment 001
 
-Status: **limited CPU smoke test verified; policy and runtime integration not verified** (2026-10-23).
+Status: **CPU smoke test and headless runtime fault probes verified on a public Linux runner** (2026-10-23).
 
 This isolated lab adds no route, tool permission, production dependency, deployment, or robot command to PI. It follows PI's evidence and verification contracts: a passing local check is evidence only for the boundary it actually exercised.
 
@@ -35,11 +35,26 @@ The machine used Windows, Python 3.13.5, MuJoCo 3.3.4, and the exact upstream mo
 
 The injected cases were short observation, short action, 41 ms stale sample, NaN observation, infinite action, and NaN simulator state. These check the **independent lab gate**, not the upstream runtime's fault handling. The fixed-control body lost its standing pose, so this run demonstrates that the model compiles and advances with finite state. It does **not** demonstrate balance, gait quality, policy safety, or hardware behavior. Wall time is machine specific.
 
+## Headless runtime follow-up (public Linux runner)
+
+The [gated workflow run](https://github.com/pisolutions9/Pisolutions9/actions/runs/40010913525) used a standard Ubuntu runner for this public repository, with read-only repository permissions, no secret inputs, no artifact upload, and no paid runner. GitHub [states standard hosted runners are free for public repositories](https://docs.github.com/en/billing/concepts/product-billing/github-actions). The workflow fetched official `microduck` commit `942e58e3aa6dbb28e7037203fff11866122c7567` and `microduck_rl` commit `b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`, installed the RL environment, and ran official `scripts/duck-sim` with `DUCK_SIM_VIEWER=0`. Its own seed script downloaded the public official policy set pinned as `v8`; no account login or custom policy was used. The exact policy file hashes were not recorded, so that part of provenance remains a limit.
+
+Raw command outputs and the independent observations are retained in [`runtime_probe-result.json`](runtime_probe-result.json). The upstream health responses are stored under `upstream_health`; separate TCP and process observations are under `independent_observation` and `faults`. The workflow's green status is backed by 11 explicit checks in `verification`, all true, with an empty blocker list and clean shutdown.
+
+| Boundary | Empirical result |
+|---|---|
+| Startup | Official script exited 0, stood the duck up, and reported trunk 0.116 m and gravity z -1.000. Baseline health was true. |
+| Control timing | Runtime reported target 50 Hz, achieved 50.0282 Hz at baseline with 313 ticks and zero missed. An independent body-protocol sample advanced 3.0000 simulated seconds in 3.0003 wall seconds (0.9999×). |
+| Disconnected body | Observer verified the body PID's command line, sent SIGTERM, and observed TCP port closure. `robotd` stayed alive; health became false with 114 consecutive bus read failures and exit code 5. |
+| Reconnected body | Restarted only the body process. TCP reopened, bus errors returned to zero, and health returned to true with 49.9658 Hz reported and exit code 0. |
+| Malformed ONNX | Official `bad_action_count.onnx` fixture (SHA-256 `b0e1204240bd7d73a19ceb6c21df8c8b0e3a20285c619eee2840bf426cf64c57`) was rejected with exit code 5 and a tensor output shape error; health remained true. |
+
+Reproduce from the branch using [the workflow](../../../.github/workflows/microduck-lab-001.yml) or on a no-cost Linux host with Python 3.12, Rust, and `uv`: fetch the two pinned commits above; run `UV_HTTP_TIMEOUT=600 uv sync --python 3.12` in `microduck_rl`; then run `python pi/labs/microduck/runtime_probe.py <microduck-checkout> <microduck_rl-checkout> /tmp/duck-sim-exp001`. The probe calls the official headless script, captures raw health and independent observations, injects both faults, and cleans up.
+
 ## Remaining gates
 
-1. **Policy in CPU MuJoCo — not verified.** A compatible exported ONNX policy was not selected or loaded. The official inference path also needs the RL project's pinned Python 3.12 environment and dependencies.
-2. **Onboard runtime against simulated body — blocked locally.** `scripts/duck-sim` needs the Rust daemon build, the RL environment, and platform support. This Windows host had no `cargo` or `uv` command available, so that integration was not run.
-3. **Physical behavior — not verified.** This experiment intentionally made no hardware purchase or robot connection. Driver, encoder, BLE, camera, NPU, and power effects remain outside the simulation's evidence boundary.
+1. **Physical behavior — not verified.** No hardware was purchased or connected. The official simulator excludes the motor bus, hardware encoder, BLE, camera ISP, NPU, and power effects.
+2. **Policy provenance — partly verified.** The run used the upstream script's public v8 set and demonstrated a standing policy, but the downloaded ONNX file hashes were not recorded. The malformed test fixture hash is recorded.
+3. **External loop timing — not verified.** The 50 Hz figure is the runtime's own health report. The independent 0.9999× body rate checks simulation pacing, not each control tick. One successful run does not establish repeatability or performance under load.
 
-Next work, if a suitable no-cost Linux host and already available ONNX policy are provided, is to run upstream headless `duck-sim`, collect health and 50 Hz timing, and inject a disconnected body and malformed policy artifact while keeping PI's evidence gate separate. Any future PI adapter should ingest recorded results as untrusted lab evidence and require independent verification before a `VERIFIED` mission outcome.
-
+No PI production adapter, deployment, merge, or robot command was made. A future adapter must treat this lab report as untrusted evidence and require independent verification before claiming a PI mission outcome is verified.
