@@ -49,7 +49,7 @@ Raw command outputs and the independent observations are retained in [`runtime_p
 | Reconnected body | Restarted only the body process. TCP reopened, bus errors returned to zero, and health returned to true with 49.9658 Hz reported and exit code 0. |
 | Malformed ONNX | Official `bad_action_count.onnx` fixture (SHA-256 `b0e1204240bd7d73a19ceb6c21df8c8b0e3a20285c619eee2840bf426cf64c57`) was rejected with exit code 5 and a tensor output shape error; health remained true. |
 
-Reproduce from the branch using [the workflow](../../../.github/workflows/microduck-lab-001.yml) or on a no-cost Linux host with Python 3.12, Rust, and `uv`: fetch the two pinned commits above; run `UV_HTTP_TIMEOUT=600 uv sync --python 3.12` in `microduck_rl`; then run `python pi/labs/microduck/runtime_probe.py <microduck-checkout> <microduck_rl-checkout> /tmp/duck-sim-exp001`. The probe calls the official headless script, captures raw health and independent observations, injects both faults, and cleans up.
+Reproduce from the branch by adding the `run-microduck-lab-001` label to PR #219 (the [workflow](../../../.github/workflows/microduck-lab-001.yml) runs only on that label), or on a no-cost Linux host with Python 3.12, Rust, and `uv`: fetch the two pinned commits above; run `UV_HTTP_TIMEOUT=600 uv sync --python 3.12` in `microduck_rl`; then run `python pi/labs/microduck/runtime_probe.py <microduck-checkout> <microduck_rl-checkout> /tmp/duck-sim-exp001`. The probe calls the official headless script, captures raw health and independent observations, injects both faults, and cleans up.
 
 ## Remaining gates
 
