@@ -94,7 +94,7 @@ def pcap_read_timestamps(path):
         pos += 16
         frame = data[pos:pos + size]
         pos += size
-        if len(frame) != size or len(frame) < 54 or frame[12:14] != b"\\x08\\x00":
+        if len(frame) != size or len(frame) < 54 or frame[12:14] != b"\x08\x00":
             continue
         ip = 14
         ihl = (frame[ip] & 15) * 4
