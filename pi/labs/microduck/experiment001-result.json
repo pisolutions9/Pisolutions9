@@ -1,0 +1,34 @@
+{
+  "fault_checks": {
+    "cases": {
+      "healthy": null,
+      "short_observation": "observation_dimension",
+      "short_action": "action_dimension",
+      "stale_sample": "stale_observation",
+      "nan_observation": "nonfinite_observation",
+      "inf_action": "nonfinite_action",
+      "nan_state": "nonfinite_state"
+    },
+    "correct": 7,
+    "total": 7,
+    "false_accepts": 0,
+    "false_rejects": 0
+  },
+  "model_smoke": {
+    "engine": "mujoco 3.3.4",
+    "model_sha256": "61cc5af86fc56894ad28e6a35634f93d16dda259eedd118e2980b663037efa6d",
+    "nq": 21,
+    "nv": 20,
+    "actuators": 14,
+    "timestep_s": 0.002,
+    "control_hz": 50,
+    "substeps_per_tick": 10,
+    "ticks": 250,
+    "simulated_seconds": 5.0,
+    "wall_seconds": 0.206,
+    "finite_ticks": 250,
+    "min_base_height_m": -0.110884,
+    "base_x_drift_m": 0.168137
+  }
+}
+
