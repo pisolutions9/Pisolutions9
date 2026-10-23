@@ -113,14 +113,15 @@ def capture_ticks(state, label, seconds=6):
     capture = subprocess.Popen(
         ["sudo", "-n", "tcpdump", "-i", "lo", "-s", "0", "-U", "-w", str(path),
          "tcp and dst host 127.0.0.1 and dst port 7801"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, start_new_session=True)
     try:
         time.sleep(0.5)
         if capture.poll() is not None:
             raise RuntimeError(f"tcpdump exited: {capture.stderr.read().decode(errors='replace')[-1000:]}")
         time.sleep(seconds)
     finally:
-        capture.terminate()
+        if capture.poll() is None:
+            os.killpg(capture.pid, signal.SIGINT)
         try:
             capture.communicate(timeout=5)
         except subprocess.TimeoutExpired:
@@ -152,7 +153,7 @@ def main():
     sim = repo / "scripts/duck-sim"
     env = dict(os.environ, DUCK_SIM_RL=str(rl), DUCK_SIM_STATE=str(state), DUCK_SIM_VIEWER="0", DUCK_SIM_PORT="7801")
     health = lambda: cmd(str(sim), "ctl", "health", "--json", env=env)
-    report = {"source_commits": {"microduck": cmd("git", "-C", str(repo), "rev-parse", "HEAD")["stdout"].strip(), "microduck_rl": cmd("git", "-C", str(rl), "rev-parse", "HEAD")["stdout"].strip()}, "upstream_health": {}, "independent_observation": {}, "faults": {}, "blockers": [], "policy_hashes": [], "tick_traces": {}, "load": {}, "workflow": {"run_id": os.environ.get("GITHUB_RUN_ID"), "head_sha": os.environ.get("GITHUB_SHA")}}
+    report = {"source_commits": {"microduck": cmd("git", "-C", str(repo), "rev-parse", "HEAD")["stdout"].strip(), "microduck_rl": cmd("git", "-C", str(rl), "rev-parse", "HEAD")["stdout"].strip()}, "upstream_health": {}, "independent_observation": {}, "faults": {}, "blockers": [], "policy_hashes": [], "tick_traces": {}, "load": {}, "workflow": {"run_id": os.environ.get("GITHUB_RUN_ID"), "head_sha": os.environ.get("PI_LAB_HEAD_SHA")}}
     load_process = None
     try:
         report["startup"] = cmd(str(sim), "up", env=env, timeout=600)
