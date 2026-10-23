@@ -27,6 +27,10 @@ PI must optimize for correctness and service rather than agreement. Important ou
 
 PI uses a human-body analogy as an engineering model: perception, coordination, memory, communication, execution, security/immune defense, recovery/healing, and controlled learning. This is an architectural analogy, not a claim that PI is biologically human or conscious.
 
+## Canonical operating system
+
+Agent authority, lane ownership, work states, owner gates, and completion rules are defined in [PI_CANONICAL_OPERATING_SYSTEM.md](PI_CANONICAL_OPERATING_SYSTEM.md). When older plans or reports conflict with it, treat them as historical/reference material rather than competing operating instructions.
+
 ## Current foundation
 
 The repository contains the owner-console/runtime foundation plus release-gate and verification coverage. V1 is being extended with a Human Understanding Layer so materially different human objectives can route differently instead of falling into a generic response path.

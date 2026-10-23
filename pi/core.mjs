@@ -1,5 +1,24 @@
 export const TRUTH_LEVELS = Object.freeze(['verified', 'probable', 'speculative', 'unknown']);
 
+function normalizeFailure(error) {
+  return String(error?.code || error?.message || error || 'unknown_error')
+    .toLowerCase()
+    .replace(/\b[0-9a-f]{7,64}\b/g, '<id>')
+    .replace(/\b\d+\b/g, '<n>')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function failureFingerprint(error) {
+  const normalized = normalizeFailure(error);
+  let hash = 2166136261;
+  for (let i = 0; i < normalized.length; i += 1) {
+    hash ^= normalized.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `f_${(hash >>> 0).toString(16).padStart(8, '0')}`;
+}
+
 export function createMission(objective, context = {}) {
   const text = String(objective || '').trim();
   if (!text) throw new Error('objective_required');
@@ -25,16 +44,31 @@ export function createMission(objective, context = {}) {
       { id: 'report', action: 'return_outcome', status: 'ready' }
     ],
     truth: { verified: [], probable: [], speculative: [], unknown: [] },
-    recovery: { attempts: 0, maxAttempts: 3, lastError: null },
+    recovery: { attempts: 0, maxAttempts: 3, lastError: null, lastFingerprint: null, repeatedFingerprintCount: 0, requiresStrategyChange: false },
     createdAt: new Date().toISOString()
   };
 }
 
 export function markFailure(mission, error) {
   const next = structuredClone(mission);
-  next.recovery.attempts += 1;
+  next.recovery ||= { attempts: 0, maxAttempts: 3 };
+  const fingerprint = failureFingerprint(error);
+  const repeated = next.recovery.lastFingerprint === fingerprint;
+  next.recovery.attempts = Number(next.recovery.attempts || 0) + 1;
   next.recovery.lastError = String(error?.message || error || 'unknown_error');
-  next.status = next.recovery.attempts < next.recovery.maxAttempts ? 'retrying' : 'blocked';
+  next.recovery.repeatedFingerprintCount = repeated ? Number(next.recovery.repeatedFingerprintCount || 1) + 1 : 1;
+  next.recovery.lastFingerprint = fingerprint;
+  next.recovery.requiresStrategyChange = next.recovery.repeatedFingerprintCount >= 2;
+
+  // Never loop the same failure fingerprint blindly. The second occurrence
+  // must leave the ordinary retry path so recovery can choose a different
+  // strategy or explicitly block/escalate.
+  if (next.recovery.requiresStrategyChange) {
+    next.status = 'blocked';
+    next.recovery.blockReason = 'repeated_failure_requires_strategy_change';
+  } else {
+    next.status = next.recovery.attempts < Number(next.recovery.maxAttempts || 3) ? 'retrying' : 'blocked';
+  }
   return next;
 }
 
