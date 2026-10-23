@@ -1,0 +1,91 @@
+{
+  "workflow_run": "https://github.com/pisolutions9/Pisolutions9/actions/runs/40010913525",
+  "source_commits": {
+    "microduck": "942e58e3aa6dbb28e7037203fff11866122c7567",
+    "microduck_rl": "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+  },
+  "upstream_health": {
+    "baseline": {
+      "exit_code": 0,
+      "stdout": "{\n  \"robot\": {\n    \"healthy\": true,\n    \"battery\": {\n      \"volts\": 7.4,\n      \"percent\": 50.00000000000006\n    },\n    \"motors\": {\n      \"hottest\": \"left_hip_yaw\",\n      \"max_c\": 32.0,\n      \"mean_c\": 32.0\n    },\n    \"control_loop\": {\n      \"target_hz\": 50.0,\n      \"achieved_hz\": 50.02824059848678,\n      \"ticks\": 313,\n      \"missed\": 0,\n      \"last_tick_age_ms\": 4\n    },\n    \"bus\": {\n      \"consecutive_errors\": 0,\n      \"startup_failures\": 0\n    },\n    \"imu\": {\n      \"ready\": true,\n      \"stale_blocks\": 0,\n      \"consecutive_stale_blocks\": 0\n    }\n  },\n  \"software\": {\n    \"robotctl\": \"0.17.8\",\n    \"robotctl_revision\": null,\n    \"services\": [\n      {\n        \"name\": \"updaterd\",\n        \"version\": \"0.17.8\",\n        \"revision\": null\n      },\n      {\n        \"name\": \"robotd\",\n        \"version\": \"0.17.8\",\n        \"revision\": null\n      },\n      {\n        \"name\": \"configd\",\n        \"version\": \"0.17.8\",\n        \"revision\": null\n      }\n    ],\n    \"units\": [\n      {\n        \"unit\": \"updaterd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"updaterd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/updaterd\",\n          \"pid\": 13524\n        }\n      },\n      {\n        \"unit\": \"robotd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"robotd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/robotd\",\n          \"pid\": 13529\n        }\n      },\n      {\n        \"unit\": \"configd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"configd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/configd\",\n          \"pid\": 13511\n        }\n      },\n      {\n        \"unit\": \"btd.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"padd.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"netpadd.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"mediad.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"tofd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"tofd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/tofd\",\n          \"pid\": 13504\n        }\n      },\n      {\n        \"unit\": \"nfcd.service\",\n        \"state\": \"inactive\"\n      }\n    ],\n    \"components\": [\n      {\n        \"name\": \"daemon\",\n        \"installed\": null,\n        \"revision\": null\n      }\n    ],\n    \"warnings\": []\n  },\n  \"account\": {\n    \"account\": null,\n    \"login\": null,\n    \"last_error\": null\n  },\n  \"board\": {}\n}\n",
+      "stderr": ""
+    },
+    "realtime_command": {
+      "exit_code": 0,
+      "stdout": "\u001b[36m==\u001b[0m the world is running at 1.00x real time\n",
+      "stderr": ""
+    },
+    "after_disconnect": {
+      "exit_code": 5,
+      "stdout": "{\n  \"robot\": {\n    \"healthy\": false,\n    \"reason\": \"114 consecutive bus read failures\",\n    \"battery\": {\n      \"volts\": 7.4,\n      \"percent\": 50.00000000000006\n    },\n    \"motors\": {\n      \"hottest\": \"left_hip_yaw\",\n      \"max_c\": 32.0,\n      \"mean_c\": 32.0\n    },\n    \"control_loop\": {\n      \"target_hz\": 50.0,\n      \"achieved_hz\": 49.9864081957475,\n      \"ticks\": 728,\n      \"missed\": 1,\n      \"last_tick_age_ms\": 9\n    },\n    \"bus\": {\n      \"consecutive_errors\": 114,\n      \"startup_failures\": 0\n    },\n    \"imu\": {\n      \"ready\": true,\n      \"stale_blocks\": 0,\n      \"consecutive_stale_blocks\": 0\n    }\n  },\n  \"software\": {\n    \"robotctl\": \"0.17.8\",\n    \"robotctl_revision\": null,\n    \"services\": [\n      {\n        \"name\": \"updaterd\",\n        \"version\": \"0.17.8\",\n        \"revision\": null\n      },\n      {\n        \"name\": \"robotd\",\n        \"version\": \"0.17.8\",\n        \"revision\": null\n      },\n      {\n        \"name\": \"configd\",\n        \"version\": \"0.17.8\",\n        \"revision\": null\n      }\n    ],\n    \"units\": [\n      {\n        \"unit\": \"updaterd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"updaterd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/updaterd\",\n          \"pid\": 13524\n        }\n      },\n      {\n        \"unit\": \"robotd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"robotd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/robotd\",\n          \"pid\": 13529\n        }\n      },\n      {\n        \"unit\": \"configd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"configd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/configd\",\n          \"pid\": 13511\n        }\n      },\n      {\n        \"unit\": \"btd.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"padd.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"netpadd.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"mediad.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"tofd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"tofd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/tofd\",\n          \"pid\": 13504\n        }\n      },\n      {\n        \"unit\": \"nfcd.service\",\n        \"state\": \"inactive\"\n      }\n    ],\n    \"components\": [\n      {\n        \"name\": \"daemon\",\n        \"installed\": null,\n        \"revision\": null\n      }\n    ],\n    \"warnings\": []\n  },\n  \"account\": {\n    \"account\": null,\n    \"login\": null,\n    \"last_error\": null\n  },\n  \"board\": {}\n}\n",
+      "stderr": ""
+    },
+    "after_reconnect": {
+      "exit_code": 0,
+      "stdout": "{\n  \"robot\": {\n    \"healthy\": true,\n    \"battery\": {\n      \"volts\": 7.4,\n      \"percent\": 50.00000000000006\n    },\n    \"motors\": {\n      \"hottest\": \"left_hip_yaw\",\n      \"max_c\": 32.0,\n      \"mean_c\": 32.0\n    },\n    \"control_loop\": {\n      \"target_hz\": 50.0,\n      \"achieved_hz\": 49.96578757582844,\n      \"ticks\": 1017,\n      \"missed\": 1,\n      \"last_tick_age_ms\": 8\n    },\n    \"bus\": {\n      \"consecutive_errors\": 0,\n      \"startup_failures\": 0\n    },\n    \"imu\": {\n      \"ready\": true,\n      \"stale_blocks\": 0,\n      \"consecutive_stale_blocks\": 0\n    }\n  },\n  \"software\": {\n    \"robotctl\": \"0.17.8\",\n    \"robotctl_revision\": null,\n    \"services\": [\n      {\n        \"name\": \"updaterd\",\n        \"version\": \"0.17.8\",\n        \"revision\": null\n      },\n      {\n        \"name\": \"robotd\",\n        \"version\": \"0.17.8\",\n        \"revision\": null\n      },\n      {\n        \"name\": \"configd\",\n        \"version\": \"0.17.8\",\n        \"revision\": null\n      }\n    ],\n    \"units\": [\n      {\n        \"unit\": \"updaterd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"updaterd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/updaterd\",\n          \"pid\": 13524\n        }\n      },\n      {\n        \"unit\": \"robotd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"robotd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/robotd\",\n          \"pid\": 13529\n        }\n      },\n      {\n        \"unit\": \"configd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"configd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/configd\",\n          \"pid\": 13511\n        }\n      },\n      {\n        \"unit\": \"btd.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"padd.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"netpadd.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"mediad.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"tofd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"tofd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/tofd\",\n          \"pid\": 13504\n        }\n      },\n      {\n        \"unit\": \"nfcd.service\",\n        \"state\": \"inactive\"\n      }\n    ],\n    \"components\": [\n      {\n        \"name\": \"daemon\",\n        \"installed\": null,\n        \"revision\": null\n      }\n    ],\n    \"warnings\": []\n  },\n  \"account\": {\n    \"account\": null,\n    \"login\": null,\n    \"last_error\": null\n  },\n  \"board\": {}\n}\n",
+      "stderr": ""
+    },
+    "after_malformed_policy": {
+      "exit_code": 0,
+      "stdout": "{\n  \"robot\": {\n    \"healthy\": true,\n    \"battery\": {\n      \"volts\": 7.4,\n      \"percent\": 50.00000000000006\n    },\n    \"motors\": {\n      \"hottest\": \"left_hip_yaw\",\n      \"max_c\": 32.0,\n      \"mean_c\": 32.0\n    },\n    \"control_loop\": {\n      \"target_hz\": 50.0,\n      \"achieved_hz\": 49.96578757582844,\n      \"ticks\": 1019,\n      \"missed\": 1,\n      \"last_tick_age_ms\": 0\n    },\n    \"bus\": {\n      \"consecutive_errors\": 0,\n      \"startup_failures\": 0\n    },\n    \"imu\": {\n      \"ready\": true,\n      \"stale_blocks\": 0,\n      \"consecutive_stale_blocks\": 0\n    }\n  },\n  \"software\": {\n    \"robotctl\": \"0.17.8\",\n    \"robotctl_revision\": null,\n    \"services\": [\n      {\n        \"name\": \"updaterd\",\n        \"version\": \"0.17.8\",\n        \"revision\": null\n      },\n      {\n        \"name\": \"robotd\",\n        \"version\": \"0.17.8\",\n        \"revision\": null\n      },\n      {\n        \"name\": \"configd\",\n        \"version\": \"0.17.8\",\n        \"revision\": null\n      }\n    ],\n    \"units\": [\n      {\n        \"unit\": \"updaterd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"updaterd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/updaterd\",\n          \"pid\": 13524\n        }\n      },\n      {\n        \"unit\": \"robotd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"robotd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/robotd\",\n          \"pid\": 13529\n        }\n      },\n      {\n        \"unit\": \"configd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"configd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/configd\",\n          \"pid\": 13511\n        }\n      },\n      {\n        \"unit\": \"btd.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"padd.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"netpadd.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"mediad.service\",\n        \"state\": \"inactive\"\n      },\n      {\n        \"unit\": \"tofd.service\",\n        \"state\": \"inactive\",\n        \"identity\": {\n          \"service\": \"tofd\",\n          \"version\": \"0.17.8\",\n          \"exe\": \"/home/runner/work/_temp/microduck/target/debug/tofd\",\n          \"pid\": 13504\n        }\n      },\n      {\n        \"unit\": \"nfcd.service\",\n        \"state\": \"inactive\"\n      }\n    ],\n    \"components\": [\n      {\n        \"name\": \"daemon\",\n        \"installed\": null,\n        \"revision\": null\n      }\n    ],\n    \"warnings\": []\n  },\n  \"account\": {\n    \"account\": null,\n    \"login\": null,\n    \"last_error\": null\n  },\n  \"board\": {}\n}\n",
+      "stderr": ""
+    }
+  },
+  "independent_observation": {
+    "body_port_open_after_start": true,
+    "body_rate": {
+      "hello": "{\"protocol\": 1}",
+      "sim_delta_s": 3,
+      "wall_delta_s": 3.0003,
+      "sim_per_wall": 0.9999
+    },
+    "robotd_alive_after_disconnect": true
+  },
+  "faults": {
+    "body_disconnect": {
+      "pid": 13476,
+      "verified_cmdline": "/home/runner/work/_temp/microduck_rl/.venv/bin/python -m mjlab_microduck.sim.body_server --port 7801 --ducks 1 --keyframe SIT --headless ",
+      "port_closed": true
+    },
+    "body_reconnect": {
+      "new_pid": 13690,
+      "port_reopened": true
+    },
+    "malformed_policy": {
+      "fixture": "duck-control/tests/fixtures/bad_action_count.onnx",
+      "sha256": "b0e1204240bd7d73a19ceb6c21df8c8b0e3a20285c619eee2840bf426cf64c57",
+      "load_attempt": {
+        "exit_code": 5,
+        "stdout": "",
+        "stderr": "error: /home/runner/work/_temp/microduck/duck-control/tests/fixtures/bad_action_count.onnx: tensor shape is output: [1, -1], expected [1 or dynamic, 14]\n"
+      }
+    }
+  },
+  "blockers": [],
+  "startup": {
+    "exit_code": 0,
+    "stdout": "\u001b[36m==\u001b[0m down\n\u001b[36m==\u001b[0m building the daemons from HEAD\n\u001b[36m==\u001b[0m no policy set here — fetching the official one\n\u001b[36m==\u001b[0m rendering duck-a a voice\n\u001b[36m==\u001b[0m starting the body from /home/runner/work/_temp/microduck_rl — a MuJoCo window should open\n\u001b[36m==\u001b[0m starting tofd\n\u001b[36m==\u001b[0m starting configd\n\u001b[36m==\u001b[0m starting updaterd\n\u001b[36m==\u001b[0m starting robotd\n\u001b[36m==\u001b[0m standing up\nrobot     healthy\n  loop      50.0 of 50.0 Hz · 309 ticks · 0 missed · last 17 ms ago\n  bus       ok\n\u001b[36m==\u001b[0m duck-a: standing (trunk 0.116 m, gravity z -1.000)\n\n  Your duck is up. From here:\n\n    scripts/duck-sim drive        walk it forward, then stop\n    scripts/duck-sim ctl health   or anything else robotctl does\n    scripts/duck-sim ctl robot do roulade\n    scripts/duck-sim log          what the daemon is saying\n    scripts/duck-sim ctl account login    reach it from anywhere, like a real duck\n    scripts/duck-sim down\n\n",
+    "stderr": ""
+  },
+  "cleanup": {
+    "exit_code": 0,
+    "stdout": "\u001b[36m==\u001b[0m down\n",
+    "stderr": ""
+  },
+  "verification": {
+    "checks": {
+      "startup": true,
+      "baseline_health": true,
+      "body_realtime": true,
+      "body_port_closed": true,
+      "robotd_survived": true,
+      "disconnect_reported_unhealthy": true,
+      "body_port_reopened": true,
+      "reconnect_reported_healthy": true,
+      "bad_policy_rejected": true,
+      "bad_policy_preserved_health": true,
+      "cleanup": true
+    },
+    "passed": true
+  }
+}
