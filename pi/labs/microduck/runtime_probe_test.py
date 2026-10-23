@@ -22,7 +22,7 @@ def packet(payload):
 
 class ProbeParserTest(unittest.TestCase):
     def test_extracts_only_read_timestamps(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as tmp:
             p = Path(tmp) / "trace.pcap"
             p.write_bytes(
                 bytes.fromhex("d4c3b2a1") + struct.pack("<HHIIII", 2, 4, 0, 0, 65535, 1)
@@ -38,7 +38,7 @@ class ProbeParserTest(unittest.TestCase):
             self.assertEqual(probe.pcap_read_timestamps(p), [1.02, 1.04])
 
     def test_hashes_every_policy_without_absolute_paths(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as tmp:
             root = Path(tmp) / "policies" / "current"
             root.mkdir(parents=True)
             (root / "walk.onnx").write_bytes(b"policy")
