@@ -1,0 +1,60 @@
+name: Microduck lab experiment 001
+
+on:
+  pull_request:
+    types: [synchronize]
+    paths:
+      - ".github/workflows/microduck-lab-001.yml"
+      - "pi/labs/microduck/runtime_probe.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: microduck-lab-001-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  headless:
+    if: github.event.pull_request.number == 219
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch pinned official sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          for repo in microduck microduck_rl; do
+            mkdir -p "$RUNNER_TEMP/$repo"
+            git -C "$RUNNER_TEMP/$repo" init -q
+            git -C "$RUNNER_TEMP/$repo" remote add origin "https://github.com/pollen-robotics/$repo.git"
+          done
+          git -C "$RUNNER_TEMP/microduck" fetch -q --depth 1 origin 942e58e3aa6dbb28e7037203fff11866122c7567
+          git -C "$RUNNER_TEMP/microduck" checkout -q --detach FETCH_HEAD
+          git -C "$RUNNER_TEMP/microduck_rl" fetch -q --depth 1 origin b02fdea4902c2b93b7d34a83a6f05da4ececb7d3
+          git -C "$RUNNER_TEMP/microduck_rl" checkout -q --detach FETCH_HEAD
+          git -C "$RUNNER_TEMP/microduck" rev-parse HEAD
+          git -C "$RUNNER_TEMP/microduck_rl" rev-parse HEAD
+      - name: Install public build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libudev-dev
+          python -m pip install uv
+          cd "$RUNNER_TEMP/microduck_rl"
+          UV_HTTP_TIMEOUT=600 uv sync --python 3.12
+      - name: Run isolated headless simulator and fault probes
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DUCK_SIM_VIEWER=0
+          export DUCK_SIM_RL="$RUNNER_TEMP/microduck_rl"
+          export DUCK_SIM_STATE=/tmp/duck-sim-exp001
+          timeout 1200 python pi/labs/microduck/runtime_probe.py "$RUNNER_TEMP/microduck" "$RUNNER_TEMP/microduck_rl" "$DUCK_SIM_STATE"
