@@ -9,7 +9,7 @@ This isolated lab adds no route, tool permission, production dependency, deploym
 - PI repository baseline: `pisolutions9/Pisolutions9` commit `13c0c943cf75ddbf61fc568971426610e61e1985`. `pi/README.md` defines replaceable tools, evidence provenance, and a verifier. `PI_V1_VERIFICATION_STANDARD.md` requires direct and independent evidence for each boundary. This experiment belongs under `pi/labs/`, away from the customer and owner runtime.
 - Official [microduck](https://github.com/pollen-robotics/microduck) holds the Rust 50 Hz onboard control loop. Its [simulation guide](https://github.com/pollen-robotics/microduck/blob/main/docs/robot/simulation.md) says `scripts/duck-sim` drives real daemons against a MuJoCo body supplied by the RL repository. It explicitly excludes physical driver coverage.
 - Official [microduck_rl](https://github.com/pollen-robotics/microduck_rl) holds MJCF models, training tasks, policy inference, and ONNX export. The 61 observation / 14 action contract and 50 Hz policy rate come from its README. Source tested: `develop` commit `b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`; `src/mjlab_microduck/robot/microduck/scene_walk.xml` with its included model and assets.
-- No policy, published model, hardware, account, secret, paid compute, or remote job was used.
+- The initial CPU smoke used no policy, published model, hardware, account, secret, paid compute, or remote job. The later headless runtime run used the official public v8 policy set on a standard public Linux runner.
 
 ## Reproduce
 
@@ -58,3 +58,24 @@ Reproduce from the branch by adding the `run-microduck-lab-001` label to PR #219
 3. **External loop timing — not verified.** The 50 Hz figure is the runtime's own health report. The independent 0.9999× body rate checks simulation pacing, not each control tick. One successful run does not establish repeatability or performance under load.
 
 No PI production adapter, deployment, merge, or robot command was made. A future adapter must treat this lab report as untrusted evidence and require independent verification before claiming a PI mission outcome is verified.
+
+## PI evidence gate (next integration step)
+
+`evidence-gate.mjs` maps the raw runtime report into PI's `evidenceRecord` shape without changing PI's production verifier. It recomputes nine checks from raw command output, body TCP/process observations, pinned source commits, and a separately obtained GitHub Actions run record. It deliberately ignores the report's own `verification.passed` field. Missing or altered observations produce `confidence: unknown`. The only verified claim is the bounded **headless simulation result**.
+
+Reproduce the local verification with Node 20 or later:
+
+```sh
+node pi/labs/microduck/evidence-gate-test.mjs
+```
+
+The test reads the committed raw report and a snapshot of the workflow metadata (run 40010913525, successful pull request event, head `c3e6d4fe7b1ac1107680f2abb7edafd48620eee5`). For an actual PI ingestion, obtain that metadata again through GitHub's workflow-run API and pass it separately to `verifyMicroduckReport(report, attestation)`. The local test is a deterministic contract test; it is not a fresh simulator run or a live GitHub attestation. Recorded Node 24.22.1 result on 2026-10-23: original accepted; five mutations rejected (missing independent observations, body port left open, malformed policy accepted, failed workflow, wrong workflow commit).
+
+The run metadata proves the referenced workflow completed successfully; the committed raw JSON was added later and has no signed or content-addressed link to the job log. This gate detects inconsistent fields, not a determined author rewriting every field. It must not be used to certify physical robot operation or to complete a PI mission.
+
+## Next gates
+
+1. Record SHA-256 for every downloaded official ONNX policy file in a fresh run, then bind the report to the run artifact or job output by digest.
+2. Add an external control-tick timestamp sample to measure loop periods, jitter, and missed deadlines independently of `robotctl`.
+3. Repeat the no-cost headless run under a defined load and compare failure/recovery distribution, keeping run-level raw evidence.
+4. Consider a production adapter only after separate owner review of provenance, safety scope, and permissions. This draft adds no production route.
