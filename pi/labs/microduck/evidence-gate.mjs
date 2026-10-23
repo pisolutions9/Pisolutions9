@@ -3,6 +3,7 @@ import { evidenceRecord } from '../../evidence.mjs';
 const MICRODUCK = '942e58e3aa6dbb28e7037203fff11866122c7567';
 const RL = 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3';
 const RUN = 'https://github.com/pisolutions9/Pisolutions9/actions/runs/40010913525';
+const RUN_HEAD = 'c3e6d4fe7b1ac1107680f2abb7edafd48620eee5';
 const BAD_POLICY = 'b0e1204240bd7d73a19ceb6c21df8c8b0e3a20285c619eee2840bf426cf64c57';
 
 function health(command) {
@@ -20,7 +21,7 @@ export function verifyMicroduckReport(report, attestation) {
   const malformed = health(h.after_malformed_policy);
   const rate = o.body_rate;
   const checks = {
-    external_run: report?.workflow_run === RUN && attestation?.url === RUN && attestation?.conclusion === 'success' && attestation?.event === 'pull_request' && attestation?.head_sha === attestation?.expected_head_sha && /^[a-f0-9]{40}$/.test(attestation?.head_sha ?? ''),
+    external_run: report?.workflow_run === RUN && attestation?.url === RUN && attestation?.conclusion === 'success' && attestation?.event === 'pull_request' && attestation?.head_sha === RUN_HEAD,
     pinned_sources: report?.source_commits?.microduck === MICRODUCK && report?.source_commits?.microduck_rl === RL,
     no_blockers: Array.isArray(report?.blockers) && report.blockers.length === 0,
     baseline: report?.startup?.exit_code === 0 && h.baseline?.exit_code === 0 && baseline?.healthy === true && baseline?.control_loop?.target_hz === 50 && baseline?.control_loop?.ticks > 0 && baseline?.control_loop?.missed === 0,
