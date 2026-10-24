@@ -22,6 +22,7 @@ env:
 
 jobs:
   deploy:
+    if: ${{ github.repository == 'pisolutions9/Pisolutions9' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
