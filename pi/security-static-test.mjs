@@ -34,3 +34,25 @@ function walk(dir){
 walk(root);
 assert.deepEqual(findings,[],`Potential committed secrets detected: ${JSON.stringify(findings)}`);
 console.log('PI static secret-safety scan passed.');
+
+// Production deployment must be inert outside the canonical repository main branch.
+// This is defense-in-depth; revoking credentials exposed to forks is a separate owner action.
+const deployWorkflow=fs.readFileSync(path.join(root,'.github/workflows/pi-chat-worker.yml'),'utf8');
+const deployLines=deployWorkflow.split(/\r?\n/);
+const deployIndex=deployLines.indexOf('  deploy:');
+assert.notEqual(deployIndex,-1,'Production deploy job must exist.');
+const firstDeployProperty=deployLines.slice(deployIndex+1).find(line=>line.trim());
+const expectedDeployGuard="    if: ${{ github.repository == 'pisolutions9/Pisolutions9' && github.ref == 'refs/heads/main' }}";
+assert.equal(firstDeployProperty,expectedDeployGuard,'Production deploy job must deny forks and non-main refs before steps run.');
+const contexts=[
+  ['canonical main push','pisolutions9/Pisolutions9','refs/heads/main',true],
+  ['canonical main dispatch','pisolutions9/Pisolutions9','refs/heads/main',true],
+  ['fork main push','PrEM21032/Pisolutions','refs/heads/main',false],
+  ['fork main dispatch','PrEM21032/Pisolutions','refs/heads/main',false],
+  ['canonical feature branch','pisolutions9/Pisolutions9','refs/heads/feature',false],
+  ['unrelated repository','someone/other','refs/heads/main',false]
+];
+for(const [label,repository,ref,allowed] of contexts){
+  assert.equal(repository==='pisolutions9/Pisolutions9' && ref==='refs/heads/main',allowed,label);
+}
+console.log('PI production deployment identity guard contract passed (6 contexts).');
