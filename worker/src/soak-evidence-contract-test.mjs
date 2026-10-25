@@ -1,3 +1,4 @@
+import { stageDurationMs } from './index.js';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -16,3 +17,12 @@ console.log('Provider-free PI soak diagnostics contract passed.');
 const behavioral=spawnSync('python',[fileURLToPath(new URL('./soak-evidence-behavior-test.py',import.meta.url))],{encoding:'utf8'});
 assert.equal(behavioral.status,0,behavioral.stdout+'\n'+behavioral.stderr);
 console.log(behavioral.stdout.trim());
+
+for(const stage of ['edge','provider','verify']){
+  assert.equal(stageDurationMs({},stage,100),undefined);
+  assert.equal(stageDurationMs({[`${stage}Ms`]:20},stage,100),20);
+  assert.equal(stageDurationMs({[`${stage}StartedAt`]:0},stage,100),100);
+  assert.equal(stageDurationMs({[`${stage}Ms`]:20,[`${stage}StartedAt`]:50},stage,100),70);
+  assert.equal(stageDurationMs({[`${stage}Ms`]:20,[`${stage}StartedAt`]:150},stage,100),20);
+}
+console.log('Completed and active timing attempts passed.');

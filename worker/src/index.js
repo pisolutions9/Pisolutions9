@@ -1726,8 +1726,16 @@ export default{
     }
     const durationMs=Date.now()-startedAt;
     response.headers.set('x-pi-request-id',requestId);
-    const edgeMs=telemetry.edgeMs??(telemetry.edgeStartedAt?Date.now()-telemetry.edgeStartedAt:undefined);const providerMs=telemetry.providerMs??(telemetry.providerStartedAt?Date.now()-telemetry.providerStartedAt:undefined);const verifyMs=telemetry.verifyMs??(telemetry.verifyStartedAt?Date.now()-telemetry.verifyStartedAt:undefined);const timings=[`pi_chat;dur=${durationMs}`];for(const [name,value] of [['pi_route',telemetry.routeMs],['pi_edge',edgeMs],['pi_verify',verifyMs],['pi_provider',providerMs]])if(Number.isFinite(value))timings.push(`${name};dur=${Math.max(0,Math.round(value))}`);response.headers.set('server-timing',timings.join(', '));
+    const timingNow=Date.now();const edgeMs=stageDurationMs(telemetry,'edge',timingNow);const providerMs=stageDurationMs(telemetry,'provider',timingNow);const verifyMs=stageDurationMs(telemetry,'verify',timingNow);const timings=[`pi_chat;dur=${durationMs}`];for(const [name,value] of [['pi_route',telemetry.routeMs],['pi_edge',edgeMs],['pi_verify',verifyMs],['pi_provider',providerMs]])if(Number.isFinite(value))timings.push(`${name};dur=${Math.max(0,Math.round(value))}`);response.headers.set('server-timing',timings.join(', '));
     console.log(JSON.stringify({event:'pi_chat_boundary',requestId,durationMs,routeMs:telemetry.routeMs??null,edgeMs:edgeMs??null,verifyMs:verifyMs??null,providerMs:providerMs??null,status:response.status,outcome}));
     return response;
   }
 };
+
+// Include completed attempts and the active attempt when the response deadline wins.
+export function stageDurationMs(timings,stage,now){
+  const completed=timings[`${stage}Ms`];
+  const started=timings[`${stage}StartedAt`];
+  if(!Number.isFinite(completed)&&!Number.isFinite(started))return undefined;
+  return (Number.isFinite(completed)?Math.max(0,completed):0)+(Number.isFinite(started)?Math.max(0,now-started):0);
+}
