@@ -7,7 +7,7 @@ import { chatOutcome, transportOutcome } from './customer-response.mjs';
 
 const app = fs.readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const script = app.replace(/^import \{ chatOutcome, transportOutcome \} from '\.\/pi\/customer-response\.mjs';\n/, '');
+const script = app.replace(/^import \{ chatOutcome, transportOutcome \} from '\.\/pi\/customer-response\.mjs';\r?\n/, '');
 assert.notEqual(app, script, 'test must load the actual UI with only its import bound by the test');
 assert.match(html, /type="module" src="app.js/);
 assert.match(html, /This browser remembers recent conversation/);
@@ -157,3 +157,4 @@ assert.equal(reloadedSources.children[1].href, shoppingSource.url);
 h.nodes.clearChat.listeners.click(); withSavedFile.nodes.clearChat.listeners.click();
 assert.equal(withSavedFile.nodes.transcript.children.length, 0);
 console.log('Actual UI handler tests passed: status, recovery, persistent browser continuity, private device sync, migration, storage denial, partials, artifact restoration, and honest device isolation.');
+

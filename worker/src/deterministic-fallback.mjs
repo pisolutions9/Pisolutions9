@@ -7,6 +7,7 @@ export function deterministicArithmetic(message) {
   const hasMathCue=/\b(calculate|compute|solve|plus|add|minus|subtract|times|multiplied by|divided by|over|to the power of|power)\b/i.test(original);
   const hasOperator=/[+\-*/()%]/.test(original);
   if(!hasMathCue&&!hasOperator)return null;
+  if(/[.!?]{2,}\s*$/.test(original))return null;
   const expression = original
     .replace(/\b(what is|calculate|compute|solve)\b/gi, '')
     .replace(/\b(plus|add)\b/gi, '+')
@@ -14,7 +15,7 @@ export function deterministicArithmetic(message) {
     .replace(/\b(times|multiplied by)\b/gi, '*')
     .replace(/\b(divided by|over)\b/gi, '/')
     .replace(/\b(to the power of|power)\b/gi, '**')
-    .replace(/\?/g, '')
+    .replace(/[.!?]\s*$/g, '')
     .trim();
   if (!/^[0-9+\-*/().%\s]+$/.test(expression) || !/[0-9]/.test(expression)) return null;
   try {
@@ -128,3 +129,4 @@ export function deterministicFallbackResult(message) {
     verification: verified ? 'curated-deterministic-recovery' : 'unverified-generic-recovery'
   };
 }
+
