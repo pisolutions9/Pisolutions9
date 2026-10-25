@@ -86,16 +86,19 @@ jobs:
           if not valid_answer('200',valid_fixture) or not provisional_answer('200',provisional_fixture) or not safe_refusal('503',refusal_fixture) or not honest_timeout('503',timeout_fixture) or valid_answer('503',timeout_fixture) or not safe_recovery('200',recovery_fixture) or valid_answer('200',legacy_fixture): raise SystemExit('customer answer contract regression')
           def ask(case):
               round_i,q_i,q=case
-              payload=json.dumps({'message':q}); t=time.time(); p=subprocess.run(['curl','--silent','--show-error','--connect-timeout','5','--max-time','22','-H','content-type: application/json','-H','origin: https://pisolutions9.github.io','-d',payload,'-w','\n%{http_code}',url],capture_output=True,text=True); elapsed=time.time()-t
-              if p.returncode!=0:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':f'curl:{p.returncode}','zero_byte':not p.stdout.strip() or p.stdout.strip()=='000','stderr':p.stderr[-240:]}
-              if '\n' not in p.stdout:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'missing-http-status','zero_byte':not p.stdout.strip(),'prefix':p.stdout[:120]}
-              body,status=p.stdout.rsplit('\n',1)
-              if not body:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'empty-response-body','zero_byte':True,'http':status}
+              payload=json.dumps({'message':q}); t=time.time(); p=subprocess.run(['curl','--silent','--show-error','--connect-timeout','5','--max-time','22','-H','content-type: application/json','-H','origin: https://pisolutions9.github.io','-d',payload,'-w','\n__PI_CURL_METRICS__%{http_code}\t%{time_connect}\t%{time_appconnect}\t%{time_starttransfer}\t%{time_total}\t%{header{x-pi-request-id}}\t%{header{server-timing}}',url],capture_output=True,text=True); elapsed=time.time()-t
+              if '__PI_CURL_METRICS__' not in p.stdout:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':f'curl:{p.returncode}:missing-metrics','zero_byte':not p.stdout.strip()}
+              body,raw_metrics=p.stdout.rsplit('__PI_CURL_METRICS__',1); metrics=raw_metrics.strip().split('\t')
+              if len(metrics)!=7:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'invalid-curl-metrics','zero_byte':not body.strip()}
+              status,connect,tls,first_byte,total,request_id,server_timing=metrics
+              transport={'curlConnectSeconds':connect,'curlTlsSeconds':tls,'curlFirstByteSeconds':first_byte,'curlTotalSeconds':total,'requestId':request_id or None,'serverTiming':server_timing or None}
+              if p.returncode!=0:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':f'curl:{p.returncode}','zero_byte':not body.strip(),**transport}
+              if not body:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'empty-response-body','zero_byte':True,'http':status,**transport}
               try:d=json.loads(body)
-              except Exception:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'invalid-json','http':status,'body_prefix':body[:240]}
+              except Exception:return False,elapsed,{'round':round_i+1,'question':q_i,'transport':'invalid-json','http':status,**transport}
               ans=d.get('answer','') if isinstance(d,dict) else ''; ready=valid_answer(status,d)
               safe=ready or provisional_answer(status,d) or safe_refusal(status,d) or honest_timeout(status,d) or safe_recovery(status,d)
-              return ready,elapsed,{'round':round_i+1,'question':q_i,'http':status,'ok':d.get('ok') if isinstance(d,dict) else None,'status':d.get('status') if isinstance(d,dict) else None,'length':len(ans) if isinstance(ans,str) else 0,'truth':d.get('truth') if isinstance(d,dict) else None,'source':d.get('source') if isinstance(d,dict) else None,'safe':safe,'verificationReason':d.get('verificationReason') if isinstance(d,dict) else None,'prefix':ans[:120] if isinstance(ans,str) else ''}
+              return ready,elapsed,{'round':round_i+1,'question':q_i,'http':status,'ok':d.get('ok') if isinstance(d,dict) else None,'status':d.get('status') if isinstance(d,dict) else None,'length':len(ans) if isinstance(ans,str) else 0,'truth':d.get('truth') if isinstance(d,dict) else None,'source':d.get('source') if isinstance(d,dict) else None,'safe':safe,'verificationReason':d.get('verificationReason') if isinstance(d,dict) else None,**transport}
           unsafe_failures=[]; zero_byte_failures=[]; degraded=[]; latencies=[]; truth_counts={}; ready_count=0
           with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
               futs=[ex.submit(ask,q) for q in cases]
