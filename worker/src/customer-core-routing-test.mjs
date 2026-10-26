@@ -122,6 +122,43 @@ try{
   assert.doesNotMatch(observedNews.body.answer,/published:/i);
   const exactPublication=await ask('What are the latest world news developments today? Give exact publication time and source for every claim.');
   assert.notEqual(exactPublication.body.truth,'live-data-response','GDELT observation time does not prove exact publication time');
+  const recentRss=`<rss><channel>${[1,2,3].map(number=>rssItem(number,new Date(currentNewsTime.getTime()-30*60*1000).toUTCString())).join('')}</channel></rss>`;
+  globalThis.fetch=async url=>String(url).includes('/live-news.json')
+    ?new Promise(()=>{})
+    :String(url).includes('bing.com/news/search')
+      ?new Response(recentRss,{status:200})
+      :new Response('unavailable',{status:503});
+  let stalledNewsTimer;
+  try{
+    const stalledNews=await Promise.race([
+      ask('What are the latest world news developments today?'),
+      new Promise(resolve=>{stalledNewsTimer=setTimeout(()=>resolve({timeout:true}),2800);})
+    ]);
+    assert.equal(stalledNews.body?.source,'pi-news-bing-rss','a hung news cache must not block fallback feeds');
+  }finally{clearTimeout(stalledNewsTimer);}
+  globalThis.fetch=async url=>String(url).includes('/live-news.json')
+    ?new Response(new ReadableStream({start(){}}),{status:200})
+    :String(url).includes('bing.com/news/search')
+      ?new Response(recentRss,{status:200})
+      :new Response('unavailable',{status:503});
+  let stalledBodyTimer;
+  try{
+    const stalledBody=await Promise.race([
+      ask('What are the latest world news developments today?'),
+      new Promise(resolve=>{stalledBodyTimer=setTimeout(()=>resolve({timeout:true}),2800);})
+    ]);
+    assert.equal(stalledBody.body?.source,'pi-news-bing-rss','a stalled news body must not block fallback feeds');
+  }finally{clearTimeout(stalledBodyTimer);}
+  globalThis.fetch=async()=>new Promise(()=>{});
+  let allHungTimer;
+  try{
+    const allHung=await Promise.race([
+      ask('What are the latest world news developments today?'),
+      new Promise(resolve=>{allHungTimer=setTimeout(()=>resolve({timeout:true}),7200);})
+    ]);
+    assert.equal(allHung.status,503,'all hung news sources must fail closed within the news deadline');
+    assert.notEqual(allHung.body?.truth,'live-data-response');
+  }finally{clearTimeout(allHungTimer);}
 }finally{
   globalThis.fetch=originalFetch;
 }

@@ -671,15 +671,33 @@ function isCurrentNewsItem(item,now){
   return Number.isFinite(published)&&published<=now+5*60*1000&&now-published<=24*60*60*1000;
 }
 
+async function fetchNewsSource(url,options,deadline){
+  const remaining=deadline-Date.now();
+  if(remaining<=0)throw new Error('news_feed_deadline');
+  const controller=new AbortController();
+  let timer;
+  try{
+    return await Promise.race([
+      (async()=>{
+        const response=await fetch(url,{...options,signal:controller.signal});
+        if(!response.ok)return {ok:false};
+        const body=await response.text();
+        return {ok:true,text:async()=>body,json:async()=>JSON.parse(body)};
+      })(),
+      new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new Error('news_feed_timeout'));},Math.min(1500,remaining));})
+    ]);
+  }finally{clearTimeout(timer);}
+}
 async function directNewsAnswer(message=''){
   const value=String(message);
   const asksNews=(/\b(news|developments?|headlines?|updates?)\b/i.test(value)
       || (/\b(world|global|international)\b/i.test(value)&&/\b(?:things?|stories|events?)\b/i.test(value)))
     && /\b(today|current|latest|happening\s+today|right\s+now|now)\b/i.test(value);
   if(!asksNews)return null;
+  const deadline=Date.now()+6000;
   try{
     const cacheUrl='https://raw.githubusercontent.com/pisolutions9/Pisolutions9/live-data/data/live-news.json';
-    const response=await fetch(cacheUrl,{headers:{accept:'application/json'}});
+    const response=await fetchNewsSource(cacheUrl,{headers:{accept:'application/json'}},deadline);
     if(response.ok){
       const cache=await response.json();
       const updatedAt=Date.parse(cache?.updatedAt||'');
@@ -694,7 +712,7 @@ async function directNewsAnswer(message=''){
   }catch{}
   try{
     const endpoint='https://news.google.com/home?hl=en-US&gl=US&ceid=US:en';
-    const response=await fetch(endpoint,{headers:{accept:'text/html','user-agent':'Mozilla/5.0'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'text/html','user-agent':'Mozilla/5.0'}},deadline);
     if(response.ok){
       const html=await response.text();
       const articles=[...html.matchAll(/<article[^>]*>([\s\S]*?)<\/article>/gi)];
@@ -717,7 +735,7 @@ async function directNewsAnswer(message=''){
   }catch{}
   try{
     const endpoint='https://www.bing.com/news/search?q='+encodeURIComponent('world news')+'&format=rss';
-    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}},deadline);
     if(response.ok){
       const xml=await response.text();
       const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,10);
@@ -738,7 +756,7 @@ async function directNewsAnswer(message=''){
   }catch{}
   try{
     const endpoint='https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en';
-    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}},deadline);
     if(!response.ok)throw new Error('Google News RSS unavailable');
     const xml=await response.text();
     const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,8);
@@ -767,7 +785,7 @@ async function directNewsAnswer(message=''){
   }catch{}
   try{
     const endpoint='https://www.aljazeera.com/xml/rss/all.xml';
-    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}},deadline);
     if(response.ok){
       const xml=await response.text();
       const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,10);
@@ -793,7 +811,7 @@ async function directNewsAnswer(message=''){
   }catch{}
   try{
     const endpoint='https://www.theguardian.com/world/rss';
-    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}},deadline);
     if(response.ok){
       const xml=await response.text();
       const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,10);
@@ -819,7 +837,7 @@ async function directNewsAnswer(message=''){
   }catch{}
   try{
     const endpoint='https://feeds.bbci.co.uk/news/world/rss.xml';
-    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}},deadline);
     if(response.ok){
       const xml=await response.text();
       const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,8);
@@ -846,7 +864,7 @@ async function directNewsAnswer(message=''){
   if(/\b(?:exact\s+)?(?:publication|published)\s+(?:date|time)\b/i.test(value))return null;
   try{
     const endpoint='https://api.gdeltproject.org/api/v2/doc/doc?query=world&mode=artlist&format=json&maxrecords=12&timespan=1d&sort=datedesc';
-    const response=await fetch(endpoint,{headers:{accept:'application/json'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'application/json'}},deadline);
     if(!response.ok)return null;
     const data=await response.json();
     const articles=Array.isArray(data?.articles)?data.articles:[];
