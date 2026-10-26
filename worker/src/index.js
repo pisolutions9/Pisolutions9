@@ -92,6 +92,11 @@ function quantifiedMultiplicationAnswer(message=''){
   const groups=[...value.matchAll(/\b([0-9]+(?:\.[0-9]+)?)\s+(?:people|persons|workers|employees|members|mandi|servers?)\b/ig)];
   const perUnits=[...value.matchAll(/\b(?:each|per|okkokadu|okkokaru|okkaokadu|prathi)\s+(?:(?:complete|do|make|perform|handle|process)(?:s)?\s+)?([0-9]+(?:\.[0-9]+)?)\b/ig)];
   if(groups.length!==1||perUnits.length!==1)return null;
+  const years=[...value.matchAll(/\b(?:in|during)\s+((?:19|20)[0-9]{2})\b/ig)];
+  const bound=new Set([...groups,...perUnits,...years].map(m=>m.index+m[0].lastIndexOf(m[1])));
+  // Another quantity may change the requested total. Defer instead of silently
+  // ignoring it while claiming deterministic verification.
+  if([...value.matchAll(/\b[0-9]+(?:\.[0-9]+)?\b/g)].some(m=>!bound.has(m.index)))return null;
   const groupCount=Number(groups[0][1]),perUnit=Number(perUnits[0][1]);
   const result=groupCount*perUnit;
   if(!Number.isFinite(result)||(Number.isInteger(result)&&!Number.isSafeInteger(result)))return null;
