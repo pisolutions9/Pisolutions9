@@ -85,13 +85,16 @@ function conversationRecallAnswer(message='',history=[]){
 
 function quantifiedMultiplicationAnswer(message=''){
   const value=String(message);
-  const hasGroup=/\b(?:people|persons|workers|employees|members|mandi|servers?)\b/i.test(value);
-  const hasPer=/\b(?:each|per|okkokadu|okkokaru|okkaokadu|prathi|requests?\s*\/\s*sec|req\s*\/\s*sec)\b/i.test(value);
   const asksTotal=/\b(?:total|how many|enta|enti|entha|mottham|mottam)\b/i.test(value);
-  const nums=[...value.matchAll(/\b([0-9]+(?:\.[0-9]+)?)\b/g)].map(m=>Number(m[1])).filter(Number.isFinite);
-  if(!hasGroup||!hasPer||!asksTotal||nums.length<2)return null;
-  const result=nums[0]*nums[1];
-  if(!Number.isFinite(result))return null;
+  if(!asksTotal)return null;
+  // Bind each operand to its role. An unrelated year, deadline, or price must
+  // never become part of a "deterministic-verified" answer.
+  const groups=[...value.matchAll(/\b([0-9]+(?:\.[0-9]+)?)\s+(?:people|persons|workers|employees|members|mandi|servers?)\b/ig)];
+  const perUnits=[...value.matchAll(/\b(?:each|per|okkokadu|okkokaru|okkaokadu|prathi)\s+(?:(?:complete|do|make|perform|handle|process)(?:s)?\s+)?([0-9]+(?:\.[0-9]+)?)\b/ig)];
+  if(groups.length!==1||perUnits.length!==1)return null;
+  const groupCount=Number(groups[0][1]),perUnit=Number(perUnits[0][1]);
+  const result=groupCount*perUnit;
+  if(!Number.isFinite(result)||(Number.isInteger(result)&&!Number.isSafeInteger(result)))return null;
   const rendered=Number.isInteger(result)?String(result):String(Number(result.toFixed(10)));
   return {
     ok:true,status:'answered',

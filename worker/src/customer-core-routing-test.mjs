@@ -44,6 +44,14 @@ assert.equal(teluguMath.body.source,'pi-deterministic-quantified-multiplication'
 assert.equal(teluguMath.body.truth,'deterministic-verified');
 assert.match(teluguMath.body.answer,/406/);
 
+const datedMath=await ask('In 2026, 29 people each complete 14 checks. What is the total number of checks?');
+assert.equal(datedMath.status,200);
+assert.equal(datedMath.body.source,'pi-deterministic-quantified-multiplication');
+assert.equal(datedMath.body.truth,'deterministic-verified');
+assert.equal(datedMath.body.answer,'The total is 406.');
+const ambiguousMath=await ask('29 people each complete 14 checks and 37 servers each handle 460 requests. What is the total?');
+assert.notEqual(ambiguousMath.body.source,'pi-deterministic-quantified-multiplication');
+assert.notEqual(ambiguousMath.body.truth,'deterministic-verified');
 const resetMath=await ask('postgres migration gurinchi vadiley. 37 servers each 460 req/sec total enta?');
 assert.equal(resetMath.status,200);
 assert.equal(resetMath.body.source,'pi-deterministic-quantified-multiplication');
