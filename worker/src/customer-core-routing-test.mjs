@@ -100,6 +100,26 @@ try{
   const staleNews=await ask('What are the latest world news developments today?');
   assert.notEqual(staleNews.body.source,'pi-news-live-cache');
   assert.notEqual(staleNews.body.truth,'live-data-response');
+  const rssItem=(number,date)=>`<item><title>RSS headline ${number}</title><link>https://example.com/rss/${number}</link><pubDate>${date}</pubDate></item>`;
+  let rss=`<rss><channel>${[1,2,3].map(number=>rssItem(number,new Date(currentNewsTime.getTime()-3*24*60*60*1000).toUTCString())).join('')}</channel></rss>`;
+  globalThis.fetch=async url=>String(url).includes('bing.com/news/search')
+    ?new Response(rss,{status:200})
+    :new Response('unavailable',{status:503});
+  const staleRss=await ask('What are the latest world news developments today?');
+  assert.notEqual(staleRss.body.truth,'live-data-response','an old RSS feed must not be presented as current news');
+  rss=`<rss><channel>${rssItem(1,new Date(currentNewsTime.getTime()-3*24*60*60*1000).toUTCString())}${[2,3,4].map(number=>rssItem(number,new Date(currentNewsTime.getTime()-30*60*1000).toUTCString())).join('')}</channel></rss>`;
+  const mixedRss=await ask('What are the latest world news developments today?');
+  assert.equal(mixedRss.body.source,'pi-news-bing-rss');
+  assert.doesNotMatch(mixedRss.body.answer,/RSS headline 1/);
+  assert.match(mixedRss.body.answer,/RSS headline 4/);
+  const gdeltArticles=[1,2,3].map(number=>({title:'GDELT headline '+number,url:'https://example.com/gdelt/'+number,domain:'example.com',seendate:recentPublished.replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z')}));
+  globalThis.fetch=async url=>String(url).includes('api.gdeltproject.org')
+    ?new Response(JSON.stringify({articles:gdeltArticles}),{status:200})
+    :new Response('unavailable',{status:503});
+  const observedNews=await ask('What are the latest world news developments today?');
+  assert.equal(observedNews.body.source,'pi-news-gdelt');
+  assert.match(observedNews.body.answer,/seen by GDELT/i);
+  assert.doesNotMatch(observedNews.body.answer,/published:/i);
 }finally{
   globalThis.fetch=originalFetch;
 }

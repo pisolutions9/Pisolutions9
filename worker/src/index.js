@@ -706,7 +706,7 @@ async function directNewsAnswer(message=''){
         const datetime=block.match(/<time[^>]*datetime="([^"]+)"/i)?.[1]||'';
         const sourceText=decodeXml((block.match(/<div[^>]*class="[^"]*(?:vr1PYe|MgUUmf)[^"]*"[^>]*>([\s\S]*?)<\/div>/i)?.[1]||'Google News').replace(/<[^>]+>/g,'')).trim()||'Google News';
         const link=href.startsWith('./')?'https://news.google.com/'+href.slice(2):href.startsWith('/')?'https://news.google.com'+href:href;
-        if(title&&/^https:\/\//.test(link)&&datetime)parsed.push({title,link,pubDate:datetime,source:sourceText});
+        if(isCurrentNewsItem({title,url:link,publishedAt:datetime},Date.now()))parsed.push({title,link,pubDate:datetime,source:sourceText});
         if(parsed.length===3)break;
       }
       if(parsed.length>=3){
@@ -727,7 +727,7 @@ async function directNewsAnswer(message=''){
         const title=decodeXml(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
         const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
         const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
-        if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:'Bing News'});
+        if(isCurrentNewsItem({title,url:link,publishedAt:pubDate},Date.now()))parsed.push({title,link,pubDate,source:'Bing News'});
         if(parsed.length===3)break;
       }
       if(parsed.length>=3){
@@ -739,7 +739,7 @@ async function directNewsAnswer(message=''){
   try{
     const endpoint='https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en';
     const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
-    if(!response.ok)return null;
+    if(!response.ok)throw new Error('Google News RSS unavailable');
     const xml=await response.text();
     const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,8);
     const parsed=[];
@@ -749,7 +749,7 @@ async function directNewsAnswer(message=''){
       const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
       const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
       const source=decodeXml(block.match(/<source[^>]*>([\s\S]*?)<\/source>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
-      if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:source||'Google News source'});
+      if(isCurrentNewsItem({title,url:link,publishedAt:pubDate},Date.now()))parsed.push({title,link,pubDate,source:source||'Google News source'});
       if(parsed.length===3)break;
     }
     if(parsed.length>=3){
@@ -777,7 +777,7 @@ async function directNewsAnswer(message=''){
         const title=decodeXml(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
         const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
         const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
-        if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:'Al Jazeera'});
+        if(isCurrentNewsItem({title,url:link,publishedAt:pubDate},Date.now()))parsed.push({title,link,pubDate,source:'Al Jazeera'});
         if(parsed.length===3)break;
       }
       if(parsed.length>=3){
@@ -803,7 +803,7 @@ async function directNewsAnswer(message=''){
         const title=decodeXml(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
         const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
         const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
-        if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:'The Guardian'});
+        if(isCurrentNewsItem({title,url:link,publishedAt:pubDate},Date.now()))parsed.push({title,link,pubDate,source:'The Guardian'});
         if(parsed.length===3)break;
       }
       if(parsed.length>=3){
@@ -829,7 +829,7 @@ async function directNewsAnswer(message=''){
         const title=decodeXml(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
         const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
         const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
-        if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:'BBC News'});
+        if(isCurrentNewsItem({title,url:link,publishedAt:pubDate},Date.now()))parsed.push({title,link,pubDate,source:'BBC News'});
         if(parsed.length===3)break;
       }
       if(parsed.length>=3){
@@ -849,12 +849,12 @@ async function directNewsAnswer(message=''){
     if(!response.ok)return null;
     const data=await response.json();
     const articles=Array.isArray(data?.articles)?data.articles:[];
-    const parsed=articles.filter(item=>item&&item.url&&item.title&&item.seendate).slice(0,3);
+    const parsed=articles.filter(item=>isCurrentNewsItem({title:item?.title,url:item?.url,publishedAt:item?.seendate},Date.now())).slice(0,3);
     if(parsed.length<3)return null;
     const lines=parsed.map((item,index)=>{
       const source=String(item.domain||'GDELT source');
-      const published=String(item.seendate);
-      return `${index+1}. ${String(item.title).trim()} — source: ${source}; published: ${published} UTC.`;
+      const observed=String(item.seendate);
+      return `${index+1}. ${String(item.title).trim()} — source: ${source}; seen by GDELT: ${observed}.`;
     });
     return {
       ok:true,
