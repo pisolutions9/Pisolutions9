@@ -73,4 +73,34 @@ assert.equal(typoShopping.body.source,'pi-shopping-search-link');
 assert.equal(typoShopping.body.truth,'retailer-search-link');
 assert.match(typoShopping.body.answer,/not independently verified/i);
 
+const originalFetch=globalThis.fetch;
+const currentNewsTime=new Date();
+const recentPublished=new Date(currentNewsTime.getTime()-30*60*1000).toISOString();
+const oldPublished=new Date(currentNewsTime.getTime()-3*24*60*60*1000).toISOString();
+const newsItem=(number,publishedAt)=>({title:'Headline '+number,url:'https://example.com/news/'+number,source:'Example',publishedAt});
+try{
+  let cacheItems=[
+    newsItem(1,oldPublished),
+    newsItem(2,recentPublished),
+    newsItem(3,recentPublished.replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z')),
+    newsItem(4,new Date(currentNewsTime.getTime()-45*60*1000).toUTCString())
+  ];
+  globalThis.fetch=async url=>{
+    if(String(url).includes('/live-news.json'))return new Response(JSON.stringify({updatedAt:currentNewsTime.toISOString(),items:cacheItems}),{status:200});
+    return new Response('unavailable',{status:503});
+  };
+  const freshNews=await ask('What are the latest world news developments today?');
+  assert.equal(freshNews.body.source,'pi-news-live-cache');
+  assert.equal(freshNews.body.truth,'live-data-response');
+  assert.doesNotMatch(freshNews.body.answer,/Headline 1/);
+  assert.match(freshNews.body.answer,/Headline 2/);
+  assert.match(freshNews.body.answer,/Headline 3/);
+  assert.match(freshNews.body.answer,/Headline 4/);
+  cacheItems=[newsItem(1,oldPublished),newsItem(2,oldPublished),newsItem(3,oldPublished)];
+  const staleNews=await ask('What are the latest world news developments today?');
+  assert.notEqual(staleNews.body.source,'pi-news-live-cache');
+  assert.notEqual(staleNews.body.truth,'live-data-response');
+}finally{
+  globalThis.fetch=originalFetch;
+}
 console.log('customer core routing regression: ok');

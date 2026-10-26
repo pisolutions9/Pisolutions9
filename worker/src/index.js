@@ -658,6 +658,19 @@ function decodeXml(value=''){
     .replace(/&quot;/g,'"').replace(/&#39;/g,"'");
 }
 
+function newsPublishedTime(value){
+  const raw=String(value||'').trim();
+  const gdelt=raw.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
+  const parsed=Date.parse(gdelt?(gdelt[1]+'-'+gdelt[2]+'-'+gdelt[3]+'T'+gdelt[4]+':'+gdelt[5]+':'+gdelt[6]+'Z'):raw);
+  return Number.isFinite(parsed)?parsed:NaN;
+}
+
+function isCurrentNewsItem(item,now){
+  if(!item?.title||!/^https:\/\//.test(String(item?.url||'')))return false;
+  const published=newsPublishedTime(item.publishedAt);
+  return Number.isFinite(published)&&published<=now+5*60*1000&&now-published<=24*60*60*1000;
+}
+
 async function directNewsAnswer(message=''){
   const value=String(message);
   const asksNews=(/\b(news|developments?|headlines?|updates?)\b/i.test(value)
@@ -670,8 +683,9 @@ async function directNewsAnswer(message=''){
     if(response.ok){
       const cache=await response.json();
       const updatedAt=Date.parse(cache?.updatedAt||'');
-      const fresh=Number.isFinite(updatedAt)&&(Date.now()-updatedAt)<=45*60*1000;
-      const items=Array.isArray(cache?.items)?cache.items.filter(item=>item?.title&&/^https:\/\//.test(String(item?.url||''))&&item?.publishedAt).slice(0,3):[];
+      const now=Date.now();
+      const fresh=Number.isFinite(updatedAt)&&updatedAt<=now+5*60*1000&&now-updatedAt<=45*60*1000;
+      const items=Array.isArray(cache?.items)?cache.items.filter(item=>isCurrentNewsItem(item,now)).slice(0,3):[];
       if(fresh&&items.length>=3){
         const lines=items.map((item,index)=>`${index+1}. ${String(item.title).trim()} — publisher: ${String(item.source||'source').trim()}; published: ${String(item.publishedAt).trim()}.`);
         return {ok:true,status:'answered',answer:`Three current world-news developments from PI's live news cache (refreshed ${cache.updatedAt}):\n\n${lines.join('\n')}`,source:'pi-news-live-cache',truth:'live-data-response',observedAt:cache.updatedAt,sources:items.map(item=>({url:String(item.url),title:String(item.source||item.title)}))};
