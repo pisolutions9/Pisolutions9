@@ -1668,7 +1668,7 @@ const piWorker={async fetch(request,env,telemetry=null){const url=new URL(reques
   const headers=lastLiveFailure?.response&&failure.error==='chat_provider_rate_limited'?rateLimitHeaders(lastLiveFailure.response):{};
   const shoppingFallback=shoppingSearchLinkAnswer(message);
   if(shoppingFallback)return krishnaJson(shoppingFallback,200,request,'live',headers);
-  return json({ok:false,status:'live_evidence_required',error:failure.error,answer:'PI could not verify current information from the available live research providers, so it will not guess.',truth:'unknown'},failure.status||503,request,headers);
+  return json({ok:false,status:'live_evidence_required',error:failure.error,answer:'PI could not verify current information from the available live research providers, so it will not guess.',truth:'unknown'},503,request,headers);
 }
 if(krishnaDecision.route==='hard'){
   const verified=await produceVerifiedHardAnswer(env,effectiveMessage,history,telemetry);
