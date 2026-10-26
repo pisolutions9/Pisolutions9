@@ -120,6 +120,8 @@ try{
   assert.equal(observedNews.body.source,'pi-news-gdelt');
   assert.match(observedNews.body.answer,/seen by GDELT/i);
   assert.doesNotMatch(observedNews.body.answer,/published:/i);
+  const exactPublication=await ask('What are the latest world news developments today? Give exact publication time and source for every claim.');
+  assert.notEqual(exactPublication.body.truth,'live-data-response','GDELT observation time does not prove exact publication time');
 }finally{
   globalThis.fetch=originalFetch;
 }

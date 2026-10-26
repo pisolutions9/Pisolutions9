@@ -843,6 +843,7 @@ async function directNewsAnswer(message=''){
       }
     }
   }catch{}
+  if(/\b(?:exact\s+)?(?:publication|published)\s+(?:date|time)\b/i.test(value))return null;
   try{
     const endpoint='https://api.gdeltproject.org/api/v2/doc/doc?query=world&mode=artlist&format=json&maxrecords=12&timespan=1d&sort=datedesc';
     const response=await fetch(endpoint,{headers:{accept:'application/json'}});
