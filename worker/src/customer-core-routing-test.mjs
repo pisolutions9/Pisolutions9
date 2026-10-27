@@ -96,6 +96,9 @@ try{
   assert.match(freshNews.body.answer,/Headline 2/);
   assert.match(freshNews.body.answer,/Headline 3/);
   assert.match(freshNews.body.answer,/Headline 4/);
+  cacheItems=[newsItem(2,recentPublished),newsItem(2,recentPublished),newsItem(2,recentPublished)];
+  const duplicateCache=await ask('What are the latest world news developments today?');
+  assert.notEqual(duplicateCache.body.truth,'live-data-response','one repeated cache story is not three developments');
   cacheItems=[newsItem(1,oldPublished),newsItem(2,oldPublished),newsItem(3,oldPublished)];
   const staleNews=await ask('What are the latest world news developments today?');
   assert.notEqual(staleNews.body.source,'pi-news-live-cache');
@@ -112,6 +115,10 @@ try{
   assert.equal(mixedRss.body.source,'pi-news-bing-rss');
   assert.doesNotMatch(mixedRss.body.answer,/RSS headline 1/);
   assert.match(mixedRss.body.answer,/RSS headline 4/);
+  rss=`<rss><channel>${[1,1,1,2,3].map(number=>rssItem(number,new Date(currentNewsTime.getTime()-30*60*1000).toUTCString())).join('')}</channel></rss>`;
+  const duplicateRss=await ask('What are the latest world news developments today?');
+  assert.equal(duplicateRss.body.source,'pi-news-bing-rss');
+  assert.deepEqual(duplicateRss.body.sources.map(source=>source.url),[1,2,3].map(number=>'https://example.com/rss/'+number),'RSS must gather three distinct developments');
   const gdeltArticles=[1,2,3].map(number=>({title:'GDELT headline '+number,url:'https://example.com/gdelt/'+number,domain:'example.com',seendate:recentPublished.replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z')}));
   globalThis.fetch=async url=>String(url).includes('api.gdeltproject.org')
     ?new Response(JSON.stringify({articles:gdeltArticles}),{status:200})
@@ -120,6 +127,12 @@ try{
   assert.equal(observedNews.body.source,'pi-news-gdelt');
   assert.match(observedNews.body.answer,/seen by GDELT/i);
   assert.doesNotMatch(observedNews.body.answer,/published:/i);
+  gdeltArticles.splice(1,2,gdeltArticles[0],gdeltArticles[0]);
+  const duplicateGdelt=await ask('What are the latest world news developments today?');
+  assert.notEqual(duplicateGdelt.body.truth,'live-data-response','one GDELT observation is not three developments');
+  gdeltArticles.splice(1,2,
+    {title:'GDELT headline 2',url:'https://example.com/gdelt/2',domain:'example.com',seendate:recentPublished.replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z')},
+    {title:'GDELT headline 3',url:'https://example.com/gdelt/3',domain:'example.com',seendate:recentPublished.replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z')});
   const exactPublication=await ask('What are the latest world news developments today? Give exact publication time and source for every claim.');
   assert.notEqual(exactPublication.body.truth,'live-data-response','GDELT observation time does not prove exact publication time');
   const recentRss=`<rss><channel>${[1,2,3].map(number=>rssItem(number,new Date(currentNewsTime.getTime()-30*60*1000).toUTCString())).join('')}</channel></rss>`;
