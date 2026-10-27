@@ -953,7 +953,7 @@ async function directShoppingAnswer(env,message=''){
       const link=String(result?.link||'');
       if(!/^https:\/\//.test(link))return false;
       if(domain){
-        try{return new URL(link).hostname.endsWith(domain);}catch{return false;}
+        try{const host=new URL(link).hostname;return host===domain||host.endsWith('.'+domain);}catch{return false;}
       }
       return true;
     }).slice(0,5);
