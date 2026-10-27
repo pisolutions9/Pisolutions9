@@ -38,7 +38,7 @@ function assertSafeHardOutcome(result){
 }
 
 const math=await ask('Calculate 17 * 19.');
-assert.equal(math.status,200);
+assert.equal(math.status,200,`basic_math_status:${JSON.stringify({status:math.status,error:math.body?.error||null,source:math.body?.source||null,truth:math.body?.truth||null,requestId:math.body?.requestId||null})}`);
 assert.equal(math.body.ok,true);
 assert.match(answerText(math),/323/);
 assert.ok(['deterministic-verified','verified-model-response'].includes(math.body.truth),`unsafe_math_truth:${math.body.truth}`);
