@@ -97,6 +97,13 @@ try {
   assert.equal(arithmetic.truth, 'deterministic-verified');
   assert.equal(arithmetic.answer, 'The answer is 3250.');
 
+  const releaseMathResponse = await ask('Calculate 17 * 19.');
+  const releaseMath = await releaseMathResponse.json();
+  assert.equal(releaseMathResponse.status, 200);
+  assert.equal(releaseMath.source, 'pi-deterministic-arithmetic');
+  assert.equal(releaseMath.truth, 'deterministic-verified');
+  assert.equal(releaseMath.answer, 'The answer is 323.');
+
   const linearResponse = await ask('A small online retailer has $10,000 to choose between Channel A and Channel B. A costs $4,000 fixed plus $20 per acquired customer. B costs $1,500 fixed plus $35 per acquired customer. At what customer count do their total costs become equal, and which is cheaper at 100 and 300 customers? Show the math clearly.');
   const linear = await linearResponse.json();
   assert.equal(linearResponse.status, 200);
