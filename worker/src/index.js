@@ -85,13 +85,21 @@ function conversationRecallAnswer(message='',history=[]){
 
 function quantifiedMultiplicationAnswer(message=''){
   const value=String(message);
-  const hasGroup=/\b(?:people|persons|workers|employees|members|mandi|servers?)\b/i.test(value);
-  const hasPer=/\b(?:each|per|okkokadu|okkokaru|okkaokadu|prathi|requests?\s*\/\s*sec|req\s*\/\s*sec)\b/i.test(value);
   const asksTotal=/\b(?:total|how many|enta|enti|entha|mottham|mottam)\b/i.test(value);
-  const nums=[...value.matchAll(/\b([0-9]+(?:\.[0-9]+)?)\b/g)].map(m=>Number(m[1])).filter(Number.isFinite);
-  if(!hasGroup||!hasPer||!asksTotal||nums.length<2)return null;
-  const result=nums[0]*nums[1];
-  if(!Number.isFinite(result))return null;
+  if(!asksTotal)return null;
+  // Bind each operand to its role. An unrelated year, deadline, or price must
+  // never become part of a "deterministic-verified" answer.
+  const groups=[...value.matchAll(/\b([0-9]+(?:\.[0-9]+)?)\s+(?:people|persons|workers|employees|members|mandi|servers?)\b/ig)];
+  const perUnits=[...value.matchAll(/\b(?:each|per|okkokadu|okkokaru|okkaokadu|prathi)\s+(?:(?:complete|do|make|perform|handle|process)(?:s)?\s+)?([0-9]+(?:\.[0-9]+)?)\b/ig)];
+  if(groups.length!==1||perUnits.length!==1)return null;
+  const years=[...value.matchAll(/\b(?:in|during)\s+((?:19|20)[0-9]{2})\b/ig)];
+  const bound=new Set([...groups,...perUnits,...years].map(m=>m.index+m[0].lastIndexOf(m[1])));
+  // Another quantity may change the requested total. Defer instead of silently
+  // ignoring it while claiming deterministic verification.
+  if([...value.matchAll(/\b[0-9]+(?:\.[0-9]+)?\b/g)].some(m=>!bound.has(m.index)))return null;
+  const groupCount=Number(groups[0][1]),perUnit=Number(perUnits[0][1]);
+  const result=groupCount*perUnit;
+  if(!Number.isFinite(result)||(Number.isInteger(result)&&!Number.isSafeInteger(result)))return null;
   const rendered=Number.isInteger(result)?String(result):String(Number(result.toFixed(10)));
   return {
     ok:true,status:'answered',
@@ -650,20 +658,61 @@ function decodeXml(value=''){
     .replace(/&quot;/g,'"').replace(/&#39;/g,"'");
 }
 
+function newsPublishedTime(value){
+  const raw=String(value||'').trim();
+  const gdelt=raw.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
+  const parsed=Date.parse(gdelt?(gdelt[1]+'-'+gdelt[2]+'-'+gdelt[3]+'T'+gdelt[4]+':'+gdelt[5]+':'+gdelt[6]+'Z'):raw);
+  return Number.isFinite(parsed)?parsed:NaN;
+}
+
+function isCurrentNewsItem(item,now){
+  if(!item?.title||!/^https:\/\//.test(String(item?.url||'')))return false;
+  const published=newsPublishedTime(item.publishedAt);
+  return Number.isFinite(published)&&published<=now+5*60*1000&&now-published<=24*60*60*1000;
+}
+
+function newsAlreadyListed(items,item){
+  const url=String(item?.url||item?.link||'').trim();
+  const title=String(item?.title||'').trim().toLowerCase().replace(/\s+/g,' ');
+  return items.some(existing=>{
+    const existingUrl=String(existing?.url||existing?.link||'').trim();
+    const existingTitle=String(existing?.title||'').trim().toLowerCase().replace(/\s+/g,' ');
+    return existingUrl===url||existingTitle===title;
+  });
+}
+async function fetchNewsSource(url,options,deadline){
+  const remaining=deadline-Date.now();
+  if(remaining<=0)throw new Error('news_feed_deadline');
+  const controller=new AbortController();
+  let timer;
+  try{
+    return await Promise.race([
+      (async()=>{
+        const response=await fetch(url,{...options,signal:controller.signal});
+        if(!response.ok)return {ok:false};
+        const body=await response.text();
+        return {ok:true,text:async()=>body,json:async()=>JSON.parse(body)};
+      })(),
+      new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new Error('news_feed_timeout'));},Math.min(1500,remaining));})
+    ]);
+  }finally{clearTimeout(timer);}
+}
 async function directNewsAnswer(message=''){
   const value=String(message);
   const asksNews=(/\b(news|developments?|headlines?|updates?)\b/i.test(value)
       || (/\b(world|global|international)\b/i.test(value)&&/\b(?:things?|stories|events?)\b/i.test(value)))
     && /\b(today|current|latest|happening\s+today|right\s+now|now)\b/i.test(value);
   if(!asksNews)return null;
+  const deadline=Date.now()+6000;
   try{
     const cacheUrl='https://raw.githubusercontent.com/pisolutions9/Pisolutions9/live-data/data/live-news.json';
-    const response=await fetch(cacheUrl,{headers:{accept:'application/json'}});
+    const response=await fetchNewsSource(cacheUrl,{headers:{accept:'application/json'}},deadline);
     if(response.ok){
       const cache=await response.json();
       const updatedAt=Date.parse(cache?.updatedAt||'');
-      const fresh=Number.isFinite(updatedAt)&&(Date.now()-updatedAt)<=45*60*1000;
-      const items=Array.isArray(cache?.items)?cache.items.filter(item=>item?.title&&/^https:\/\//.test(String(item?.url||''))&&item?.publishedAt).slice(0,3):[];
+      const now=Date.now();
+      const fresh=Number.isFinite(updatedAt)&&updatedAt<=now+5*60*1000&&now-updatedAt<=45*60*1000;
+      const items=Array.isArray(cache?.items)?cache.items.filter(item=>isCurrentNewsItem(item,now)).filter((item,index,all)=>!newsAlreadyListed(all.slice(0,index),item)).slice(0,3):[];
       if(fresh&&items.length>=3){
         const lines=items.map((item,index)=>`${index+1}. ${String(item.title).trim()} — publisher: ${String(item.source||'source').trim()}; published: ${String(item.publishedAt).trim()}.`);
         return {ok:true,status:'answered',answer:`Three current world-news developments from PI's live news cache (refreshed ${cache.updatedAt}):\n\n${lines.join('\n')}`,source:'pi-news-live-cache',truth:'live-data-response',observedAt:cache.updatedAt,sources:items.map(item=>({url:String(item.url),title:String(item.source||item.title)}))};
@@ -672,7 +721,7 @@ async function directNewsAnswer(message=''){
   }catch{}
   try{
     const endpoint='https://news.google.com/home?hl=en-US&gl=US&ceid=US:en';
-    const response=await fetch(endpoint,{headers:{accept:'text/html','user-agent':'Mozilla/5.0'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'text/html','user-agent':'Mozilla/5.0'}},deadline);
     if(response.ok){
       const html=await response.text();
       const articles=[...html.matchAll(/<article[^>]*>([\s\S]*?)<\/article>/gi)];
@@ -684,7 +733,7 @@ async function directNewsAnswer(message=''){
         const datetime=block.match(/<time[^>]*datetime="([^"]+)"/i)?.[1]||'';
         const sourceText=decodeXml((block.match(/<div[^>]*class="[^"]*(?:vr1PYe|MgUUmf)[^"]*"[^>]*>([\s\S]*?)<\/div>/i)?.[1]||'Google News').replace(/<[^>]+>/g,'')).trim()||'Google News';
         const link=href.startsWith('./')?'https://news.google.com/'+href.slice(2):href.startsWith('/')?'https://news.google.com'+href:href;
-        if(title&&/^https:\/\//.test(link)&&datetime)parsed.push({title,link,pubDate:datetime,source:sourceText});
+        if(isCurrentNewsItem({title,url:link,publishedAt:datetime},Date.now())&&!newsAlreadyListed(parsed,{title,link}))parsed.push({title,link,pubDate:datetime,source:sourceText});
         if(parsed.length===3)break;
       }
       if(parsed.length>=3){
@@ -695,7 +744,7 @@ async function directNewsAnswer(message=''){
   }catch{}
   try{
     const endpoint='https://www.bing.com/news/search?q='+encodeURIComponent('world news')+'&format=rss';
-    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}},deadline);
     if(response.ok){
       const xml=await response.text();
       const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,10);
@@ -705,7 +754,7 @@ async function directNewsAnswer(message=''){
         const title=decodeXml(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
         const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
         const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
-        if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:'Bing News'});
+        if(isCurrentNewsItem({title,url:link,publishedAt:pubDate},Date.now())&&!newsAlreadyListed(parsed,{title,link}))parsed.push({title,link,pubDate,source:'Bing News'});
         if(parsed.length===3)break;
       }
       if(parsed.length>=3){
@@ -716,8 +765,8 @@ async function directNewsAnswer(message=''){
   }catch{}
   try{
     const endpoint='https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en';
-    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
-    if(!response.ok)return null;
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}},deadline);
+    if(!response.ok)throw new Error('Google News RSS unavailable');
     const xml=await response.text();
     const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,8);
     const parsed=[];
@@ -727,7 +776,7 @@ async function directNewsAnswer(message=''){
       const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
       const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
       const source=decodeXml(block.match(/<source[^>]*>([\s\S]*?)<\/source>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
-      if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:source||'Google News source'});
+      if(isCurrentNewsItem({title,url:link,publishedAt:pubDate},Date.now())&&!newsAlreadyListed(parsed,{title,link}))parsed.push({title,link,pubDate,source:source||'Google News source'});
       if(parsed.length===3)break;
     }
     if(parsed.length>=3){
@@ -745,7 +794,7 @@ async function directNewsAnswer(message=''){
   }catch{}
   try{
     const endpoint='https://www.aljazeera.com/xml/rss/all.xml';
-    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}},deadline);
     if(response.ok){
       const xml=await response.text();
       const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,10);
@@ -755,7 +804,7 @@ async function directNewsAnswer(message=''){
         const title=decodeXml(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
         const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
         const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
-        if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:'Al Jazeera'});
+        if(isCurrentNewsItem({title,url:link,publishedAt:pubDate},Date.now())&&!newsAlreadyListed(parsed,{title,link}))parsed.push({title,link,pubDate,source:'Al Jazeera'});
         if(parsed.length===3)break;
       }
       if(parsed.length>=3){
@@ -771,7 +820,7 @@ async function directNewsAnswer(message=''){
   }catch{}
   try{
     const endpoint='https://www.theguardian.com/world/rss';
-    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}},deadline);
     if(response.ok){
       const xml=await response.text();
       const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,10);
@@ -781,7 +830,7 @@ async function directNewsAnswer(message=''){
         const title=decodeXml(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
         const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
         const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
-        if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:'The Guardian'});
+        if(isCurrentNewsItem({title,url:link,publishedAt:pubDate},Date.now())&&!newsAlreadyListed(parsed,{title,link}))parsed.push({title,link,pubDate,source:'The Guardian'});
         if(parsed.length===3)break;
       }
       if(parsed.length>=3){
@@ -797,7 +846,7 @@ async function directNewsAnswer(message=''){
   }catch{}
   try{
     const endpoint='https://feeds.bbci.co.uk/news/world/rss.xml';
-    const response=await fetch(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'application/rss+xml,application/xml,text/xml'}},deadline);
     if(response.ok){
       const xml=await response.text();
       const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,8);
@@ -807,7 +856,7 @@ async function directNewsAnswer(message=''){
         const title=decodeXml(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1]||'').replace(/<[^>]+>/g,'').trim();
         const link=decodeXml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1]||'').trim();
         const pubDate=decodeXml(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1]||'').trim();
-        if(title&&/^https:\/\//.test(link)&&pubDate)parsed.push({title,link,pubDate,source:'BBC News'});
+        if(isCurrentNewsItem({title,url:link,publishedAt:pubDate},Date.now())&&!newsAlreadyListed(parsed,{title,link}))parsed.push({title,link,pubDate,source:'BBC News'});
         if(parsed.length===3)break;
       }
       if(parsed.length>=3){
@@ -821,18 +870,19 @@ async function directNewsAnswer(message=''){
       }
     }
   }catch{}
+  if(/\b(?:exact\s+)?(?:publication|published)\s+(?:date|time)\b/i.test(value))return null;
   try{
     const endpoint='https://api.gdeltproject.org/api/v2/doc/doc?query=world&mode=artlist&format=json&maxrecords=12&timespan=1d&sort=datedesc';
-    const response=await fetch(endpoint,{headers:{accept:'application/json'}});
+    const response=await fetchNewsSource(endpoint,{headers:{accept:'application/json'}},deadline);
     if(!response.ok)return null;
     const data=await response.json();
     const articles=Array.isArray(data?.articles)?data.articles:[];
-    const parsed=articles.filter(item=>item&&item.url&&item.title&&item.seendate).slice(0,3);
+    const parsed=articles.filter(item=>isCurrentNewsItem({title:item?.title,url:item?.url,publishedAt:item?.seendate},Date.now())).filter((item,index,all)=>!newsAlreadyListed(all.slice(0,index),item)).slice(0,3);
     if(parsed.length<3)return null;
     const lines=parsed.map((item,index)=>{
       const source=String(item.domain||'GDELT source');
-      const published=String(item.seendate);
-      return `${index+1}. ${String(item.title).trim()} — source: ${source}; published: ${published} UTC.`;
+      const observed=String(item.seendate);
+      return `${index+1}. ${String(item.title).trim()} — source: ${source}; seen by GDELT: ${observed}.`;
     });
     return {
       ok:true,
@@ -912,7 +962,7 @@ async function directShoppingAnswer(env,message=''){
       const link=String(result?.link||'');
       if(!/^https:\/\//.test(link))return false;
       if(domain){
-        try{return new URL(link).hostname.endsWith(domain);}catch{return false;}
+        try{const host=new URL(link).hostname;return host===domain||host.endsWith('.'+domain);}catch{return false;}
       }
       return true;
     }).slice(0,5);
@@ -1381,7 +1431,7 @@ function json(body,status,request,extraHeaders={}){const origin=request.headers.
 function krishnaJson(body,status,request,route='general',extraHeaders={}){if(status>=200&&status<300&&body?.ok!==false){const check=validateKrishnaAnswer(body,{route});if(!check.ok)return json({ok:false,status:'answer_contract_failed',error:check.reason,answer:'PI blocked an invalid answer before it reached the customer.',truth:'unknown'},503,request,extraHeaders);}return json(body,status,request,extraHeaders);}
 function preflight(request){const origin=request.headers.get('Origin')||'';if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);return new Response(null,{status:204,headers:corsHeaders(origin)});}
 function rateLimitHeaders(response){const headers={};for(const name of['x-ratelimit-limit-requests','x-ratelimit-remaining-requests','x-ratelimit-reset-requests']){const value=response.headers.get(name);if(value)headers[name]=value;}return headers;}
-async function callProvider({apiKey,model,baseUrl,message,history=[],timeoutMs=PROVIDER_TIMEOUT_MS,useWebSearch=false,instructions=PI_INSTRUCTIONS,apiStyle='responses'}){const controller=new AbortController();const boundedTimeout=Math.max(1,Math.min(PROVIDER_TIMEOUT_MS,timeoutMs));const timer=setTimeout(()=>controller.abort(),boundedTimeout);try{const root=baseUrl.replace(/\/$/,'');if(apiStyle==='chat-completions'){if(useWebSearch)throw new Error('chat_completions_live_search_not_supported');const body={model,messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:MAX_OUTPUT_TOKENS};return await fetch(`${root}/chat/completions`,{method:'POST',headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},body:JSON.stringify(body),signal:controller.signal});}const body={model,store:false,max_output_tokens:MAX_OUTPUT_TOKENS,instructions,input:[...history,{role:'user',content:message}]};if(useWebSearch){body.tools=[{type:'web_search',search_context_size:'medium'}];body.tool_choice='required';}return await fetch(`${root}/responses`,{method:'POST',headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},body:JSON.stringify(body),signal:controller.signal});}finally{clearTimeout(timer);}}
+async function callProvider({apiKey,model,baseUrl,message,history=[],timeoutMs=PROVIDER_TIMEOUT_MS,useWebSearch=false,instructions=PI_INSTRUCTIONS,apiStyle='responses',timings=null}){const controller=new AbortController();const boundedTimeout=Math.max(1,Math.min(PROVIDER_TIMEOUT_MS,timeoutMs));const timer=setTimeout(()=>controller.abort(),boundedTimeout);const startedAt=Date.now();if(timings)timings.providerStartedAt=startedAt;try{const root=baseUrl.replace(/\/$/,'');if(apiStyle==='chat-completions'){if(useWebSearch)throw new Error('chat_completions_live_search_not_supported');const body={model,messages:[{role:'system',content:instructions},...history,{role:'user',content:message}],max_tokens:MAX_OUTPUT_TOKENS};return await fetch(`${root}/chat/completions`,{method:'POST',headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},body:JSON.stringify(body),signal:controller.signal});}const body={model,store:false,max_output_tokens:MAX_OUTPUT_TOKENS,instructions,input:[...history,{role:'user',content:message}]};if(useWebSearch){body.tools=[{type:'web_search',search_context_size:'medium'}];body.tool_choice='required';}return await fetch(`${root}/responses`,{method:'POST',headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},body:JSON.stringify(body),signal:controller.signal});}finally{clearTimeout(timer);if(timings){timings.providerMs=(timings.providerMs||0)+Date.now()-startedAt;delete timings.providerStartedAt;}}}
 function extractAnswer(body){const chat=body?.choices?.[0]?.message?.content;if(typeof chat==='string'&&chat.trim())return chat.trim();if(Array.isArray(chat)){const joined=chat.map(part=>typeof part==='string'?part:(part?.text||part?.content||'')).join('').trim();if(joined)return joined;}return body?.output_text?.trim()||body?.output?.flatMap(item=>item?.content||[]).find(part=>part?.type==='output_text')?.text?.trim();}
 function extractSources(body){const found=new Map();for(const item of body?.output||[]){if(item?.type==='web_search_call'){for(const source of item?.action?.sources||[]){if(source?.url)found.set(source.url,{url:source.url,title:source.title||source.url});}}for(const part of item?.content||[]){for(const annotation of part?.annotations||[]){const value=annotation?.url_citation||annotation;if(value?.url)found.set(value.url,{url:value.url,title:value.title||value.url});}}}return [...found.values()].slice(0,8);}
 function extractGroqSources(body){const found=new Map();for(const tool of body?.choices?.[0]?.message?.executed_tools||[]){for(const source of tool?.search_results||[]){const url=source?.url||source?.link;if(url)found.set(url,{url,title:source?.title||url});}}return [...found.values()].slice(0,8);}
@@ -1408,7 +1458,8 @@ async function runEdgeWithTimeout(env,model,message,history,{instructions=PI_INS
   finally{if(edgeInFlight.get(inFlightKey)===work)edgeInFlight.delete(inFlightKey);}
 }
 function edgeResultIncomplete(result,maxTokens){const finishReasons=[result?.finish_reason,result?.choices?.[0]?.finish_reason,result?.result?.finish_reason,result?.result?.choices?.[0]?.finish_reason];if(finishReasons.some(reason=>['length','max_tokens','max_output_tokens'].includes(reason)))return true;const usages=[result?.usage,result?.result?.usage].filter(Boolean);return usages.some(usage=>[usage.completion_tokens,usage.output_tokens,usage.tokens_generated].some(value=>Number.isFinite(value)&&value>=maxTokens));}
-async function callWorkersAI(env,message,history,{preferStrong=false,instructions=PI_INSTRUCTIONS,deadline=null,maxTokens=MAX_OUTPUT_TOKENS,fastProbeMs=EDGE_TIMEOUT_MS}={}){if(!env.AI||typeof env.AI.run!=='function')return null;const configured=env.PI_EDGE_MODEL||DEFAULT_EDGE_MODEL;const models=preferStrong
+async function callWorkersAI(env,message,history,{preferStrong=false,instructions=PI_INSTRUCTIONS,deadline=null,maxTokens=MAX_OUTPUT_TOKENS,fastProbeMs=EDGE_TIMEOUT_MS,timings=null}={}){const startedAt=Date.now();if(timings)timings.edgeStartedAt=startedAt;try{return await callWorkersAIInternal(env,message,history,{preferStrong,instructions,deadline,maxTokens,fastProbeMs});}finally{if(timings){timings.edgeMs=(timings.edgeMs||0)+Date.now()-startedAt;delete timings.edgeStartedAt;}}}
+async function callWorkersAIInternal(env,message,history,{preferStrong=false,instructions=PI_INSTRUCTIONS,deadline=null,maxTokens=MAX_OUTPUT_TOKENS,fastProbeMs=EDGE_TIMEOUT_MS}={}){if(!env.AI||typeof env.AI.run!=='function')return null;const configured=env.PI_EDGE_MODEL||DEFAULT_EDGE_MODEL;const models=preferStrong
   ? [...new Set([DEFAULT_EDGE_MODEL,configured,'@cf/openai/gpt-oss-20b','@cf/qwen/qwen3-30b-a3b-fp8','@cf/google/gemma-4-26b-a4b-it'].filter(Boolean))]
   : [...new Set([configured,...EDGE_MODEL_FALLBACKS].filter(Boolean))];
   const tryResult=async(model,rejectIfBusy,timeoutMs)=>{
@@ -1501,10 +1552,10 @@ export function edgeDeadlineForRequest(startMs,hasExternalFallback){
   return startMs+CHAT_REQUEST_BUDGET_MS-(hasExternalFallback?EXTERNAL_FALLBACK_RESERVE_MS:0);
 }
 function remainingBudget(deadline){return Math.max(0,deadline-Date.now());}
-async function produceVerifiedHardAnswerCore(env,message,history){
+async function produceVerifiedHardAnswerCore(env,message,history,timings=null){
   const overallDeadline=Date.now()+HARD_REASONING_BUDGET_MS;
   const candidateDeadline=Math.min(overallDeadline,Date.now()+HARD_CANDIDATE_STAGE_MS);
-  const first=await callWorkersAI(env,message,history,{preferStrong:true,instructions:HARD_REASONING_INSTRUCTIONS,deadline:candidateDeadline,maxTokens:HARD_CANDIDATE_TOKENS,fastProbeMs:HARD_FAST_PROBE_MS});
+  const first=await callWorkersAI(env,message,history,{preferStrong:true,instructions:HARD_REASONING_INSTRUCTIONS,deadline:candidateDeadline,maxTokens:HARD_CANDIDATE_TOKENS,fastProbeMs:HARD_FAST_PROBE_MS,timings});
   if(!first)return {rejected:true,verificationReason:'hard_candidate_unavailable'};
   if(first.incomplete)return {rejected:true,verificationReason:'hard_candidate_incomplete'};
   // Borrow unused candidate time while preserving the independent final check.
@@ -1537,13 +1588,14 @@ function hardCachePut(key,result,now=Date.now()){
   hardVerifiedCache.set(key,{result,expiresAt:now+HARD_VERIFIED_CACHE_TTL_MS});
 }
 export function resetHardAnswerCacheForTest(){hardVerifiedCache.clear();hardInFlight.clear();}
-async function produceVerifiedHardAnswer(env,message,history){
+async function produceVerifiedHardAnswer(env,message,history,timings=null){const startedAt=Date.now();if(timings)timings.verifyStartedAt=startedAt;try{return await produceVerifiedHardAnswerInternal(env,message,history,timings);}finally{if(timings){timings.verifyMs=(timings.verifyMs||0)+Date.now()-startedAt;delete timings.verifyStartedAt;}}}
+async function produceVerifiedHardAnswerInternal(env,message,history,timings=null){
   const key=JSON.stringify([message,history]);
   const cached=hardCacheGet(key);
   if(cached)return cached;
   const existing=hardInFlight.get(key);
   if(existing)return await existing;
-  const work=produceVerifiedHardAnswerCore(env,message,history);
+  const work=produceVerifiedHardAnswerCore(env,message,history,timings);
   if(hardInFlight.size>=64){
     const result=await work;
     hardCachePut(key,result);
@@ -1565,7 +1617,7 @@ function usefulProviderAnswer(answer=''){
 }
 function recoveryResponse(message,request,failure){const result=deterministicFallbackResult(message);if(!result?.answer)return null;const headers=failure?.response&&failure.failure.error==='chat_provider_rate_limited'?rateLimitHeaders(failure.response):{};return krishnaJson({ok:true,answer:result.answer,source:'pi-chat-deterministic-recovery',truth:result.verified?'deterministic-verified':'deterministic',verification:result.verification,providerFailure:failure?.failure?.error||'chat_provider_unavailable'},200,request,'general',headers);}
 export { PISessionStore };
-const piWorker={async fetch(request,env){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'external-action-boundary',run:()=>externalActionBoundaryAnswer(message)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'quantified-multiplication',run:()=>quantifiedMultiplicationAnswer(message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'system-properties',run:()=>availabilityReliabilitySecurityAnswer(message)},{name:'ecommerce-reliability',run:()=>ecommerceReliabilityDiagnosisAnswer(message)},{name:'quantum-classical',run:()=>quantumVsClassicalAnswer(message)},{name:'marketplace-architecture',run:()=>marketplaceArchitectureAnswer(message)},{name:'autonomous-agent-workflow',run:()=>autonomousAgentWorkflowAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message,history)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
+const piWorker={async fetch(request,env,telemetry=null){const url=new URL(request.url);const origin=request.headers.get('Origin')||'';if(url.pathname==='/api/session')return handleSessionRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/owner/'))return handleOwnerRequest(request,env,ALLOWED_ORIGIN);if(url.pathname.startsWith('/api/billing/'))return handleBillingRequest(request,env);if(url.pathname!=='/api/chat')return new Response('Not found',{status:404});if(origin&&origin!==ALLOWED_ORIGIN)return json({ok:false,error:'origin_not_allowed'},403,request);if(request.method==='OPTIONS')return preflight(request);if(request.method!=='POST')return json({ok:false,error:'method_not_allowed'},405,request);let payload;try{payload=await request.json();}catch{return json({ok:false,error:'invalid_json'},400,request);}const message=String(payload?.message||'').trim();if(!message)return json({ok:false,error:'message_required'},400,request);if(message.length>MAX_INPUT)return json({ok:false,error:'message_too_large'},413,request);let history=[];let attachment=null;let attachmentInfo=null;try{history=validateHistory(payload.history);attachment=validateAttachment(payload.attachment);if(!attachment){const mission=inventoryMission(message);if(mission)return json(mission,200,request);}if(attachment)attachmentInfo=await attachmentContext(env,attachment);}catch(error){const code=String(error?.message||error);const status=code==='attachment_conversion_unavailable'||code==='attachment_conversion_failed'?503:400;return json({ok:false,error:code},status,request);}const effectiveMessage=withAttachment(message,attachmentInfo);const routeStartedAt=Date.now();const krishnaDecision=await decideKrishnaRoute({message,history,attachmentInfo,directTools:[{name:'conversation-recall',run:()=>conversationRecallAnswer(message,history)},{name:'external-action-boundary',run:()=>externalActionBoundaryAnswer(message)},{name:'runtime-capabilities',run:()=>runtimeCapabilityAnswer(env,message)},{name:'quantified-multiplication',run:()=>quantifiedMultiplicationAnswer(message)},{name:'arithmetic',run:()=>deterministicArithmeticAnswer(message)},{name:'linear-cost',run:()=>linearCostComparisonAnswer(message,history)},{name:'operating-profit',run:()=>operatingProfitAnswer(message)},{name:'finance-followup',run:()=>financeFollowupAnswer(message,history)},{name:'cash-flow',run:()=>cashFlowSequenceAnswer(message,history)},{name:'causal-inference',run:()=>causalInferenceGuardAnswer(message)},{name:'false-precision',run:()=>falsePrecisionGuardAnswer(message)},{name:'runtime-clock',run:()=>runtimeClockAnswer(message)},{name:'bayes-diagnostic',run:()=>bayesDiagnosticAnswer(message)},{name:'system-properties',run:()=>availabilityReliabilitySecurityAnswer(message)},{name:'ecommerce-reliability',run:()=>ecommerceReliabilityDiagnosisAnswer(message)},{name:'quantum-classical',run:()=>quantumVsClassicalAnswer(message)},{name:'marketplace-architecture',run:()=>marketplaceArchitectureAnswer(message)},{name:'autonomous-agent-workflow',run:()=>autonomousAgentWorkflowAnswer(message)},{name:'database-migration-architecture',run:()=>databaseMigrationArchitectureAnswer(message)},{name:'payment-inventory-architecture',run:()=>paymentInventoryArchitectureAnswer(message)},{name:'payment-safety',run:()=>paymentRetrySafetyAnswer(message)},{name:'runway-scenarios',run:()=>deterministicRunwayScenarioAnswer(message)},{name:'weather',run:()=>directWeatherAnswer(message,history)},{name:'news',run:()=>((/\b(world|global|international)\b/i.test(message)||(!env.OPENAI_API_KEY&&!env.GROQ_API_KEY))?directNewsAnswer(message):null)},{name:'shopping',run:()=>directShoppingAnswer(env,message)}],requiresLiveEvidence:requiresLiveEvidenceForRequest,requiresHardReasoning});if(telemetry)telemetry.routeMs=Date.now()-routeStartedAt;if(krishnaDecision.route==='direct')return krishnaJson(krishnaDecision.result,200,request,'direct');if(krishnaDecision.route==='live'){
   let lastLiveFailure=null;
   if(env.OPENAI_API_KEY&&providerAvailable('openai')){
     const models=[...new Set([env.PI_WEB_MODEL,env.PI_CHAT_MODEL,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];
@@ -1573,6 +1625,7 @@ const piWorker={async fetch(request,env){const url=new URL(request.url);const or
       try{
         const response=await callProvider({
           apiKey:env.OPENAI_API_KEY,
+          timings:telemetry,
           model,
           baseUrl:'https://api.openai.com/v1',
           message:effectiveMessage,
@@ -1607,6 +1660,7 @@ const piWorker={async fetch(request,env){const url=new URL(request.url);const or
       const model=env.PI_GROQ_WEB_MODEL||'groq/compound-mini';
       const response=await callProvider({
         apiKey:env.GROQ_API_KEY,
+        timings:telemetry,
         model,
         baseUrl:'https://api.groq.com/openai/v1',
         message:effectiveMessage,
@@ -1642,16 +1696,17 @@ const piWorker={async fetch(request,env){const url=new URL(request.url);const or
   const headers=lastLiveFailure?.response&&failure.error==='chat_provider_rate_limited'?rateLimitHeaders(lastLiveFailure.response):{};
   const shoppingFallback=shoppingSearchLinkAnswer(message);
   if(shoppingFallback)return krishnaJson(shoppingFallback,200,request,'live',headers);
-  return json({ok:false,status:'live_evidence_required',error:failure.error,answer:'PI could not verify current information from the available live research providers, so it will not guess.',truth:'unknown'},failure.status||503,request,headers);
+  return json({ok:false,status:'live_evidence_required',error:failure.error,answer:'PI could not verify current information from the available live research providers, so it will not guess.',truth:'unknown'},503,request,headers);
 }
 if(krishnaDecision.route==='hard'){
-  const verified=await produceVerifiedHardAnswer(env,effectiveMessage,history);
+  const verified=await produceVerifiedHardAnswer(env,effectiveMessage,history,telemetry);
   if(verified?.verified)return krishnaJson({ok:true,status:'answered',answer:verified.answer,source:`pi-chat-cloudflare-ai:${verified.model}`,truth:'verified-model-response',verification:'independent-pass'},200,request,'hard');
   if(verified?.provisional){const runwayFallback=runwaySafetyFallback(effectiveMessage);if(runwayFallback)return krishnaJson(runwayFallback,200,request,'hard');return krishnaJson({ok:true,status:'answered',answer:verified.answer,source:`pi-chat-cloudflare-ai:${verified.model}`,truth:'provisional-model-response',verification:'not-completed',verificationReason:verified.verificationReason},200,request,'hard');}
   if(env.PI_FALLBACK_API_KEY&&env.PI_FALLBACK_API_URL&&env.PI_FALLBACK_MODEL){
     try{
       const response=await callProvider({
         apiKey:env.PI_FALLBACK_API_KEY,
+        timings:telemetry,
         model:env.PI_FALLBACK_MODEL,
         baseUrl:env.PI_FALLBACK_API_URL,
         message:effectiveMessage,
@@ -1672,7 +1727,7 @@ if(krishnaDecision.route==='hard'){
   const verificationReason=verified?.verificationReason||'material_verification_defect';
   return json({ok:false,status:'verification_failed',error:'hard_reasoning_not_verified',answer:'PI found a material verification problem and will not present that draft as reliable.',truth:'unknown',verificationReason},503,request);
 }
-const requestStartedAt=Date.now();const deadline=requestStartedAt+CHAT_REQUEST_BUDGET_MS;const hasExternalFallback=Boolean(env.OPENAI_API_KEY||env.GROQ_API_KEY||env.OPENROUTER_API_KEY||(env.PI_FALLBACK_API_KEY&&env.PI_FALLBACK_API_URL&&env.PI_FALLBACK_MODEL));const edgeDeadline=edgeDeadlineForRequest(requestStartedAt,hasExternalFallback);const edgeResult=await callWorkersAI(env,effectiveMessage,history,{deadline:edgeDeadline});if(edgeResult)return krishnaJson({ok:!edgeResult.incomplete,status:edgeResult.incomplete?'incomplete':'answered',answer:edgeResult.answer,source:`pi-chat-cloudflare-ai:${edgeResult.model}`,truth:attachmentInfo?'file-grounded-model-response':'model-response',...(attachmentInfo?{attachment:{name:attachmentInfo.name,mimeType:attachmentInfo.mimeType,truncated:attachmentInfo.truncated}}:{})},200,request,'general');if(remainingBudget(deadline)<=0)return json({ok:false,status:'provider_timeout',error:'customer_request_deadline_exceeded',answer:'PI could not complete this answer within the safe response window. Please try again.',truth:'unknown'},503,request);const providers=[];if(env.OPENAI_API_KEY){const configured=env.PI_CHAT_MODEL;const models=[...new Set([configured,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];for(const model of models)providers.push({vendor:'openai',name:`openai:${model}`,apiKey:env.OPENAI_API_KEY,model,baseUrl:'https://api.openai.com/v1'});}if(env.GROQ_API_KEY)providers.push({vendor:'groq',name:`groq:${env.PI_GROQ_MODEL||'openai/gpt-oss-20b'}`,apiKey:env.GROQ_API_KEY,model:env.PI_GROQ_MODEL||'openai/gpt-oss-20b',baseUrl:'https://api.groq.com/openai/v1',apiStyle:'chat-completions'});if(env.OPENROUTER_API_KEY)providers.push({vendor:'openrouter',name:`openrouter:${env.PI_OPENROUTER_MODEL||'openrouter/free'}`,apiKey:env.OPENROUTER_API_KEY,model:env.PI_OPENROUTER_MODEL||'openrouter/free',baseUrl:'https://openrouter.ai/api/v1',apiStyle:'chat-completions'});if(env.PI_FALLBACK_API_KEY&&env.PI_FALLBACK_API_URL&&env.PI_FALLBACK_MODEL)providers.push({vendor:'independent-fallback',name:'fallback',apiKey:env.PI_FALLBACK_API_KEY,model:env.PI_FALLBACK_MODEL,baseUrl:env.PI_FALLBACK_API_URL,apiStyle:env.PI_FALLBACK_API_STYLE||'responses'});let lastFailure={failure:{error:'edge_model_unavailable',status:503},provider:'cloudflare-ai'};const exhaustedVendors=new Set();for(const provider of providers){if(exhaustedVendors.has(provider.vendor)||!providerAvailable(provider.vendor))continue;try{const timeLeft=remainingBudget(deadline);if(timeLeft<=0)break;const response=await callProvider({...provider,message:effectiveMessage,history,timeoutMs:timeLeft});if(!response.ok){const failure=await providerError(response);lastFailure={response,failure,provider:provider.name};markProviderFailure(provider.vendor,failure.error);if(failure.error==='chat_provider_quota_exhausted'){exhaustedVendors.add(provider.vendor);continue;}if(response.status===429||response.status>=500||response.status===404)continue;const recovered=recoveryResponse(effectiveMessage,request,lastFailure);return recovered||json({ok:false,error:lastFailure.failure.error},lastFailure.failure.status,request);}markProviderSuccess(provider.vendor);const body=await response.json();const answer=extractAnswer(body);if(!answer){lastFailure={failure:{error:'empty_model_response',status:502},provider:provider.name};continue;}if(!usefulProviderAnswer(answer)){lastFailure={failure:{error:'low_quality_model_response',status:502},provider:provider.name};markProviderFailure(provider.vendor,'low_quality_model_response');continue;}return krishnaJson({ok:body.status!=='incomplete',status:body.status==='incomplete'?'incomplete':'answered',answer,source:`pi-chat-${provider.name}`,truth:['openrouter','independent-fallback'].includes(provider.vendor)?'provisional-model-response':attachmentInfo?'file-grounded-model-response':'model-response',...(['openrouter','independent-fallback'].includes(provider.vendor)?{verification:'not-completed'}:{}),...(attachmentInfo?{attachment:{name:attachmentInfo.name,mimeType:attachmentInfo.mimeType,truncated:attachmentInfo.truncated}}:{})},200,request,'general');}catch{markProviderFailure(provider.vendor,'chat_provider_network_error');lastFailure={failure:{error:'chat_provider_network_error',status:503},provider:provider.name};}}const recovered=recoveryResponse(effectiveMessage,request,lastFailure);if(recovered)return recovered;const failure=lastFailure.failure||{error:'chat_provider_unavailable',status:503};const headers=lastFailure.response&&failure.error==='chat_provider_rate_limited'?rateLimitHeaders(lastFailure.response):{};return json({ok:false,error:failure.error},failure.status,request,headers);}};
+const requestStartedAt=Date.now();const deadline=requestStartedAt+CHAT_REQUEST_BUDGET_MS;const hasExternalFallback=Boolean(env.OPENAI_API_KEY||env.GROQ_API_KEY||env.OPENROUTER_API_KEY||(env.PI_FALLBACK_API_KEY&&env.PI_FALLBACK_API_URL&&env.PI_FALLBACK_MODEL));const edgeDeadline=edgeDeadlineForRequest(requestStartedAt,hasExternalFallback);const edgeResult=await callWorkersAI(env,effectiveMessage,history,{deadline:edgeDeadline,timings:telemetry});if(edgeResult)return krishnaJson({ok:!edgeResult.incomplete,status:edgeResult.incomplete?'incomplete':'answered',answer:edgeResult.answer,source:`pi-chat-cloudflare-ai:${edgeResult.model}`,truth:attachmentInfo?'file-grounded-model-response':'model-response',...(attachmentInfo?{attachment:{name:attachmentInfo.name,mimeType:attachmentInfo.mimeType,truncated:attachmentInfo.truncated}}:{})},200,request,'general');if(remainingBudget(deadline)<=0)return json({ok:false,status:'provider_timeout',error:'customer_request_deadline_exceeded',answer:'PI could not complete this answer within the safe response window. Please try again.',truth:'unknown'},503,request);const providers=[];if(env.OPENAI_API_KEY){const configured=env.PI_CHAT_MODEL;const models=[...new Set([configured,...OPENAI_MODEL_FALLBACKS].filter(Boolean))];for(const model of models)providers.push({vendor:'openai',name:`openai:${model}`,apiKey:env.OPENAI_API_KEY,model,baseUrl:'https://api.openai.com/v1'});}if(env.GROQ_API_KEY)providers.push({vendor:'groq',name:`groq:${env.PI_GROQ_MODEL||'openai/gpt-oss-20b'}`,apiKey:env.GROQ_API_KEY,model:env.PI_GROQ_MODEL||'openai/gpt-oss-20b',baseUrl:'https://api.groq.com/openai/v1',apiStyle:'chat-completions'});if(env.OPENROUTER_API_KEY)providers.push({vendor:'openrouter',name:`openrouter:${env.PI_OPENROUTER_MODEL||'openrouter/free'}`,apiKey:env.OPENROUTER_API_KEY,model:env.PI_OPENROUTER_MODEL||'openrouter/free',baseUrl:'https://openrouter.ai/api/v1',apiStyle:'chat-completions'});if(env.PI_FALLBACK_API_KEY&&env.PI_FALLBACK_API_URL&&env.PI_FALLBACK_MODEL)providers.push({vendor:'independent-fallback',name:'fallback',apiKey:env.PI_FALLBACK_API_KEY,model:env.PI_FALLBACK_MODEL,baseUrl:env.PI_FALLBACK_API_URL,apiStyle:env.PI_FALLBACK_API_STYLE||'responses'});let lastFailure={failure:{error:'edge_model_unavailable',status:503},provider:'cloudflare-ai'};const exhaustedVendors=new Set();for(const provider of providers){if(exhaustedVendors.has(provider.vendor)||!providerAvailable(provider.vendor))continue;try{const timeLeft=remainingBudget(deadline);if(timeLeft<=0)break;const response=await callProvider({...provider,message:effectiveMessage,history,timeoutMs:timeLeft,timings:telemetry});if(!response.ok){const failure=await providerError(response);lastFailure={response,failure,provider:provider.name};markProviderFailure(provider.vendor,failure.error);if(failure.error==='chat_provider_quota_exhausted'){exhaustedVendors.add(provider.vendor);continue;}if(response.status===429||response.status>=500||response.status===404)continue;const recovered=recoveryResponse(effectiveMessage,request,lastFailure);return recovered||json({ok:false,error:lastFailure.failure.error},lastFailure.failure.status,request);}markProviderSuccess(provider.vendor);const body=await response.json();const answer=extractAnswer(body);if(!answer){lastFailure={failure:{error:'empty_model_response',status:502},provider:provider.name};continue;}if(!usefulProviderAnswer(answer)){lastFailure={failure:{error:'low_quality_model_response',status:502},provider:provider.name};markProviderFailure(provider.vendor,'low_quality_model_response');continue;}return krishnaJson({ok:body.status!=='incomplete',status:body.status==='incomplete'?'incomplete':'answered',answer,source:`pi-chat-${provider.name}`,truth:['openrouter','independent-fallback'].includes(provider.vendor)?'provisional-model-response':attachmentInfo?'file-grounded-model-response':'model-response',...(['openrouter','independent-fallback'].includes(provider.vendor)?{verification:'not-completed'}:{}),...(attachmentInfo?{attachment:{name:attachmentInfo.name,mimeType:attachmentInfo.mimeType,truncated:attachmentInfo.truncated}}:{})},200,request,'general');}catch{markProviderFailure(provider.vendor,'chat_provider_network_error');lastFailure={failure:{error:'chat_provider_network_error',status:503},provider:provider.name};}}const recovered=recoveryResponse(effectiveMessage,request,lastFailure);if(recovered)return recovered;const failure=lastFailure.failure||{error:'chat_provider_unavailable',status:503};const headers=lastFailure.response&&failure.error==='chat_provider_rate_limited'?rateLimitHeaders(lastFailure.response):{};return json({ok:false,error:failure.error},failure.status,request,headers);}};
 export function validateHistory(history) {
  if(history===undefined)return [];
  if(!Array.isArray(history)||history.length>20)throw new Error('history_invalid');
@@ -1704,13 +1759,14 @@ export default{
     if(new URL(request.url).pathname!=='/api/chat')return piWorker.fetch(request,env);
     const requestId=crypto.randomUUID();
     const startedAt=Date.now();
+    const telemetry={};
     console.log(JSON.stringify({event:'pi_chat_ingress',requestId}));
     let payload={};
     request.clone().json().then(value=>{payload=value;}).catch(()=>{});
     let outcome='response';
     let response;
     try{
-      response=await withResponseDeadline(piWorker.fetch(request,env),CHAT_REQUEST_BUDGET_MS-500,()=>{
+      response=await withResponseDeadline(piWorker.fetch(request,env,telemetry),CHAT_REQUEST_BUDGET_MS-500,()=>{
         outcome='deadline';
         return chatDeadlineResponse(request,payload);
       });
@@ -1720,8 +1776,16 @@ export default{
     }
     const durationMs=Date.now()-startedAt;
     response.headers.set('x-pi-request-id',requestId);
-    response.headers.set('server-timing',`pi_chat;dur=${durationMs}`);
-    console.log(JSON.stringify({event:'pi_chat_boundary',requestId,durationMs,status:response.status,outcome}));
+    const timingNow=Date.now();const edgeMs=stageDurationMs(telemetry,'edge',timingNow);const providerMs=stageDurationMs(telemetry,'provider',timingNow);const verifyMs=stageDurationMs(telemetry,'verify',timingNow);const timings=[`pi_chat;dur=${durationMs}`];for(const [name,value] of [['pi_route',telemetry.routeMs],['pi_edge',edgeMs],['pi_verify',verifyMs],['pi_provider',providerMs]])if(Number.isFinite(value))timings.push(`${name};dur=${Math.max(0,Math.round(value))}`);response.headers.set('server-timing',timings.join(', '));
+    console.log(JSON.stringify({event:'pi_chat_boundary',requestId,durationMs,routeMs:telemetry.routeMs??null,edgeMs:edgeMs??null,verifyMs:verifyMs??null,providerMs:providerMs??null,status:response.status,outcome}));
     return response;
   }
 };
+
+// Include completed attempts and the active attempt when the response deadline wins.
+export function stageDurationMs(timings,stage,now){
+  const completed=timings[`${stage}Ms`];
+  const started=timings[`${stage}StartedAt`];
+  if(!Number.isFinite(completed)&&!Number.isFinite(started))return undefined;
+  return (Number.isFinite(completed)?Math.max(0,completed):0)+(Number.isFinite(started)?Math.max(0,now-started):0);
+}

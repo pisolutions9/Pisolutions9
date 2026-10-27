@@ -26,3 +26,6 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Run V1.02 core regression suite
         run: npm run test:v1.02
+      - name: Pre-deploy configuration validation (provider-free)
+        working-directory: worker
+        run: node scripts/validate-deploy-configuration-test.mjs

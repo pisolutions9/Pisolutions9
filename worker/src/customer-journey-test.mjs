@@ -8,8 +8,8 @@ const env = { AI:{run:async(model,input,options)=>{seen=input;seenModel=model;se
 const history=[{role:'user',content:'My budget is 73000 rupees.'},{role:'assistant',content:'Understood.'}];
 let result=await (await worker.fetch(request({message:'What was my budget?',history}),env)).json();
 assert.equal(result.truth,'conversation-grounded');assert.match(result.answer,/73000/);
-const modelResult=await (await worker.fetch(request({message:'Explain why customer retention matters.',history}),env)).json();
-assert.equal(modelResult.truth,'model-response');assert.deepEqual(seen.messages.slice(1,-1),history);
+const modelResponse=await worker.fetch(request({message:'Explain why customer retention matters.',history}),env);const modelResult=await modelResponse.json();
+assert.equal(modelResult.truth,'model-response');assert.match(modelResponse.headers.get('server-timing')||'',/pi_route;dur=\d+, pi_edge;dur=\d+/);assert.deepEqual(seen.messages.slice(1,-1),history);
 assert.equal(seen.max_tokens,1200);assert.equal(seenOptions.rejectIfBusy,true);assert.equal(seenOptions.gateway.id,'default');assert.equal(seenOptions.gateway.cacheTtl,300);assert.match(seenOptions.gateway.cacheKey,/^pi-v1-[0-9a-f]{64}$/);
 const recallHistory=[{role:'user',content:'Remember: project code ORCHID-7319, budget 73000 rupees, deadline 14 November. Reply with the project code only.'},{role:'assistant',content:'ORCHID-7319'}];
 const recall=await (await worker.fetch(request({message:'What project code, budget, and deadline did I give you?',history:recallHistory}),env)).json();
@@ -61,7 +61,7 @@ const correctionEnv={AI:{run:async(model,input)=>{
 }}};
 const corrected=await worker.fetch(request({message:'Calculate a Bayesian posterior probability and show enough calculations to audit the answer.'}),correctionEnv);
 const correctedBody=await corrected.json();
-assert.equal(corrected.status,200);assert.equal(correctedBody.truth,'verified-model-response');assert.equal(correctedBody.verification,'independent-pass');
+assert.equal(corrected.status,200);assert.match(corrected.headers.get('server-timing')||'',/pi_verify;dur=\d+/);assert.equal(correctedBody.truth,'verified-model-response');assert.equal(correctedBody.verification,'independent-pass');
 assert.match(correctedBody.answer,/67\.37%/);assert.equal(correctionCalls.length,3);
 assert.equal(correctionCalls[0].model,'@cf/zai-org/glm-4.7-flash');
 assert.equal(correctionCalls[1].model,'@cf/meta/llama-3.1-8b-instruct-fast');
@@ -118,6 +118,7 @@ globalThis.fetch=originalFetch;
 assert.equal(researchedResponse.status,200);
 assert.equal(researchedBody.ok,true);
 assert.equal(researchedBody.truth,'web-grounded-model-response');
+assert.match(researchedResponse.headers.get('server-timing')||'',/pi_provider;dur=\d+/);
 
 assert.equal(researchedBody.sources[0].url,'https://weather.example/source');
 

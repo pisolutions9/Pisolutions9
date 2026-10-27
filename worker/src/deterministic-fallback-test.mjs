@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { deterministicFallback, deterministicFallbackResult } from './deterministic-fallback.mjs';
+import { deterministicArithmetic, deterministicFallback, deterministicFallbackResult } from './deterministic-fallback.mjs';
 
 assert.equal(deterministicFallback('What is 2 plus 2?'), 'The answer is 4.');
 assert.match(deterministicFallback('Why is the sky blue?'), /scatters shorter blue wavelengths/);
@@ -52,3 +52,11 @@ assert.equal(genericUnavailable.verified, false);
 assert.equal(genericUnavailable.verification, 'unverified-generic-recovery');
 
 console.log('Curated deterministic recovery metadata tests passed.');
+
+assert.equal(deterministicArithmetic('Calculate 17 * 19.'), '323');
+assert.equal(deterministicArithmetic('What is 17 plus 25?'), '42');
+assert.equal(deterministicArithmetic('17 * 19. explain'), null);
+assert.equal(deterministicArithmetic('17 * 19..'), null);
+assert.equal(deterministicArithmetic('17 * 19,'), null);
+console.log('Arithmetic sentence punctuation regressions passed.');
+

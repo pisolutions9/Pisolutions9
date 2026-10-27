@@ -277,6 +277,19 @@ try {
   assert.match(shopping.answer,/live shopping results from the web/i);
   assert.equal(shopping.sources?.[0]?.url,'https://shop.example/laptop-a');
   assert.equal(shopping.sources?.[0]?.title,'Laptop A - $649');
+  globalThis.fetch = async url => {
+    assert.match(String(url),/^https:\/\/serpapi\.com\/search\.json\?/);
+    return new Response(JSON.stringify({organic_results:[
+      {title:'Impersonating Amazon',link:'https://notamazon.com/product',snippet:'Fake listing'},
+      {title:'Amazon Marketplace',link:'https://amazon.com/product',snippet:'Valid listing'},
+      {title:'Amazon Store',link:'https://www.amazon.com/product',snippet:'Valid listing'}
+    ]}),{status:200,headers:{'content-type':'application/json'}});
+  };
+  const retailerResponse=await ask('Find a stainless steel water bottle currently available on Amazon and give the product link.',{SERPAPI_API_KEY:'serp-test-key'});
+  const retailer=await retailerResponse.json();
+  assert.equal(retailerResponse.status,200);
+  assert.equal(retailer.source,'pi-shopping-serpapi');
+  assert.deepEqual(retailer.sources.map(source=>source.url),['https://amazon.com/product','https://www.amazon.com/product']);
 
   globalThis.fetch = async () => { throw new Error('network must not be used by deterministic capabilities'); };
   const searchResponse = await ask('Find me a stainless steel water bottle currently available on Amazon and give me the product link.');

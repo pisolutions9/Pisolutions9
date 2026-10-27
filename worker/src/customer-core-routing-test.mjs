@@ -44,6 +44,17 @@ assert.equal(teluguMath.body.source,'pi-deterministic-quantified-multiplication'
 assert.equal(teluguMath.body.truth,'deterministic-verified');
 assert.match(teluguMath.body.answer,/406/);
 
+const datedMath=await ask('In 2026, 29 people each complete 14 checks. What is the total number of checks?');
+assert.equal(datedMath.status,200);
+assert.equal(datedMath.body.source,'pi-deterministic-quantified-multiplication');
+assert.equal(datedMath.body.truth,'deterministic-verified');
+assert.equal(datedMath.body.answer,'The total is 406.');
+const ambiguousMath=await ask('29 people each complete 14 checks and 37 servers each handle 460 requests. What is the total?');
+assert.notEqual(ambiguousMath.body.source,'pi-deterministic-quantified-multiplication');
+assert.notEqual(ambiguousMath.body.truth,'deterministic-verified');
+const bonusMath=await ask('In 2026, 29 people each complete 14 checks, plus 5 bonus checks. What is the total number of checks?');
+assert.notEqual(bonusMath.body.source,'pi-deterministic-quantified-multiplication');
+assert.notEqual(bonusMath.body.truth,'deterministic-verified');
 const resetMath=await ask('postgres migration gurinchi vadiley. 37 servers each 460 req/sec total enta?');
 assert.equal(resetMath.status,200);
 assert.equal(resetMath.body.source,'pi-deterministic-quantified-multiplication');
@@ -62,4 +73,106 @@ assert.equal(typoShopping.body.source,'pi-shopping-search-link');
 assert.equal(typoShopping.body.truth,'retailer-search-link');
 assert.match(typoShopping.body.answer,/not independently verified/i);
 
+const originalFetch=globalThis.fetch;
+const currentNewsTime=new Date();
+const recentPublished=new Date(currentNewsTime.getTime()-30*60*1000).toISOString();
+const oldPublished=new Date(currentNewsTime.getTime()-3*24*60*60*1000).toISOString();
+const newsItem=(number,publishedAt)=>({title:'Headline '+number,url:'https://example.com/news/'+number,source:'Example',publishedAt});
+try{
+  let cacheItems=[
+    newsItem(1,oldPublished),
+    newsItem(2,recentPublished),
+    newsItem(3,recentPublished.replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z')),
+    newsItem(4,new Date(currentNewsTime.getTime()-45*60*1000).toUTCString())
+  ];
+  globalThis.fetch=async url=>{
+    if(String(url).includes('/live-news.json'))return new Response(JSON.stringify({updatedAt:currentNewsTime.toISOString(),items:cacheItems}),{status:200});
+    return new Response('unavailable',{status:503});
+  };
+  const freshNews=await ask('What are the latest world news developments today?');
+  assert.equal(freshNews.body.source,'pi-news-live-cache');
+  assert.equal(freshNews.body.truth,'live-data-response');
+  assert.doesNotMatch(freshNews.body.answer,/Headline 1/);
+  assert.match(freshNews.body.answer,/Headline 2/);
+  assert.match(freshNews.body.answer,/Headline 3/);
+  assert.match(freshNews.body.answer,/Headline 4/);
+  cacheItems=[newsItem(2,recentPublished),newsItem(2,recentPublished),newsItem(2,recentPublished)];
+  const duplicateCache=await ask('What are the latest world news developments today?');
+  assert.notEqual(duplicateCache.body.truth,'live-data-response','one repeated cache story is not three developments');
+  cacheItems=[newsItem(1,oldPublished),newsItem(2,oldPublished),newsItem(3,oldPublished)];
+  const staleNews=await ask('What are the latest world news developments today?');
+  assert.notEqual(staleNews.body.source,'pi-news-live-cache');
+  assert.notEqual(staleNews.body.truth,'live-data-response');
+  const rssItem=(number,date)=>`<item><title>RSS headline ${number}</title><link>https://example.com/rss/${number}</link><pubDate>${date}</pubDate></item>`;
+  let rss=`<rss><channel>${[1,2,3].map(number=>rssItem(number,new Date(currentNewsTime.getTime()-3*24*60*60*1000).toUTCString())).join('')}</channel></rss>`;
+  globalThis.fetch=async url=>String(url).includes('bing.com/news/search')
+    ?new Response(rss,{status:200})
+    :new Response('unavailable',{status:503});
+  const staleRss=await ask('What are the latest world news developments today?');
+  assert.notEqual(staleRss.body.truth,'live-data-response','an old RSS feed must not be presented as current news');
+  rss=`<rss><channel>${rssItem(1,new Date(currentNewsTime.getTime()-3*24*60*60*1000).toUTCString())}${[2,3,4].map(number=>rssItem(number,new Date(currentNewsTime.getTime()-30*60*1000).toUTCString())).join('')}</channel></rss>`;
+  const mixedRss=await ask('What are the latest world news developments today?');
+  assert.equal(mixedRss.body.source,'pi-news-bing-rss');
+  assert.doesNotMatch(mixedRss.body.answer,/RSS headline 1/);
+  assert.match(mixedRss.body.answer,/RSS headline 4/);
+  rss=`<rss><channel>${[1,1,1,2,3].map(number=>rssItem(number,new Date(currentNewsTime.getTime()-30*60*1000).toUTCString())).join('')}</channel></rss>`;
+  const duplicateRss=await ask('What are the latest world news developments today?');
+  assert.equal(duplicateRss.body.source,'pi-news-bing-rss');
+  assert.deepEqual(duplicateRss.body.sources.map(source=>source.url),[1,2,3].map(number=>'https://example.com/rss/'+number),'RSS must gather three distinct developments');
+  const gdeltArticles=[1,2,3].map(number=>({title:'GDELT headline '+number,url:'https://example.com/gdelt/'+number,domain:'example.com',seendate:recentPublished.replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z')}));
+  globalThis.fetch=async url=>String(url).includes('api.gdeltproject.org')
+    ?new Response(JSON.stringify({articles:gdeltArticles}),{status:200})
+    :new Response('unavailable',{status:503});
+  const observedNews=await ask('What are the latest world news developments today?');
+  assert.equal(observedNews.body.source,'pi-news-gdelt');
+  assert.match(observedNews.body.answer,/seen by GDELT/i);
+  assert.doesNotMatch(observedNews.body.answer,/published:/i);
+  gdeltArticles.splice(1,2,gdeltArticles[0],gdeltArticles[0]);
+  const duplicateGdelt=await ask('What are the latest world news developments today?');
+  assert.notEqual(duplicateGdelt.body.truth,'live-data-response','one GDELT observation is not three developments');
+  gdeltArticles.splice(1,2,
+    {title:'GDELT headline 2',url:'https://example.com/gdelt/2',domain:'example.com',seendate:recentPublished.replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z')},
+    {title:'GDELT headline 3',url:'https://example.com/gdelt/3',domain:'example.com',seendate:recentPublished.replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z')});
+  const exactPublication=await ask('What are the latest world news developments today? Give exact publication time and source for every claim.');
+  assert.notEqual(exactPublication.body.truth,'live-data-response','GDELT observation time does not prove exact publication time');
+  const recentRss=`<rss><channel>${[1,2,3].map(number=>rssItem(number,new Date(currentNewsTime.getTime()-30*60*1000).toUTCString())).join('')}</channel></rss>`;
+  globalThis.fetch=async url=>String(url).includes('/live-news.json')
+    ?new Promise(()=>{})
+    :String(url).includes('bing.com/news/search')
+      ?new Response(recentRss,{status:200})
+      :new Response('unavailable',{status:503});
+  let stalledNewsTimer;
+  try{
+    const stalledNews=await Promise.race([
+      ask('What are the latest world news developments today?'),
+      new Promise(resolve=>{stalledNewsTimer=setTimeout(()=>resolve({timeout:true}),2800);})
+    ]);
+    assert.equal(stalledNews.body?.source,'pi-news-bing-rss','a hung news cache must not block fallback feeds');
+  }finally{clearTimeout(stalledNewsTimer);}
+  globalThis.fetch=async url=>String(url).includes('/live-news.json')
+    ?new Response(new ReadableStream({start(){}}),{status:200})
+    :String(url).includes('bing.com/news/search')
+      ?new Response(recentRss,{status:200})
+      :new Response('unavailable',{status:503});
+  let stalledBodyTimer;
+  try{
+    const stalledBody=await Promise.race([
+      ask('What are the latest world news developments today?'),
+      new Promise(resolve=>{stalledBodyTimer=setTimeout(()=>resolve({timeout:true}),2800);})
+    ]);
+    assert.equal(stalledBody.body?.source,'pi-news-bing-rss','a stalled news body must not block fallback feeds');
+  }finally{clearTimeout(stalledBodyTimer);}
+  globalThis.fetch=async()=>new Promise(()=>{});
+  let allHungTimer;
+  try{
+    const allHung=await Promise.race([
+      ask('What are the latest world news developments today?'),
+      new Promise(resolve=>{allHungTimer=setTimeout(()=>resolve({timeout:true}),7200);})
+    ]);
+    assert.equal(allHung.status,503,'all hung news sources must fail closed within the news deadline');
+    assert.notEqual(allHung.body?.truth,'live-data-response');
+  }finally{clearTimeout(allHungTimer);}
+}finally{
+  globalThis.fetch=originalFetch;
+}
 console.log('customer core routing regression: ok');
