@@ -1642,7 +1642,10 @@ const piWorker={async fetch(request,env){const url=new URL(request.url);const or
   const headers=lastLiveFailure?.response&&failure.error==='chat_provider_rate_limited'?rateLimitHeaders(lastLiveFailure.response):{};
   const shoppingFallback=shoppingSearchLinkAnswer(message);
   if(shoppingFallback)return krishnaJson(shoppingFallback,200,request,'live',headers);
-  return json({ok:false,status:'live_evidence_required',error:failure.error,answer:'PI could not verify current information from the available live research providers, so it will not guess.',truth:'unknown'},failure.status||503,request,headers);
+  // A failed upstream gateway is a verification outage for this API, not a
+  // successful live answer. Keep the refusal truthful and use the same 503
+  // boundary as other unavailable live-evidence paths.
+  return json({ok:false,status:'live_evidence_required',error:failure.error,answer:'PI could not verify current information from the available live research providers, so it will not guess.',truth:'unknown'},503,request,headers);
 }
 if(krishnaDecision.route==='hard'){
   const verified=await produceVerifiedHardAnswer(env,effectiveMessage,history);
