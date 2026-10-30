@@ -1,0 +1,6 @@
+{
+  "provenance": "synthetic-fixture",
+  "label": "A: concentrated holding falls",
+  "at": "2026-10-29T15:00:00.000Z",
+  "prices": { "AAPL": 232.3, "MSFT": 428.4, "VTI": 279.3, "NVDA": 94.5, "SCHD": 28.56 }
+}

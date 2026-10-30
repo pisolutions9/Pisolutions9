@@ -1,0 +1,6 @@
+# Fresh threat review regressions run against PR #224 head 6a370f8 (before fixes), 2026-10-30
+FAIL R1 compound order-shaped schema fields are refused even when pinned: called despite symbols,orderQuantity
+FAIL R2 reconnect after tool drift does not keep a stale route: stale route still callable after drift
+FAIL R3 an allowlist edit alone does not enable live access: edited allowlist reached the network 1 time(s) without owner digest confirmation (threw:network_failure)
+{"suite":"pi-investment-lab-adversarial","failed":["R1 compound order-shaped schema fields are refused even when pinned","R2 reconnect after tool drift does not keep a stale route","R3 an allowlist edit alone does not enable live access"]}
+FAIL R4 (pi/investment-lab/investment-lab-test.mjs): no pull_request workflow runs npm run test:investment-lab for pi/investment-lab/** changes

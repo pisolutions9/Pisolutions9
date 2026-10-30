@@ -1,0 +1,33 @@
+{
+  "record": {
+    "schema": "pi.investment-lab.decision-proof.v1",
+    "provenance": "synthetic-fixture",
+    "at": "2026-10-01T12:00:00.000Z",
+    "capital": 1000,
+    "candidate": {
+      "symbol": "FOCUS",
+      "shares": 30,
+      "price": 10
+    },
+    "benchmark": {
+      "symbol": "BASKET",
+      "price": 100
+    },
+    "policy": {
+      "maxSinglePositionWeight": 0.25
+    },
+    "costs": {
+      "slippageBps": 5,
+      "commissionPerOrder": 1
+    },
+    "proposedWeightPercent": 30,
+    "decision": "hold_cash",
+    "reason": "exceeds_owner_concentration_limit",
+    "challenge": {
+      "independentlyComputedWeightPercent": 30,
+      "agrees": true
+    },
+    "thesis": "An owner-set concentration rule checks a single-position bet; it is not a price forecast."
+  },
+  "sha256": "0f6d6173fcd80bb30df0fe677a66ae482f90fcabac32921723058e7e9ac21e4c"
+}

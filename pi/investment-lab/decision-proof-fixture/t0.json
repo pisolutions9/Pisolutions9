@@ -1,0 +1,9 @@
+{
+  "provenance": "synthetic-fixture",
+  "at": "2026-10-01T12:00:00.000Z",
+  "capital": 1000,
+  "candidate": { "symbol": "FOCUS", "shares": 30, "price": 10 },
+  "benchmark": { "symbol": "BASKET", "price": 100 },
+  "policy": { "maxSinglePositionWeight": 0.25 },
+  "costs": { "slippageBps": 5, "commissionPerOrder": 1 }
+}

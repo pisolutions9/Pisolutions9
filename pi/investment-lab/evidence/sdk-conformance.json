@@ -1,0 +1,27 @@
+{
+  "ok": true,
+  "sdkVersion": "1.32.2",
+  "piClientVsSdkServer_json": {
+    "protocolVersion": "2025-11-25",
+    "server": "official-sdk-server",
+    "decisions": {
+      "get_quotes": "allow",
+      "place_order": "deny"
+    },
+    "quoteOk": true
+  },
+  "piClientVsSdkServer_sse": {
+    "protocolVersion": "2025-11-25",
+    "server": "official-sdk-server",
+    "decisions": {
+      "get_quotes": "allow",
+      "place_order": "deny"
+    },
+    "quoteOk": true
+  },
+  "sdkClientVsPiFixture": {
+    "tools": 14,
+    "structuredContent": true,
+    "symbol": "AAPL"
+  }
+}

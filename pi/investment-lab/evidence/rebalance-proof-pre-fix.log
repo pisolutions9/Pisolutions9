@@ -1,0 +1,4 @@
+# rebalance-proof-test run before binding the frozen cost model into replay (2026-10-30)
+AssertionError: changing the frozen cost model is detected — expected decision_rule_inconsistent, got independent_outcome_check_failed (replay used default slippage, so an edited cost model was only caught incidentally by benchmark arithmetic)
+# rebalance-proof-test section 8 before the empty-reveal fix (2026-10-30); reveal with no T1 files exited 0 and printed an empty outcome section
+AssertionError [ERR_ASSERTION]: Missing expected exception.

@@ -1,0 +1,8 @@
+{
+  "endpoint": "https://agent.robinhood.com/mcp/trading",
+  "reachable": false,
+  "outcome": "network_failure",
+  "detail": {
+    "cause": "ENOTFOUND"
+  }
+}

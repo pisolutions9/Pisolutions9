@@ -1,0 +1,12 @@
+# Adversarial gateway suite run against commit 394b768 code (before fixes), 2026-10-29T23:35:03Z
+FAIL A1 disguised write tool (read name + readOnlyHint) is never called without reviewed allowlist: inspect must be refused
+FAIL A2 misleading/changed description invalidates the reviewed entry: drifted tool was called
+FAIL A3 order-shaped input schema is refused even when pinned: tool with order-shaped schema was called
+FAIL A4 nested order arguments and unreviewed args are rejected before transport: accepted {"symbols":"AAPL","params":{"side":"buy","quantity":5}}
+FAIL A5 PII and account numbers in free text / odd keys are redacted: sensitive values leaked to agents
+FAIL A6 unexpected response shapes fail closed: leaked via shape 2
+FAIL A7 redirects are refused and the token never reaches the target: redirect target received 4 request(s); with auth: 0
+FAIL A8 duplicate tool names are refused: ambiguous tool was called
+FAIL A9 report and output files are free of identifiers, tokens and PII: personal data in outputs
+FAIL A10 live path refuses before network without a reviewed allowlist: demo must expose an injectable live entry point
+{"suite":"pi-investment-lab-adversarial","failed":["A1 disguised write tool (read name + readOnlyHint) is never called without reviewed allowlist","A2 misleading/changed description invalidates the reviewed entry","A3 order-shaped input schema is refused even when pinned","A4 nested order arguments and unreviewed args are rejected before transport","A5 PII and account numbers in free text / odd keys are redacted","A6 unexpected response shapes fail closed","A7 redirects are refused and the token never reaches the target","A8 duplicate tool names are refused","A9 report and output files are free of identifiers, tokens and PII","A10 live path refuses before network without a reviewed allowlist"]}

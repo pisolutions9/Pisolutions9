@@ -1,0 +1,31 @@
+name: PI Investment Lab
+
+# Offline only: synthetic and adversarial loopback MCP servers. No secrets, no broker or provider calls.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pi/investment-lab/**'
+      - 'pi/policy.mjs'
+      - 'pi/evidence.mjs'
+      - 'pi/tool-evidence.mjs'
+      - 'pi/specialist-contracts.mjs'
+      - 'pi/team-manifest.mjs'
+      - 'worker/src/execution-trace.mjs'
+      - 'package.json'
+      - '.github/workflows/pi-investment-lab.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  investment-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Investment Lab unit and adversarial suites (dependency-free)
+        run: npm run test:investment-lab

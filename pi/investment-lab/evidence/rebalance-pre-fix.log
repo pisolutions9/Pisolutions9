@@ -1,0 +1,4 @@
+# Rebalancing regression run against 9588b30 riskAgent (before the sell-handling fix), 2026-10-30
+AssertionError [ERR_ASSERTION]: a sell that raises cash is not blocked for cash still below the floor
+# rebalance-test section 8 before the status fix (2026-10-30): a zero-equity account and an account too small for whole shares were both reported as already_within_band while 20pp from target
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:

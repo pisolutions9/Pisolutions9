@@ -1,0 +1,6 @@
+{
+  "provenance": "synthetic-fixture",
+  "label": "B: adverse counterexample — the trimmed holding rallies and the added one falls",
+  "at": "2026-10-29T15:00:00.000Z",
+  "prices": { "AAPL": 236.9, "MSFT": 424.2, "VTI": 293.55, "NVDA": 189, "SCHD": 25.76 }
+}

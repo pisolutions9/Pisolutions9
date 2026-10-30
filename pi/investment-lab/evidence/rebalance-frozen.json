@@ -1,0 +1,239 @@
+{
+  "record": {
+    "schema": "pi.investment-lab.rebalance-proof.v1",
+    "provenance": "synthetic-fixture",
+    "sourceAt": "2026-10-01T15:00:00.000Z",
+    "decidedAt": "2026-10-01T15:00:00.000Z",
+    "ownerPlan": {
+      "targets": {
+        "VTI": 0.25,
+        "NVDA": 0.2,
+        "MSFT": 0.2,
+        "AAPL": 0.15,
+        "SCHD": 0.1
+      },
+      "minCashWeight": 0.08
+    },
+    "unsafePlan": {
+      "targets": {
+        "NVDA": 0.45,
+        "VTI": 0.3,
+        "MSFT": 0.2
+      },
+      "minCashWeight": 0.1
+    },
+    "benchmark": {
+      "symbol": "VTI",
+      "shares": 196.337529,
+      "cashLeft": 0,
+      "entryCost": 43.804235,
+      "description": "convert all holdings and cash into VTI at T0 with the same cost model."
+    },
+    "costs": {
+      "slippageBps": 5,
+      "feesPerOrder": 0,
+      "basis": "entry costs at T0 for every path; all paths marked at T1 last price, no exit costs"
+    },
+    "inputs": {
+      "cash": 3000,
+      "marginEnabled": true,
+      "holdings": [
+        {
+          "symbol": "AAPL",
+          "quantity": 40,
+          "averageCost": 150
+        },
+        {
+          "symbol": "MSFT",
+          "quantity": 25,
+          "averageCost": 300
+        },
+        {
+          "symbol": "VTI",
+          "quantity": 60,
+          "averageCost": 220
+        },
+        {
+          "symbol": "NVDA",
+          "quantity": 120,
+          "averageCost": 40
+        }
+      ],
+      "quotes": {
+        "AAPL": {
+          "last": 230,
+          "bid": 229.98,
+          "ask": 230.02,
+          "updatedAt": "2026-10-01T15:00:00.000Z"
+        },
+        "MSFT": {
+          "last": 420,
+          "bid": 419.98,
+          "ask": 420.02,
+          "updatedAt": "2026-10-01T15:00:00.000Z"
+        },
+        "VTI": {
+          "last": 285,
+          "bid": 284.98,
+          "ask": 285.02,
+          "updatedAt": "2026-10-01T15:00:00.000Z"
+        },
+        "NVDA": {
+          "last": 135,
+          "bid": 134.98,
+          "ask": 135.02,
+          "updatedAt": "2026-10-01T15:00:00.000Z"
+        },
+        "SCHD": {
+          "last": 28,
+          "bid": 27.98,
+          "ask": 28.02,
+          "updatedAt": "2026-10-01T15:00:00.000Z"
+        }
+      }
+    },
+    "rows": [
+      {
+        "symbol": "AAPL",
+        "current": 0.164286,
+        "target": 0.15,
+        "postTrade": 0.147891
+      },
+      {
+        "symbol": "MSFT",
+        "current": 0.1875,
+        "target": 0.2,
+        "postTrade": 0.195044
+      },
+      {
+        "symbol": "NVDA",
+        "current": 0.289286,
+        "target": 0.2,
+        "postTrade": 0.197723
+      },
+      {
+        "symbol": "SCHD",
+        "current": 0,
+        "target": 0.1,
+        "postTrade": 0.099522
+      },
+      {
+        "symbol": "VTI",
+        "current": 0.305357,
+        "target": 0.25,
+        "postTrade": 0.249431
+      }
+    ],
+    "cashBefore": 0.053571,
+    "cashAfter": 0.110388,
+    "choice": {
+      "status": "proposed",
+      "stage": null,
+      "problems": [],
+      "orders": [
+        {
+          "side": "sell",
+          "symbol": "AAPL",
+          "quantity": 4
+        },
+        {
+          "side": "sell",
+          "symbol": "NVDA",
+          "quantity": 38
+        },
+        {
+          "side": "sell",
+          "symbol": "VTI",
+          "quantity": 11
+        },
+        {
+          "side": "buy",
+          "symbol": "SCHD",
+          "quantity": 199
+        },
+        {
+          "side": "buy",
+          "symbol": "MSFT",
+          "quantity": 1
+        }
+      ],
+      "fills": [
+        {
+          "side": "sell",
+          "symbol": "AAPL",
+          "quantity": 4,
+          "referencePrice": 229.98,
+          "price": 229.86501,
+          "notional": 919.46004
+        },
+        {
+          "side": "sell",
+          "symbol": "NVDA",
+          "quantity": 38,
+          "referencePrice": 134.98,
+          "price": 134.91251,
+          "notional": 5126.67538
+        },
+        {
+          "side": "sell",
+          "symbol": "VTI",
+          "quantity": 11,
+          "referencePrice": 284.98,
+          "price": 284.83751,
+          "notional": 3133.21261
+        },
+        {
+          "side": "buy",
+          "symbol": "SCHD",
+          "quantity": 199,
+          "referencePrice": 28.02,
+          "price": 28.03401,
+          "notional": 5578.76799
+        },
+        {
+          "side": "buy",
+          "symbol": "MSFT",
+          "quantity": 1,
+          "referencePrice": 420.02,
+          "price": 420.23001,
+          "notional": 420.23001
+        }
+      ],
+      "afterCash": 6180.35003,
+      "afterHoldings": [
+        {
+          "symbol": "AAPL",
+          "quantity": 36
+        },
+        {
+          "symbol": "MSFT",
+          "quantity": 26
+        },
+        {
+          "symbol": "VTI",
+          "quantity": 49
+        },
+        {
+          "symbol": "NVDA",
+          "quantity": 82
+        },
+        {
+          "symbol": "SCHD",
+          "quantity": 199
+        }
+      ],
+      "totalCost": 12.64997
+    },
+    "unsafeChoice": {
+      "status": "refused",
+      "stage": "plan_validation",
+      "problems": [
+        "target_exceeds_position_cap:NVDA:0.45>0.25",
+        "target_exceeds_position_cap:VTI:0.3>0.25",
+        "impossible_targets_plus_cash_exceed_100pct:1.05"
+      ]
+    },
+    "thesis": "Owner-set target weights and cash floor applied at current quotes; not a price forecast."
+  },
+  "sha256": "67fb05f57c62eca0dc502f5bcc1ba12b63b0d6eb13dadea9c567f90f83a559cc"
+}

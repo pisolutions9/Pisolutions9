@@ -1,0 +1,8 @@
+{
+  "provenance": "synthetic-fixture",
+  "note": "Owner input for the synthetic proof. Targets and benchmark are the owner's choice, not a recommendation.",
+  "t0": "2026-10-01T15:00:00.000Z",
+  "plan": { "targets": { "VTI": 0.25, "NVDA": 0.2, "MSFT": 0.2, "AAPL": 0.15, "SCHD": 0.1 }, "minCashWeight": 0.08 },
+  "unsafePlan": { "targets": { "NVDA": 0.45, "VTI": 0.3, "MSFT": 0.2 }, "minCashWeight": 0.1 },
+  "benchmark": { "symbol": "VTI", "description": "convert all holdings and cash into VTI at T0 with the same cost model." }
+}

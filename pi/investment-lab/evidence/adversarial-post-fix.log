@@ -1,0 +1,18 @@
+# Adversarial gateway suite run against fixed working tree, 2026-10-30T00:20:08Z
+PASS A1 disguised write tool (read name + readOnlyHint) is never called without reviewed allowlist
+PASS A2 misleading/changed description invalidates the reviewed entry
+PASS A3 order-shaped input schema is refused even when pinned
+PASS A4 nested order arguments and unreviewed args are rejected before transport
+PASS A5 PII and account numbers in free text / odd keys are redacted
+PASS A6 unexpected response shapes fail closed
+PASS A7 redirects are refused and the token never reaches the target
+PASS A8 duplicate tool names are refused
+PASS A9 report and output files are free of identifiers, tokens and PII
+PASS A10 live path refuses before network without a reviewed allowlist
+PASS A12 legitimate symbols, large amounts and enums survive minimization
+PASS A13 oversized chunked responses are aborted at the cap
+PASS R1 compound order-shaped schema fields are refused even when pinned
+PASS R2 reconnect after tool drift does not keep a stale route
+PASS R3 an allowlist edit alone does not enable live access
+PASS A11 renderOutputs refuses to emit text containing secrets or PII
+{"suite":"pi-investment-lab-adversarial","failed":[]}

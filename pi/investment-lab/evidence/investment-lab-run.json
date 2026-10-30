@@ -1,0 +1,577 @@
+{
+  "schema": "pi.investment-lab.run.v2",
+  "missionId": "lab_demo_1793319608975",
+  "provenance": "synthetic-fixture",
+  "ok": true,
+  "stoppedAt": null,
+  "executionStatus": {
+    "mode": "read_only_inspection_plus_simulation",
+    "liveOrders": "not_built",
+    "accountFunding": "not_built",
+    "margin": "forbidden",
+    "automatedTrading": "not_built",
+    "simulatedTrades": "enabled_local_paper_ledger_only"
+  },
+  "discovery": {
+    "server": {
+      "name": "pi-synthetic-broker-fixture",
+      "version": "0.1.0"
+    },
+    "protocolVersion": "2025-11-25",
+    "endpointHost": "127.0.0.1:46733",
+    "reviewedEntries": 5,
+    "tools": [
+      {
+        "name": "get_accounts",
+        "decision": "allow",
+        "reason": "reviewed_exact_match",
+        "capability": "accounts"
+      },
+      {
+        "name": "get_portfolio",
+        "decision": "allow",
+        "reason": "reviewed_exact_match",
+        "capability": "portfolio"
+      },
+      {
+        "name": "get_positions",
+        "decision": "allow",
+        "reason": "reviewed_exact_match",
+        "capability": "positions"
+      },
+      {
+        "name": "get_quotes",
+        "decision": "allow",
+        "reason": "reviewed_exact_match",
+        "capability": "quotes"
+      },
+      {
+        "name": "get_historicals",
+        "decision": "allow",
+        "reason": "reviewed_exact_match",
+        "capability": "historicals"
+      },
+      {
+        "name": "get_order_history",
+        "decision": "deny",
+        "reason": "deny_token:order",
+        "capability": null
+      },
+      {
+        "name": "get_account_settings",
+        "decision": "deny",
+        "reason": "annotation_not_read_only",
+        "capability": null
+      },
+      {
+        "name": "refresh_positions",
+        "decision": "deny",
+        "reason": "not_in_reviewed_allowlist",
+        "capability": null
+      },
+      {
+        "name": "place_equity_order",
+        "decision": "deny",
+        "reason": "deny_token:place",
+        "capability": null
+      },
+      {
+        "name": "cancel_order",
+        "decision": "deny",
+        "reason": "deny_token:cancel",
+        "capability": null
+      },
+      {
+        "name": "transfer_funds",
+        "decision": "deny",
+        "reason": "deny_token:transfer",
+        "capability": null
+      },
+      {
+        "name": "enable_margin",
+        "decision": "deny",
+        "reason": "deny_token:enable",
+        "capability": null
+      },
+      {
+        "name": "getQuoteAndPlaceOrder",
+        "decision": "deny",
+        "reason": "deny_token:place",
+        "capability": null
+      },
+      {
+        "name": "get_holdings",
+        "decision": "deny",
+        "reason": "not_in_reviewed_allowlist",
+        "capability": null
+      }
+    ],
+    "routes": {
+      "accounts": "get_accounts",
+      "portfolio": "get_portfolio",
+      "positions": "get_positions",
+      "quotes": "get_quotes",
+      "historicals": "get_historicals"
+    }
+  },
+  "research": {
+    "status": "ok",
+    "truthLevel": "probable",
+    "failureClass": "unknown",
+    "problems": [],
+    "result": "Inspected 1 account(s); 4 position(s); 5 quote(s); 5 price series."
+  },
+  "quant": {
+    "status": "ok",
+    "truthLevel": "probable",
+    "failureClass": "unknown",
+    "problems": [],
+    "data": {
+      "snapshot": {
+        "holdings": [
+          {
+            "symbol": "VTI",
+            "quantity": 60,
+            "last": 285,
+            "marketValue": 17100,
+            "costBasis": 13200,
+            "unrealizedPnl": 3900,
+            "weight": 0.305357
+          },
+          {
+            "symbol": "NVDA",
+            "quantity": 120,
+            "last": 135,
+            "marketValue": 16200,
+            "costBasis": 4800,
+            "unrealizedPnl": 11400,
+            "weight": 0.289286
+          },
+          {
+            "symbol": "MSFT",
+            "quantity": 25,
+            "last": 420,
+            "marketValue": 10500,
+            "costBasis": 7500,
+            "unrealizedPnl": 3000,
+            "weight": 0.1875
+          },
+          {
+            "symbol": "AAPL",
+            "quantity": 40,
+            "last": 230,
+            "marketValue": 9200,
+            "costBasis": 6000,
+            "unrealizedPnl": 3200,
+            "weight": 0.164286
+          }
+        ],
+        "cash": 3000,
+        "invested": 53000,
+        "totalEquity": 56000,
+        "cashWeight": 0.053571,
+        "topWeight": 0.305357,
+        "herfindahl": 0.239075,
+        "effectiveHoldings": 4.183,
+        "unrealizedPnl": 21500,
+        "missingQuotes": []
+      },
+      "perSymbol": {
+        "AAPL": {
+          "observations": 63,
+          "totalReturn": -0.117228,
+          "annualizedVolatility": 0.189675,
+          "maxDrawdown": -0.188528,
+          "momentum20d": -0.047517
+        },
+        "MSFT": {
+          "observations": 63,
+          "totalReturn": 0.091081,
+          "annualizedVolatility": 0.186853,
+          "maxDrawdown": -0.053331,
+          "momentum20d": 0.040316
+        },
+        "VTI": {
+          "observations": 63,
+          "totalReturn": -0.111956,
+          "annualizedVolatility": 0.170878,
+          "maxDrawdown": -0.150446,
+          "momentum20d": 0.004569
+        },
+        "NVDA": {
+          "observations": 63,
+          "totalReturn": 0.017308,
+          "annualizedVolatility": 0.170208,
+          "maxDrawdown": -0.069608,
+          "momentum20d": -0.00468
+        },
+        "SCHD": {
+          "observations": 63,
+          "totalReturn": 0.040401,
+          "annualizedVolatility": 0.189726,
+          "maxDrawdown": -0.143701,
+          "momentum20d": 0.003599
+        }
+      },
+      "portfolioRisk": {
+        "ok": true,
+        "observations": 62,
+        "coveredWeight": 0.946429,
+        "missing": [],
+        "annualizedVolatility": 0.072689,
+        "historicalVaR1d": 0.007766,
+        "varConfidence": 0.95,
+        "method": "historical simulation on equity-weighted daily log returns over overlapping dates; cash assumed zero-return"
+      }
+    }
+  },
+  "risk": {
+    "status": "ok",
+    "truthLevel": "probable",
+    "failureClass": "unknown",
+    "problems": [],
+    "data": {
+      "limits": {
+        "maxPositionWeight": 0.25,
+        "minCashWeight": 0.02,
+        "maxPortfolioVolatility": 0.3,
+        "maxHistoricalVaR1d": 0.03
+      },
+      "flags": [
+        {
+          "severity": "high",
+          "code": "concentration",
+          "detail": "VTI is 30.54% of equity (limit 25%)."
+        },
+        {
+          "severity": "high",
+          "code": "concentration",
+          "detail": "NVDA is 28.93% of equity (limit 25%)."
+        },
+        {
+          "severity": "info",
+          "code": "margin_account",
+          "detail": "The inspected account reports margin capability. The lab never uses margin; simulations are cash-only."
+        }
+      ],
+      "decisions": [
+        {
+          "order": {
+            "side": "buy",
+            "symbol": "SCHD",
+            "quantity": 10,
+            "type": "market"
+          },
+          "approvedForSimulation": true,
+          "reason": "within_limits"
+        },
+        {
+          "order": {
+            "side": "sell",
+            "symbol": "AAPL",
+            "quantity": 5,
+            "type": "market"
+          },
+          "approvedForSimulation": true,
+          "reason": "within_limits"
+        },
+        {
+          "order": {
+            "side": "buy",
+            "symbol": "NVDA",
+            "quantity": 20,
+            "type": "market"
+          },
+          "approvedForSimulation": false,
+          "reason": "post_trade_weight_33.75pct_exceeds_limit"
+        },
+        {
+          "order": {
+            "side": "buy",
+            "symbol": "VTI",
+            "quantity": 1000,
+            "type": "market"
+          },
+          "approvedForSimulation": false,
+          "reason": "post_trade_weight_539.46pct_exceeds_limit"
+        }
+      ]
+    }
+  },
+  "simulation": {
+    "status": "ok",
+    "truthLevel": "probable",
+    "failureClass": "unknown",
+    "problems": [],
+    "data": {
+      "paper": {
+        "simulated": true,
+        "cash": 3868.98495,
+        "positions": [
+          {
+            "symbol": "AAPL",
+            "quantity": 35,
+            "averageCost": null
+          },
+          {
+            "symbol": "MSFT",
+            "quantity": 25,
+            "averageCost": null
+          },
+          {
+            "symbol": "VTI",
+            "quantity": 60,
+            "averageCost": null
+          },
+          {
+            "symbol": "NVDA",
+            "quantity": 120,
+            "averageCost": null
+          },
+          {
+            "symbol": "SCHD",
+            "quantity": 10,
+            "averageCost": null
+          }
+        ],
+        "fills": [
+          {
+            "simulated": true,
+            "submittedToBroker": false,
+            "status": "simulated_fill",
+            "id": "sim_1",
+            "at": "2026-10-30T00:20:09.049Z",
+            "side": "buy",
+            "symbol": "SCHD",
+            "quantity": 10,
+            "referencePrice": 28.02,
+            "price": 28.03401,
+            "slippageBps": 5,
+            "notional": 280.3401,
+            "cashBefore": 3000,
+            "cashAfter": 2719.6599
+          },
+          {
+            "simulated": true,
+            "submittedToBroker": false,
+            "status": "simulated_fill",
+            "id": "sim_2",
+            "at": "2026-10-30T00:20:09.049Z",
+            "side": "sell",
+            "symbol": "AAPL",
+            "quantity": 5,
+            "referencePrice": 229.98,
+            "price": 229.86501,
+            "slippageBps": 5,
+            "notional": 1149.32505,
+            "cashBefore": 2719.6599,
+            "cashAfter": 3868.98495
+          }
+        ],
+        "rejections": []
+      },
+      "liveExecution": {
+        "ok": false,
+        "status": "refused",
+        "reason": "live_execution_not_available_in_this_version",
+        "policyDecision": {
+          "ok": true,
+          "reason": "approved_but_no_executor"
+        },
+        "requested": "equity_order",
+        "requires": [
+          "Explicit written owner approval naming the exact capability (e.g. single manual equity order), account, and per-order/per-day limits.",
+          "A separate code change and review; execution must never be enabled by configuration, environment variable, or model output alone.",
+          "Per-order human confirmation with the full order preview shown to the owner before submission.",
+          "Cash-only enforcement: no margin, no shorting, no options, no leverage.",
+          "Kill switch, idempotency keys, audit trail, and reconciliation against broker confirmations.",
+          "Sandbox or paper-trading verification plus a supervised production smoke before any unattended use."
+        ],
+        "sideEffect": false
+      },
+      "executionStatus": {
+        "mode": "read_only_inspection_plus_simulation",
+        "liveOrders": "not_built",
+        "accountFunding": "not_built",
+        "margin": "forbidden",
+        "automatedTrading": "not_built",
+        "simulatedTrades": "enabled_local_paper_ledger_only"
+      }
+    }
+  },
+  "verification": {
+    "status": "ok",
+    "truthLevel": "verified",
+    "failureClass": "unknown",
+    "problems": [],
+    "result": "14/14 verification checks passed.",
+    "data": {
+      "checks": [
+        {
+          "name": "equity_recomputed_independently",
+          "ok": true,
+          "detail": "independent 56000.00 vs quant 56000"
+        },
+        {
+          "name": "equity_matches_source_reported",
+          "ok": true,
+          "detail": "source-reported 56000; relative difference 0.000% (tolerance 0.5%)"
+        },
+        {
+          "name": "evidence_accounts",
+          "ok": true,
+          "detail": "tool:get_accounts observed 2026-10-30T00:20:09.021Z"
+        },
+        {
+          "name": "evidence_portfolio",
+          "ok": true,
+          "detail": "tool:get_portfolio observed 2026-10-30T00:20:09.024Z"
+        },
+        {
+          "name": "evidence_positions",
+          "ok": true,
+          "detail": "tool:get_positions observed 2026-10-30T00:20:09.027Z"
+        },
+        {
+          "name": "evidence_quotes",
+          "ok": true,
+          "detail": "tool:get_quotes observed 2026-10-30T00:20:09.030Z"
+        },
+        {
+          "name": "evidence_historicals",
+          "ok": true,
+          "detail": "tool:get_historicals observed 2026-10-30T00:20:09.037Z"
+        },
+        {
+          "name": "quotes_fresh_per_source_timestamp",
+          "ok": true,
+          "detail": "all quotes within 120s"
+        },
+        {
+          "name": "gateway_only_called_read_classified_tools",
+          "ok": true,
+          "detail": "5 call(s), all to read-classified tools"
+        },
+        {
+          "name": "gateway_never_called_denied_tools",
+          "ok": true,
+          "detail": "9 tool(s) denied at discovery"
+        },
+        {
+          "name": "all_trades_simulated_not_submitted",
+          "ok": true,
+          "detail": "2 fill(s), 0 rejection(s)"
+        },
+        {
+          "name": "paper_ledger_reconciles",
+          "ok": true,
+          "detail": "start 3000 + flows 868.984950 = end 3868.98495"
+        },
+        {
+          "name": "paper_ledger_cash_non_negative_no_margin",
+          "ok": true,
+          "detail": "end cash 3868.98495"
+        },
+        {
+          "name": "live_execution_refused",
+          "ok": true,
+          "detail": "live_execution_not_available_in_this_version"
+        }
+      ],
+      "scope": "Internal consistency, provenance, freshness, read-only gateway behaviour and simulation integrity. Not an audit of the broker’s data."
+    }
+  },
+  "audit": [
+    {
+      "seq": 1,
+      "at": "2026-10-30T00:20:09.014Z",
+      "type": "discovery",
+      "decision": "info",
+      "toolsSeen": 14,
+      "toolsAllowed": 5,
+      "reviewedEntries": 5
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-30T00:20:09.021Z",
+      "type": "inspect",
+      "capability": "accounts",
+      "tool": "get_accounts",
+      "decision": "allow",
+      "ok": true,
+      "argKeys": [],
+      "latencyMs": 6
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-30T00:20:09.025Z",
+      "type": "inspect",
+      "capability": "portfolio",
+      "tool": "get_portfolio",
+      "decision": "allow",
+      "ok": true,
+      "argKeys": [
+        "accountRef"
+      ],
+      "latencyMs": 4
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-30T00:20:09.027Z",
+      "type": "inspect",
+      "capability": "positions",
+      "tool": "get_positions",
+      "decision": "allow",
+      "ok": true,
+      "argKeys": [
+        "accountRef"
+      ],
+      "latencyMs": 2
+    },
+    {
+      "seq": 5,
+      "at": "2026-10-30T00:20:09.030Z",
+      "type": "inspect",
+      "capability": "quotes",
+      "tool": "get_quotes",
+      "decision": "allow",
+      "ok": true,
+      "argKeys": [
+        "symbols"
+      ],
+      "latencyMs": 2
+    },
+    {
+      "seq": 6,
+      "at": "2026-10-30T00:20:09.037Z",
+      "type": "inspect",
+      "capability": "historicals",
+      "tool": "get_historicals",
+      "decision": "allow",
+      "ok": true,
+      "argKeys": [
+        "symbols",
+        "interval",
+        "span"
+      ],
+      "latencyMs": 7
+    }
+  ],
+  "trace": {
+    "runId": "lab_demo_1793319608975",
+    "taskId": "lab_demo_1793319608975",
+    "eventCount": 7,
+    "totalLatencyMs": 44,
+    "totalCostUsd": 0,
+    "failures": []
+  },
+  "demoEvidence": {
+    "serverCalls": [
+      "get_accounts",
+      "get_portfolio",
+      "get_positions",
+      "get_quotes",
+      "get_historicals"
+    ]
+  }
+}
