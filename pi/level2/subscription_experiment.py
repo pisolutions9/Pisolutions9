@@ -65,7 +65,7 @@ def run(root, claude, codex):
  if root.exists() and any(root.iterdir()): raise ValueError("workspace_must_be_empty")
  root.mkdir(parents=True, exist_ok=True)
  auth = preflight(claude, codex, root)
- (root / "candidate.py").write_text(FIXTURE, encoding="utf-8")
+ (root / "candidate.py").write_bytes(FIXTURE.encode("utf-8"))
  write(root / "manifest.json", {"schema":"pi.level2.subscription-proof.v1", "paid_call_cap":0, "max_attempts":2, "max_depth":2, "production_mutations":0})
  q = Queue(str(root / "queue.db"))
  try:
@@ -96,7 +96,7 @@ def run(root, claude, codex):
   codex_result = call([codex, "exec", "--sandbox", "read-only", "--skip-git-repo-check", "--ephemeral", "--ignore-user-config", "-C", str(root), codex_prompt], cwd=root, timeout=120)
   generated = codex_result.stdout.strip() + "\n"
   if generated != FIXED: raise ValueError("codex_output_out_of_scope")
-  (root / "candidate.py").write_text(generated, encoding="utf-8")
+  (root / "candidate.py").write_bytes(generated.encode("utf-8"))
   source = (root / "candidate.py").read_text(encoding="utf-8")
   write(root / "implementation.json", {"provider":"codex-cli", "before_sha256":sha(FIXTURE), "after_sha256":sha(source), "file":"candidate.py"})
   assert q.finish("implement", "codex-cli", "disposable implementation", "implementation.json") == "awaiting_review"
