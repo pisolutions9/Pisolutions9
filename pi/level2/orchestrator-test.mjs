@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {SandboxQueue,validate,handoff,runWorker,LIMITS} from './orchestrator.mjs';
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'pi-l2-')),db=path.join(dir,'queue.json');
+const task=(id,assignee='claude')=>({id,assignee,action:'plan',goal:'Research robust tracking approaches',depth:0,acceptance:['Provide testable hypothesis']});
+let count=0;const test=(name,fn)=>{fn();count++;};
+try{
+ const q=new SandboxQueue(db).open();
+ test('valid',()=>assert.equal(validate(task('a')),null));
+ test('prod blocked',()=>assert.equal(validate({...task('bad'),goal:'deploy to production'}),'restricted_scope'));
+ test('acceptance',()=>assert.equal(validate({...task('bad'),acceptance:[]}), 'missing_acceptance'));
+ test('depth',()=>assert.equal(validate({...task('bad'),depth:3}),'depth_exceeded'));
+ test('idempotent',()=>{assert.equal(q.add(task('a')).accepted,true);assert.equal(q.add(task('a')).reason,'duplicate_id')});
+ test('locking',()=>assert.throws(()=>new SandboxQueue(db).open(),/EEXIST/));
+ test('spend denied',()=>assert.throws(()=>q.charge(0.01),/model_budget_denied/));
+ test('free model denied',()=>assert.throws(()=>q.charge(0,1),/model_budget_denied/));
+ test('safe handoff',()=>assert.equal(handoff(task('b'),{reference:'fixture:1'}).context.productionAccess,false));
+ test('role claim',()=>{assert.equal(q.claim('codex'),null);assert.equal(q.claim('claude').id,'a')});
+ test('output evidence',()=>assert.throws(()=>q.complete('a',{summary:'ok'}),/evidence_required/));
+ test('complete',()=>{q.complete('a',{summary:'plan created',evidenceRef:'fixture:plan'});assert.equal(q.snapshot().tasks[0].status,'awaiting_review')});
+ test('review provenance required',()=>assert.throws(()=>q.verify('a',{verifier:'claude',passed:true,evidenceRef:'fixture'}),/independent_evidence_required/));
+ test('retry',()=>{assert.equal(q.verify('a',{verifier:'independent',passed:false,evidenceRef:'fixture:failed'}),'rejected');assert.equal(q.retry('a'),true)});
+ test('retry cap',()=>{q.claim('claude');q.complete('a',{summary:'fixed',evidenceRef:'fixture:retest'});q.verify('a',{verifier:'independent',passed:false,evidenceRef:'fixture:fail2'});assert.equal(q.retry('a'),false);assert.equal(q.snapshot().tasks[0].status,'blocked')});
+ test('verified',()=>{q.add(task('b','codex'));q.claim('codex');q.complete('b',{summary:'tests',evidenceRef:'fixture:tests'});assert.equal(q.verify('b',{verifier:'independent',passed:true,evidenceRef:'fixture:verified'}),'verified')});
+ test('audit chain',()=>{const e=q.snapshot().events;assert.ok(e.every((x,i)=>x.previous===(i?e[i-1].hash:null)))});
+ q.close();
+ test('reopen',()=>{const z=new SandboxQueue(db).open();assert.equal(z.snapshot().tasks.find(t=>t.id==='b').status,'verified');z.close()});
+ const q2=new SandboxQueue(db).open();
+ test('mock enqueue',()=>assert.equal(q2.add(task('c','claude')).accepted,true));
+ const result=await runWorker(q2,'claude',async()=>({summary:'mock hypothesis',evidenceRef:'fixture:mock-claude'}));
+ test('mock worker',()=>assert.equal(result.status,'awaiting_review'));
+ test('not auto verified',()=>assert.equal(q2.snapshot().tasks.find(t=>t.id==='c').status,'awaiting_review'));
+ test('queue limit',()=>{for(let i=0;i<20;i++)q2.add(task('z'+i));assert.equal(q2.snapshot().tasks.length,LIMITS.maxTasks)});
+ q2.close();
+ console.log(JSON.stringify({status:'PASS',assertionGroups:count,mode:'mock',modelCalls:0,productionMutations:0},null,2));
+}finally{fs.rmSync(dir,{recursive:true,force:true});}
