@@ -1,0 +1,22 @@
+name: PI Level 2 Sandbox Contract
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'pi/level2/**'
+      - '.github/workflows/pi-level2-experiments.yml'
+permissions:
+  contents: read
+concurrency:
+  group: pi-level2-contract-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: node pi/level2/orchestrator-test.mjs
