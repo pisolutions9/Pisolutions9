@@ -1,0 +1,22 @@
+name: PI Level 2 Transactional Queue Gate
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'pi/level2/**'
+      - '.github/workflows/pi-level2-sqlite.yml'
+permissions:
+  contents: read
+jobs:
+  sqlite-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run transactional queue adversarial tests
+        run: python3 pi/level2/queue-sqlite-test.py
+      - name: Run existing Level 2 mock orchestration tests
+        run: node pi/level2/orchestrator-test.mjs
