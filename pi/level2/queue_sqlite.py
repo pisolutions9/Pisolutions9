@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS tasks(
  id TEXT PRIMARY KEY, role TEXT NOT NULL, action TEXT NOT NULL, goal TEXT NOT NULL,
  status TEXT NOT NULL, depth INTEGER NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
  lease_owner TEXT, lease_until INTEGER, evidence_ref TEXT, result TEXT,
- verifier TEXT, review_ref TEXT, parent_id TEXT, created_at INTEGER NOT NULL);
+ verifier TEXT, review_ref TEXT, parent_id TEXT, completed_by TEXT, created_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS events(
  seq INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT NOT NULL,
  kind TEXT NOT NULL, payload TEXT NOT NULL, previous_hash TEXT, hash TEXT NOT NULL);
@@ -29,6 +29,8 @@ class Queue:
   self.db.execute("PRAGMA busy_timeout=5000")
   self.db.execute("PRAGMA journal_mode=WAL")
   self.db.executescript(SCHEMA)
+  if "completed_by" not in {row[1] for row in self.db.execute("PRAGMA table_info(tasks)")}:
+   self.db.execute("ALTER TABLE tasks ADD COLUMN completed_by TEXT")
   self.now=now or (lambda: int(time.time()))
 
  def close(self): self.db.close()
@@ -58,7 +60,14 @@ class Queue:
    self.db.execute("BEGIN IMMEDIATE")
    if self.db.execute("SELECT 1 FROM tasks WHERE id=?",(tid,)).fetchone(): return "duplicate"
    if self.db.execute("SELECT COUNT(*) AS n FROM tasks").fetchone()["n"]>=MAX_TASKS:return "task_limit"
-   if task.get("parent_id") and not self.db.execute("SELECT 1 FROM tasks WHERE id=?",(task["parent_id"],)).fetchone():return "unknown_parent"
+   parent_id=task.get("parent_id")
+   if parent_id:
+    parent=self.db.execute("SELECT depth,status FROM tasks WHERE id=?",(parent_id,)).fetchone()
+    if not parent:return "unknown_parent"
+    if task["depth"]!=parent["depth"]+1:return "invalid_parent_depth"
+    if parent["status"]!="verified" and not (task["role"]=="verifier" and parent["status"]=="awaiting_review"):
+     return "parent_not_ready"
+   elif task["depth"]!=0:return "root_depth"
    self.db.execute("INSERT INTO tasks(id,role,action,goal,status,depth,created_at,parent_id) VALUES (?,?,?,?,?,?,?,?)",
      (tid,task["role"],task["action"],task["goal"],"queued",task["depth"],self.now(),task.get("parent_id")))
    self._event(tid,"submitted",{"role":task["role"]})
@@ -83,8 +92,8 @@ class Queue:
    self.db.execute("BEGIN IMMEDIATE")
    t=self.db.execute("SELECT * FROM tasks WHERE id=?",(tid,)).fetchone()
    if not t or t["status"]!="running" or t["lease_owner"]!=worker or t["lease_until"]<=self.now():return "lease_invalid"
-   self.db.execute("UPDATE tasks SET status='awaiting_review',result=?,evidence_ref=?,lease_owner=NULL,lease_until=NULL WHERE id=?",
-                   (result,evidence_ref,tid))
+   self.db.execute("UPDATE tasks SET status='awaiting_review',result=?,evidence_ref=?,completed_by=?,lease_owner=NULL,lease_until=NULL WHERE id=?",
+                   (result,evidence_ref,worker,tid))
    self._event(tid,"submitted_for_review",{"ref":evidence_ref})
    return "awaiting_review"
 
@@ -94,8 +103,8 @@ class Queue:
    self.db.execute("BEGIN IMMEDIATE")
    t=self.db.execute("SELECT * FROM tasks WHERE id=?",(tid,)).fetchone()
    if not t or t["status"]!="awaiting_review":return "not_ready"
-   if verifier=="reviewer:"+t["lease_owner"] if t["lease_owner"] else False:return "same_identity"
-   # A name prefix is NOT authentication; the real verifier requires distinct runner credentials.
+   if verifier.removeprefix("reviewer:")==t["completed_by"]:return "same_identity"
+   # These are process labels, not authenticated identities.
    status="verified" if passed else ("blocked" if t["attempts"]>=MAX_ATTEMPTS else "queued")
    self.db.execute("UPDATE tasks SET status=?,verifier=?,review_ref=? WHERE id=?",(status,verifier,review_ref,tid))
    self._event(tid,"review",{"verifier":verifier,"passed":passed,"ref":review_ref})
@@ -107,3 +116,4 @@ class Queue:
 
  def rows(self):
   return [dict(x) for x in self.db.execute("SELECT * FROM tasks ORDER BY created_at,id")]
+
