@@ -96,6 +96,23 @@ with tempfile.TemporaryDirectory() as d:
  check(q.db.execute("SELECT COUNT(*) FROM events WHERE task_id='implement' AND kind='verifier_child_terminal'").fetchone()[0]==1)
  check(q.db.execute("""SELECT COUNT(*) FROM tasks p JOIN tasks c ON c.parent_id=p.id
   WHERE p.status='awaiting_review' AND c.role='verifier' AND c.depth=2 AND c.status='blocked'""").fetchone()[0]==0)
+ # An expired verifier's final lease takes the same fail-closed parent path.
+ lease_parent={**task("lease_parent","codex"),"action":"write_patch","depth":1,"parent_id":"a"}
+ check(q.submit(lease_parent)=="accepted")
+ check(q.claim("codex","lease-patch")["id"]=="lease_parent")
+ check(q.finish("lease_parent","lease-patch","patch","evidence:lease-patch")=="awaiting_review")
+ lease_child={**task("lease_verify","verifier"),"action":"review","depth":2,"parent_id":"lease_parent"}
+ check(q.submit(lease_child)=="accepted")
+ check(q.claim("verifier","lease-v1",lease_seconds=5)["attempt"]==1)
+ now[0]+=6
+ check(q.claim("verifier","lease-v2",lease_seconds=5)["attempt"]==2)
+ now[0]+=6
+ check(q.reap_expired()==1)
+ rows={x["id"]:x for x in q.rows()}
+ check(rows["lease_verify"]["status"]=="blocked" and rows["lease_verify"]["failure_reason"]=="lease_expired_max_attempts")
+ check(rows["lease_parent"]["status"]=="blocked" and rows["lease_parent"]["failure_reason"]=="verifier_child_terminal")
+ check(q.reap_expired()==0)
+ check(q.db.execute("SELECT COUNT(*) FROM events WHERE task_id='lease_parent' AND kind='verifier_child_terminal'").fetchone()[0]==1)
  check(q.db.execute("PRAGMA integrity_check").fetchone()[0]=="ok")
  events=list(q.db.execute("SELECT previous_hash,hash FROM events ORDER BY seq"))
  check(all(e["previous_hash"]==(events[i-1]["hash"] if i else None) for i,e in enumerate(events)))
