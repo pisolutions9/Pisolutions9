@@ -1,0 +1,29 @@
+name: PI Physical Lab Simulation Gate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'lab/**'
+      - '.github/workflows/pi-physical-lab-sim.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pi-physical-lab-sim-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  simulation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Verify physical lab is simulation-only
+        run: |
+          node lab/controller-test.mjs
+          test ! -e lab/hardware-driver.mjs
