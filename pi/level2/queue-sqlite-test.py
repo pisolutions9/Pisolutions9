@@ -135,5 +135,38 @@ with tempfile.TemporaryDirectory() as d:
  events=list(q.db.execute("SELECT previous_hash,hash FROM events ORDER BY seq"))
  check(all(e["previous_hash"]==(events[i-1]["hash"] if i else None) for i,e in enumerate(events)))
  q2.close();q.close()
+# Regression (found by verifier-boundary tests): verifier must not claim while its parent is requeued,
+# and a parent re-entering review beside a terminal verifier child must block, not wait forever.
+with tempfile.TemporaryDirectory() as d:
+ now=[1000]
+ q=Queue(os.path.join(d,"regress.db"),now=lambda:now[0])
+ check(q.submit({**task("rp"),"action":"plan"})=="accepted")
+ q.claim("claude","rp-w");q.finish("rp","rp-w","done","evidence:rp");check(q.review("rp","reviewer:x",True,"r")=="verified")
+ check(q.submit({**task("ri","codex"),"action":"write_patch","depth":1,"parent_id":"rp"})=="accepted")
+ q.claim("codex","ri-w");check(q.finish("ri","ri-w","patch","evidence:ri")=="awaiting_review")
+ check(q.submit({**task("rv","verifier"),"action":"review","depth":2,"parent_id":"ri"})=="accepted")
+ check(q.claim("verifier","rv-1")["attempt"]==1)
+ q.finish("rv","rv-1","fail","evidence:rv1")
+ check(q.review("rv","reviewer:b",False,"r")=="queued" and q.review("ri","reviewer:b",False,"r")=="queued")
+ check(q.claim("verifier","rv-early") is None)
+ check(next(x for x in q.rows() if x["id"]=="rv")["attempts"]==1)
+ check(q.claim("codex","ri-w2")["attempt"]==2)
+ check(q.finish("ri","ri-w2","patch2","evidence:ri2")=="awaiting_review")
+ check(q.claim("verifier","rv-2")["attempt"]==2)
+ # Terminal verifier child, then force the parent back through review to exercise the finish-time guard.
+ q.finish("rv","rv-2","fail","evidence:rv2")
+ q.db.execute("UPDATE tasks SET status='blocked' WHERE id='rv'")
+ q.db.execute("UPDATE tasks SET status='running',lease_owner='ri-w3',lease_until=? WHERE id='ri'",(now[0]+30,))
+ check(q.finish("ri","ri-w3","patch3","evidence:ri3")=="blocked")
+ r=next(x for x in q.rows() if x["id"]=="ri")
+ check(r["status"]=="blocked" and r["failure_reason"]=="verifier_child_terminal")
+ check(q.db.execute("""SELECT COUNT(*) FROM tasks p JOIN tasks c ON c.parent_id=p.id
+  WHERE p.status='awaiting_review' AND c.role='verifier' AND c.status='blocked'""").fetchone()[0]==0)
+ check(q.submit({**task("booldepth"),"depth":False})=="depth")
+ try:q.claim("claude","w",lease_seconds=True);check(False)
+ except ValueError:check(True)
+ check(q.claim("claude","root-ok") is None and q.submit(task("root2"))=="accepted" and q.claim("claude","root-ok")["id"]=="root2")
+ q.close()
 print({"status":"PASS","assertions":count,"backend":"sqlite","providers_invoked":0,"cost_usd":0,"production_mutations":0})
+
 
