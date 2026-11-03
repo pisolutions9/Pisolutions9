@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import tempfile
+import threading
 from queue_sqlite import Queue, MAX_ATTEMPTS
 
 def task(i, role="claude"):
@@ -113,6 +114,23 @@ with tempfile.TemporaryDirectory() as d:
  check(rows["lease_parent"]["status"]=="blocked" and rows["lease_parent"]["failure_reason"]=="verifier_child_terminal")
  check(q.reap_expired()==0)
  check(q.db.execute("SELECT COUNT(*) FROM events WHERE task_id='lease_parent' AND kind='verifier_child_terminal'").fetchone()[0]==1)
+ # Two connections racing for one queued task must produce one lease.
+ check(q.submit(task("race"))=="accepted")
+ start=threading.Barrier(3)
+ results=[]
+ def race_claim(worker):
+  connection=Queue(p,now=lambda:now[0])
+  try:
+   start.wait(timeout=5)
+   results.append(connection.claim("claude",worker))
+  finally:connection.close()
+ threads=[threading.Thread(target=race_claim,args=(f"racer-{i}",)) for i in range(2)]
+ for thread in threads:thread.start()
+ start.wait(timeout=5)
+ for thread in threads:thread.join(timeout=5)
+ check(all(not thread.is_alive() for thread in threads))
+ check(len(results)==2 and sorted(x is None for x in results)==[False,True])
+ check(next(x for x in q.rows() if x["id"]=="race")["attempts"]==1)
  check(q.db.execute("PRAGMA integrity_check").fetchone()[0]=="ok")
  events=list(q.db.execute("SELECT previous_hash,hash FROM events ORDER BY seq"))
  check(all(e["previous_hash"]==(events[i-1]["hash"] if i else None) for i,e in enumerate(events)))
