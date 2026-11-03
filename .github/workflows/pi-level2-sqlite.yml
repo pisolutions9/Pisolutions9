@@ -22,4 +22,6 @@ jobs:
         run: node pi/level2/orchestrator-test.mjs
       - name: Run mock end-to-end experiment
         run: python3 pi/level2/experiment-test.py
+      - name: Run structured handoff adversarial tests
+        run: python3 pi/level2/handoff-test.py
 
