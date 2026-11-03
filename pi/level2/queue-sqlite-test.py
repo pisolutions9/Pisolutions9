@@ -58,6 +58,16 @@ with tempfile.TemporaryDirectory() as d:
  check(q.finish("c","worker-z","late","evidence:late")=="lease_invalid")
  check(q2.finish("c","worker-x","done","evidence:done")=="awaiting_review")
  check(q.review("c","reviewer:independent",True,"review:ok")=="verified")
+ check(q.submit(task("expired"))=="accepted")
+ check(q.claim("claude","first",lease_seconds=5)["id"]=="expired")
+ now[0]+=6
+ check(q2.claim("claude","second",lease_seconds=5)["attempt"]==2)
+ now[0]+=6
+ check(q.reap_expired()==1)
+ check(q2.reap_expired()==0)
+ check(next(x for x in q.rows() if x["id"]=="expired")["status"]=="blocked")
+ check(q.finish("expired","second","late","evidence:late")=="lease_invalid")
+ check(q.claim("claude","third") is None)
  check(q.db.execute("PRAGMA integrity_check").fetchone()[0]=="ok")
  events=list(q.db.execute("SELECT previous_hash,hash FROM events ORDER BY seq"))
  check(all(e["previous_hash"]==(events[i-1]["hash"] if i else None) for i,e in enumerate(events)))
