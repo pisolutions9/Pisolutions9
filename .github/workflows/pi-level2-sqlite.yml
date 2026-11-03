@@ -20,3 +20,6 @@ jobs:
         run: python3 pi/level2/queue-sqlite-test.py
       - name: Run existing Level 2 mock orchestration tests
         run: node pi/level2/orchestrator-test.mjs
+      - name: Run mock end-to-end experiment
+        run: python3 pi/level2/experiment-test.py
+
