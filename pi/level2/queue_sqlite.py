@@ -101,8 +101,17 @@ class Queue:
      (task["id"],self.now(),MAX_ATTEMPTS))
    if cursor.rowcount:
     self._event(task["id"],"lease_attempts_exhausted",{"attempts":task["attempts"]})
+    self._block_parent_for_terminal_verifier(task["id"])
     changed+=1
   return changed
+
+ def _block_parent_for_terminal_verifier(self, tid):
+  child=self.db.execute("SELECT parent_id FROM tasks WHERE id=? AND role='verifier' AND depth=2 AND status='blocked'",(tid,)).fetchone()
+  if not child or not child["parent_id"]:return
+  cursor=self.db.execute("""UPDATE tasks SET status='blocked',failure_reason='verifier_child_terminal'
+   WHERE id=? AND status='awaiting_review' AND EXISTS
+   (SELECT 1 FROM tasks c WHERE c.parent_id=tasks.id AND c.role='verifier' AND c.depth=2 AND c.status='blocked')""",(child["parent_id"],))
+  if cursor.rowcount:self._event(child["parent_id"],"verifier_child_terminal",{"child_id":tid})
 
  def reap_expired(self):
   """Block exhausted expired leases even when no worker is claiming that role."""
@@ -129,9 +138,18 @@ class Queue:
    if not t or t["status"]!="awaiting_review":return "not_ready"
    if verifier.removeprefix("reviewer:")==t["completed_by"]:return "same_identity"
    # These are process labels, not authenticated identities.
+   if passed and t["role"]=="codex" and t["action"]=="write_patch":
+    children=self.db.execute("SELECT status FROM tasks WHERE parent_id=? AND role='verifier' AND depth=2",(tid,)).fetchall()
+    if not children or any(child["status"]!="verified" for child in children):return "verifier_not_verified"
    status="verified" if passed else ("blocked" if t["attempts"]>=MAX_ATTEMPTS else "queued")
-   self.db.execute("UPDATE tasks SET status=?,verifier=?,review_ref=? WHERE id=?",(status,verifier,review_ref,tid))
+   if status=="verified" and t["role"]=="codex" and t["action"]=="write_patch":
+    cursor=self.db.execute("""UPDATE tasks SET status=?,verifier=?,review_ref=? WHERE id=? AND status='awaiting_review'
+     AND EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id=tasks.id AND c.role='verifier' AND c.depth=2 AND c.status='verified')
+     AND NOT EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id=tasks.id AND c.role='verifier' AND c.depth=2 AND c.status!='verified')""",(status,verifier,review_ref,tid))
+    if not cursor.rowcount:return "verifier_not_verified"
+   else:self.db.execute("UPDATE tasks SET status=?,verifier=?,review_ref=? WHERE id=?",(status,verifier,review_ref,tid))
    self._event(tid,"review",{"verifier":verifier,"passed":passed,"ref":review_ref})
+   if status=="blocked":self._block_parent_for_terminal_verifier(tid)
    return status
 
  def reserve_paid_call(self,estimated_cents):
