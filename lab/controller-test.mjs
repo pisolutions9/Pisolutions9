@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import {createSimulation,authorize,handoff,LAB_LIMITS} from './controller.mjs';
+const valid=(id,action,depth=0,attempts=0)=>({id,action,goal:'Measure environment',depth,attempts});
+const base={mode:'simulation',hardwareConnected:false,emergencyStop:false,interlockClosed:true,costUsd:0,modelCalls:0};
+assert.equal(authorize(valid('ok','observe'),base),null);
+assert.equal(authorize(valid('bad','relay_on'),base),'action_not_allowlisted');
+assert.equal(authorize(valid('bad','observe'),{...base,hardwareConnected:true}),'hardware_disabled');
+assert.equal(authorize(valid('bad','observe'),{...base,emergencyStop:true}),'interlock_open');
+assert.equal(authorize(valid('bad','observe'),{...base,costUsd:1}),'budget_exceeded');
+assert.equal(authorize(valid('bad','observe',3),base),'depth_exceeded');
+assert.equal(authorize(valid('bad','observe',0,2),base),'retry_exhausted');
+assert.equal(authorize({...valid('bad','observe'),details:'production deploy'},base),'action_not_allowlisted');
+let tick=10000;
+const sim=createSimulation({now:()=>tick,sensor:()=>({value:24.5,observedAt:tick})});
+assert.deepEqual(sim.submit(valid('a','observe')),{accepted:true,id:'a'});
+assert.equal(sim.step().status,'simulated');
+assert.equal(sim.submit(valid('b','simulate_led_on')).accepted,true);
+assert.equal(sim.step().led,true);
+assert.equal(sim.submit(valid('b','simulate_led_on')).reason,'duplicate_task');
+tick+=LAB_LIMITS.maxEvidenceAgeMs+1;
+assert.equal(sim.submit(valid('c','simulate_led_off')).accepted,true);
+assert.equal(sim.step().reason,'no_fresh_sensor');
+assert.equal(sim.snapshot().state.led,true); // fail closed: never execute stale command
+sim.stop();
+assert.equal(sim.snapshot().state.led,false);
+assert.equal(sim.submit(valid('d','observe')).reason,'interlock_open');
+const stale=createSimulation({now:()=>10000,sensor:()=>({value:1,observedAt:0})});
+stale.submit(valid('s','observe'));assert.equal(stale.step().reason,'stale_or_invalid_sensor');
+assert.equal(stale.snapshot().hardwareConnected,false);
+assert.equal(stale.snapshot().mode,'simulation');
+assert.equal(sim.snapshot().evidence.length,3);
+assert.ok(sim.snapshot().evidence.every(x=>typeof x.hash==='string'&&x.hash.length===64));
+const report=handoff({parentId:'a',goal:'validate track',findings:'simulation works',evidenceHash:'abcd',nextAction:'review'});
+assert.equal(report.physicalExecutionAuthorized,false);
+console.log(JSON.stringify({status:'PASS',tests:18,mode:'simulation',hardwareActions:0,providerCalls:0,costUsd:0,
+  simulatedEvidence:sim.snapshot().evidence.map(e=>({id:e.id,status:e.status,reason:e.reason||null,hash:e.hash}))},null,2));
