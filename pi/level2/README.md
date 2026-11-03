@@ -31,5 +31,7 @@ The queue enforces parent depth and readiness before accepting a child task. It 
 
 `Queue.reap_expired()` atomically moves a task with an expired final lease to the existing `blocked` state with `failure_reason=lease_expired_max_attempts`, clears ownership, and records one event. A claim also runs this sweep. A single-host runner must poll or call the reaper for expiry to become visible; this draft does not install a production scheduler.
 
+If a depth-two verifier child reaches `blocked`, the queue blocks its `awaiting_review` implementation parent in the same transaction and records `failure_reason=verifier_child_terminal`. A `codex` `write_patch` task cannot become `verified` until a depth-two verifier child is verified. This is a queue state rule, not proof of authenticated reviewer identity.
+
 This is an **end-to-end mock integration**, not real Claude or Codex provider execution. The fixed fixture and controlled output do not establish general sandboxing for untrusted generated code. The verifier is a separate process with an independently computed check, but it has no separate authenticated identity or operating-system security boundary. The SQLite queue is durable on one host; it is not a cross-run distributed service. No provider adapter is enabled because no Claude provider connection or paid-call authorization is present in this workflow. Zero paid calls is enforced by `Queue.reserve_paid_call` denying all calls.
 
