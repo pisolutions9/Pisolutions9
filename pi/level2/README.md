@@ -27,5 +27,7 @@ Existing `pi-autonomous.yml`, `pi-team-24x7.yml`, `pi/runner.mjs`, production pa
 
 `python3 pi/level2/experiment.py run /path/to/empty/disposable/workspace` drives three stages through the SQLite queue without owner input between stages. A mock Claude process emits a bounded proposal, a mock Codex process changes one fixed arithmetic fixture, and a separate verifier process recomputes the source hash and checks acceptance behavior. `proof.json` records stage statuses, attempts, and zero paid calls. CI runs `experiment-test.py`.
 
+The queue enforces parent depth and readiness before accepting a child task. It retains the completing worker label and rejects review under that same label. This improves state integrity but does not authenticate either label.
+
 This is an **end-to-end mock integration**, not real Claude or Codex provider execution. The fixed fixture and controlled output do not establish general sandboxing for untrusted generated code. The verifier is a separate process with an independently computed check, but it has no separate authenticated identity or operating-system security boundary. The SQLite queue is durable on one host; it is not a cross-run distributed service. No provider adapter is enabled because no Claude provider connection or paid-call authorization is present in this workflow. Zero paid calls is enforced by `Queue.reserve_paid_call` denying all calls.
 
