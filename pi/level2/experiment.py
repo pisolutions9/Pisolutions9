@@ -61,8 +61,8 @@ def stage(root, name):
     passed = namespace["add"](2, 3) == 5 and namespace["add"](-2, 1) == -1
    write_json(root / "verification.json", {"schema":"pi.level2.verification.v1", "verifier":"independent-process", "passed":passed, "source_sha256":digest(source), "acceptance":ACCEPTANCE})
    assert q.finish(claim["id"], "independent-verifier", "acceptance checked", "verification.json") == "awaiting_review"
-   assert q.review("implement", "reviewer:independent-process", passed, "verification.json") in ("verified", "queued")
    assert q.review("verify", "reviewer:broker", passed, "verification.json") in ("verified", "queued")
+   assert q.review("implement", "reviewer:independent-process", passed, "verification.json") in ("verified", "queued")
   else: raise ValueError("unknown_stage")
  finally: q.close()
 
