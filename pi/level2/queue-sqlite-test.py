@@ -62,10 +62,15 @@ with tempfile.TemporaryDirectory() as d:
  check(q.claim("claude","first",lease_seconds=5)["id"]=="expired")
  now[0]+=6
  check(q2.claim("claude","second",lease_seconds=5)["attempt"]==2)
+ check(q2.reap_expired()==0)
+ check(next(x for x in q.rows() if x["id"]=="expired")["status"]=="running")
  now[0]+=6
  check(q.reap_expired()==1)
  check(q2.reap_expired()==0)
- check(next(x for x in q.rows() if x["id"]=="expired")["status"]=="blocked")
+ exhausted=next(x for x in q.rows() if x["id"]=="expired")
+ check(exhausted["status"]=="blocked" and exhausted["failure_reason"]=="lease_expired_max_attempts")
+ check(exhausted["lease_owner"] is None and exhausted["lease_until"] is None and exhausted["attempts"]==2)
+ check(q.db.execute("SELECT COUNT(*) FROM tasks WHERE status='running' AND lease_until<=? AND attempts>=?",(now[0],MAX_ATTEMPTS)).fetchone()[0]==0)
  check(q.finish("expired","second","late","evidence:late")=="lease_invalid")
  check(q.claim("claude","third") is None)
  check(q.db.execute("PRAGMA integrity_check").fetchone()[0]=="ok")
