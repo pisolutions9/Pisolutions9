@@ -10,7 +10,7 @@ permissions:
 jobs:
   sqlite-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
@@ -24,4 +24,10 @@ jobs:
         run: python3 pi/level2/experiment-test.py
       - name: Run structured handoff adversarial tests
         run: python3 pi/level2/handoff-test.py
+      - name: Run signed verifier boundary adversarial tests
+        timeout-minutes: 8
+        run: python3 pi/level2/verifier-boundary-test.py
+      - name: Run disabled provider adapter tests
+        run: python3 pi/level2/providers-test.py
+
 
