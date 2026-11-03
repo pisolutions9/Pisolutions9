@@ -77,6 +77,7 @@ class Queue:
   if role not in ROLES or not worker or not isinstance(lease_seconds,int) or not 1<=lease_seconds<=300:raise ValueError("invalid_claim")
   with self.db:
    self.db.execute("BEGIN IMMEDIATE")
+   self._reap_expired_locked()
    task=self.db.execute("""SELECT * FROM tasks WHERE role=? AND
      (status='queued' OR (status='running' AND lease_until<=?))
      AND attempts<? ORDER BY created_at,id LIMIT 1""",(role,self.now(),MAX_ATTEMPTS)).fetchone()
@@ -85,6 +86,21 @@ class Queue:
                    (worker,self.now()+lease_seconds,task["id"]))
    self._event(task["id"],"claimed",{"worker":worker,"attempt":task["attempts"]+1})
    return {"id":task["id"],"goal":task["goal"],"role":role,"attempt":task["attempts"]+1}
+
+ def _reap_expired_locked(self):
+  expired=self.db.execute("""SELECT id,attempts FROM tasks WHERE status='running'
+    AND lease_until<=? AND attempts>=? ORDER BY created_at,id""",
+    (self.now(),MAX_ATTEMPTS)).fetchall()
+  for task in expired:
+   self.db.execute("UPDATE tasks SET status='blocked',lease_owner=NULL,lease_until=NULL WHERE id=?",(task["id"],))
+   self._event(task["id"],"lease_attempts_exhausted",{"attempts":task["attempts"]})
+  return len(expired)
+
+ def reap_expired(self):
+  """Block exhausted expired leases even when no worker is claiming that role."""
+  with self.db:
+   self.db.execute("BEGIN IMMEDIATE")
+   return self._reap_expired_locked()
 
  def finish(self,tid,worker,result,evidence_ref):
   if not isinstance(result,str) or not result or len(result)>4096 or not evidence_ref or len(evidence_ref)>300:raise ValueError("bad_output")
