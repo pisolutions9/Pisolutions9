@@ -52,7 +52,7 @@ class Queue:
   if not isinstance(tid,str) or not tid or len(tid)>64 or not all(c.isalnum() or c in "_-" for c in tid): return "bad_id"
   if task.get("role") not in ROLES or task.get("action") not in ACTIONS: return "bad_capability"
   if not isinstance(task.get("goal"),str) or not 4<=len(task["goal"])<=500: return "bad_goal"
-  if not isinstance(task.get("depth"),int) or not 0<=task["depth"]<=MAX_DEPTH: return "depth"
+  if type(task.get("depth")) is not int or not 0<=task["depth"]<=MAX_DEPTH: return "depth"
   acceptance=task.get("acceptance")
   if not isinstance(acceptance,list) or not acceptance or any(not isinstance(x,str) or len(x)>200 for x in acceptance): return "acceptance"
   # This broker holds research metadata only. No arbitrary commands, credentials or paths.
@@ -77,13 +77,15 @@ class Queue:
   return "accepted"
 
  def claim(self,role,worker,lease_seconds=30):
-  if role not in ROLES or not worker or not isinstance(lease_seconds,int) or not 1<=lease_seconds<=300:raise ValueError("invalid_claim")
+  if role not in ROLES or not worker or type(lease_seconds) is not int or not 1<=lease_seconds<=300:raise ValueError("invalid_claim")
   with self.db:
    self.db.execute("BEGIN IMMEDIATE")
    self._reap_expired_locked()
    task=self.db.execute("""SELECT * FROM tasks WHERE role=? AND
      (status='queued' OR (status='running' AND lease_until<=?))
-     AND attempts<? ORDER BY created_at,id LIMIT 1""",(role,self.now(),MAX_ATTEMPTS)).fetchone()
+     AND attempts<? AND (role!='verifier' OR parent_id IS NULL OR EXISTS
+     (SELECT 1 FROM tasks p WHERE p.id=tasks.parent_id AND p.status='awaiting_review'))
+     ORDER BY created_at,id LIMIT 1""",(role,self.now(),MAX_ATTEMPTS)).fetchone()
    if task is None:return None
    self.db.execute("UPDATE tasks SET status='running',attempts=attempts+1,lease_owner=?,lease_until=? WHERE id=?",
                    (worker,self.now()+lease_seconds,task["id"]))
@@ -128,6 +130,13 @@ class Queue:
    self.db.execute("UPDATE tasks SET status='awaiting_review',result=?,evidence_ref=?,completed_by=?,lease_owner=NULL,lease_until=NULL WHERE id=?",
                    (result,evidence_ref,worker,tid))
    self._event(tid,"submitted_for_review",{"ref":evidence_ref})
+   # A parent re-entering review after its verifier child already went terminal must not wait forever.
+   cursor=self.db.execute("""UPDATE tasks SET status='blocked',failure_reason='verifier_child_terminal'
+    WHERE id=? AND status='awaiting_review' AND EXISTS
+    (SELECT 1 FROM tasks c WHERE c.parent_id=tasks.id AND c.role='verifier' AND c.depth=2 AND c.status='blocked')""",(tid,))
+   if cursor.rowcount:
+    self._event(tid,"verifier_child_terminal",{"on":"finish"})
+    return "blocked"
    return "awaiting_review"
 
  def review(self,tid,verifier,passed,review_ref):
@@ -158,4 +167,5 @@ class Queue:
 
  def rows(self):
   return [dict(x) for x in self.db.execute("SELECT * FROM tasks ORDER BY created_at,id")]
+
 
