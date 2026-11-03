@@ -15,7 +15,7 @@ with tempfile.TemporaryDirectory() as tmp:
  assert proof["attempts"] == {"propose":1, "implement":1, "verify":1}
  assert proof["paid_provider_calls"] == proof["spent_usd"] == proof["production_mutations"] == 0
  assert (root / "proof.json").exists()
- assert json.loads((root / "verification.json").read_text())["passed"] is True
+ assert json.loads((root / "handoff" / "verification.json").read_text())["payload"]["passed"] is True
  q = Queue(str(root / "queue.db"))
  assert q.db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
  events = list(q.db.execute("SELECT previous_hash,hash FROM events ORDER BY seq"))
@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory() as tmp:
   subprocess.run([sys.executable, str(Path(__file__).with_name("experiment.py").resolve()), "stage", str(tampered), role], check=True, timeout=20, cwd=tampered, env={"PATH":os.environ.get("PATH", ""), "SYSTEMROOT":os.environ.get("SYSTEMROOT", "")})
  (tampered / "candidate.py").write_text("def add(a, b):\n    return 0\n", encoding="utf-8")
  subprocess.run([sys.executable, str(Path(__file__).with_name("experiment.py").resolve()), "stage", str(tampered), "verifier"], check=True, timeout=20, cwd=tampered, env={"PATH":os.environ.get("PATH", ""), "SYSTEMROOT":os.environ.get("SYSTEMROOT", "")})
- assert json.loads((tampered / "verification.json").read_text(encoding="utf-8"))["passed"] is False
+ assert json.loads((tampered / "handoff" / "verification.json").read_text(encoding="utf-8"))["payload"]["passed"] is False
  q = Queue(str(tampered / "queue.db"))
  assert {row["id"]:row["status"] for row in q.rows()} == {"propose":"verified","implement":"queued","verify":"queued"}
  q.close()
