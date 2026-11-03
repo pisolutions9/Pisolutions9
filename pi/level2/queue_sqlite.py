@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS tasks(
  id TEXT PRIMARY KEY, role TEXT NOT NULL, action TEXT NOT NULL, goal TEXT NOT NULL,
  status TEXT NOT NULL, depth INTEGER NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
  lease_owner TEXT, lease_until INTEGER, evidence_ref TEXT, result TEXT,
- verifier TEXT, review_ref TEXT, parent_id TEXT, completed_by TEXT, created_at INTEGER NOT NULL);
+ verifier TEXT, review_ref TEXT, parent_id TEXT, completed_by TEXT,
+ failure_reason TEXT, created_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS events(
  seq INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT NOT NULL,
  kind TEXT NOT NULL, payload TEXT NOT NULL, previous_hash TEXT, hash TEXT NOT NULL);
@@ -31,6 +32,8 @@ class Queue:
   self.db.executescript(SCHEMA)
   if "completed_by" not in {row[1] for row in self.db.execute("PRAGMA table_info(tasks)")}:
    self.db.execute("ALTER TABLE tasks ADD COLUMN completed_by TEXT")
+  if "failure_reason" not in {row[1] for row in self.db.execute("PRAGMA table_info(tasks)")}:
+   self.db.execute("ALTER TABLE tasks ADD COLUMN failure_reason TEXT")
   self.now=now or (lambda: int(time.time()))
 
  def close(self): self.db.close()
@@ -91,10 +94,15 @@ class Queue:
   expired=self.db.execute("""SELECT id,attempts FROM tasks WHERE status='running'
     AND lease_until<=? AND attempts>=? ORDER BY created_at,id""",
     (self.now(),MAX_ATTEMPTS)).fetchall()
+  changed=0
   for task in expired:
-   self.db.execute("UPDATE tasks SET status='blocked',lease_owner=NULL,lease_until=NULL WHERE id=?",(task["id"],))
-   self._event(task["id"],"lease_attempts_exhausted",{"attempts":task["attempts"]})
-  return len(expired)
+   cursor=self.db.execute("""UPDATE tasks SET status='blocked',failure_reason='lease_expired_max_attempts',
+     lease_owner=NULL,lease_until=NULL WHERE id=? AND status='running' AND lease_until<=? AND attempts>=?""",
+     (task["id"],self.now(),MAX_ATTEMPTS))
+   if cursor.rowcount:
+    self._event(task["id"],"lease_attempts_exhausted",{"attempts":task["attempts"]})
+    changed+=1
+  return changed
 
  def reap_expired(self):
   """Block exhausted expired leases even when no worker is claiming that role."""
