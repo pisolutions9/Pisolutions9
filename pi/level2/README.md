@@ -29,5 +29,7 @@ Existing `pi-autonomous.yml`, `pi-team-24x7.yml`, `pi/runner.mjs`, production pa
 
 The queue enforces parent depth and readiness before accepting a child task. It retains the completing worker label and rejects review under that same label. This improves state integrity but does not authenticate either label.
 
+`Queue.reap_expired()` atomically moves a task with an expired final lease to `blocked`, clears ownership, and records one event. A claim also runs this sweep. A single-host runner must poll or call the reaper for expiry to become visible; this draft does not install a production scheduler.
+
 This is an **end-to-end mock integration**, not real Claude or Codex provider execution. The fixed fixture and controlled output do not establish general sandboxing for untrusted generated code. The verifier is a separate process with an independently computed check, but it has no separate authenticated identity or operating-system security boundary. The SQLite queue is durable on one host; it is not a cross-run distributed service. No provider adapter is enabled because no Claude provider connection or paid-call authorization is present in this workflow. Zero paid calls is enforced by `Queue.reserve_paid_call` denying all calls.
 
