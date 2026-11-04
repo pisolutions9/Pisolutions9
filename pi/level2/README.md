@@ -1,6 +1,8 @@
 # PI Level 2 Candidate — software-experiment agent handoffs
 
-Status: **mock-tested only**. No real Claude/Codex API execution or production deployment.
+Status: **draft, unmerged**. The bounded operator-machine experiment recorded one real Claude Code subscription CLI proposal and one real Codex subscription CLI implementation. CI replays those recorded bytes with zero provider calls; its other agent stages use mocks. No production deployment.
+
+The verifier lane is pinned to content-addressed git objects, but its pin is still supplied by this PR until the reviewed pin reaches `main`. It does not yet protect against a malicious PR changing both the workflow and pin. See `SUBSCRIPTION_PROOF.md` and `VERIFIER_BOUNDARY.md` for the proof and trust boundary.
 
 Canonical base main: 13c0c943cf75ddbf61fc568971426610e61e1985.
 
