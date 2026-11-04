@@ -1,0 +1,29 @@
+{
+  "attempts": {
+    "implement": 1,
+    "propose": 1,
+    "verify": 1
+  },
+  "auth": {
+    "claude": "claude.ai subscription",
+    "codex": "ChatGPT subscription"
+  },
+  "candidate_sha256": "ba1a531f581d2e6094e978ed6f7aca7a8d92eeb62c6e7ad73ee692f7f18bc772",
+  "codex_application": "broker_applied_exact_model_output",
+  "extra_usage_credits": "must_be_off_in_account_settings",
+  "mode": "real-subscription-clis",
+  "paid_api_calls": 0,
+  "production_mutations": 0,
+  "schema": "pi.level2.subscription-proof.v1",
+  "stages": [
+    "real-claude-cli",
+    "real-codex-cli",
+    "independent-python-process"
+  ],
+  "statuses": {
+    "implement": "verified",
+    "propose": "verified",
+    "verify": "verified"
+  },
+  "verifier_identity": "same-OS-account-process-label"
+}

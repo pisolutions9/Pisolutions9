@@ -1,0 +1,3 @@
+# Byte-identical lane files on every OS: verifier-pin.json hashes and fixture hashes depend on LF.
+* text=auto eol=lf
+*.db binary
