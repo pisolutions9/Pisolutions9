@@ -1,8 +1,11 @@
 name: PI Level 2 Verifier Identity Boundary
-# Separate OS identity for the verifier on a DISPOSABLE GitHub-hosted runner, running PINNED verifier code.
-# Provider use: ZERO calls. Mock Claude/Codex stages, plus byte-for-byte replay of one committed bundle of real
-# Claude/Codex subscription CLI output recorded on the operator machine (pi/level2/proofs/). No provider
-# credentials, no secrets, no network from candidate code, zero paid usage, no deploy, no merge.
+# Separate OS identity for the verifier on a DISPOSABLE GitHub-hosted runner. The whole verification lane (worker,
+# broker acceptance, queue, bundle checks, test assertions, replayed subject) runs from a copy rebuilt from the git
+# objects named in verifier-pin.json, never from the PR working tree.
+# Evidence kinds: mock Claude/Codex stages; CI REPLAY (byte-for-byte) of one real CLI RECORDING made on the operator
+# machine on 2026-11-03. ZERO provider calls in CI, no credentials or secrets, zero paid usage, no deploy, no merge.
+# TRUST: when the base branch has no pin, the pin comes from this PR ("bootstrap-pr") and protects nothing against a
+# malicious PR. This workflow file is itself PR-controlled on pull_request; see VERIFIER_BOUNDARY.md.
 on:
   workflow_dispatch:
   pull_request:
@@ -17,58 +20,96 @@ concurrency:
 jobs:
   verifier-identity:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
           fetch-depth: 0
-      - name: Negative control - suite must FAIL before the boundary exists
-        run: |
-          set +e
-          /usr/bin/python3 pi/level2/verifier-identity-test.py > pre.log 2>&1
-          rc=$?
-          set -e
-          cat pre.log
-          test "$rc" -eq 1
-          grep -q "FAIL: verifier boundary unavailable" pre.log
-          echo "negative control OK: missing boundary fails the suite (exit $rc)"
-      - name: Resolve verifier pin (base branch pin wins when the base has one)
+      - name: Resolve lane pin (base branch pin wins; PR pin is bootstrap only)
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           echo "PI_VERIFIER_PIN=$RUNNER_TEMP/verifier-pin.json" >> "$GITHUB_ENV"
-          echo "TRUSTED=$RUNNER_TEMP/trusted-verifier" >> "$GITHUB_ENV"
+          echo "TRUSTED=$RUNNER_TEMP/trusted-lane" >> "$GITHUB_ENV"
           echo "PI_PROOF_OUT=$RUNNER_TEMP/subscription-verified-proof.json" >> "$GITHUB_ENV"
+          echo "PI_PR_TREE=$GITHUB_WORKSPACE/pi/level2" >> "$GITHUB_ENV"
           if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:pi/level2/verifier-pin.json" 2>/dev/null; then
             git show "$BASE_SHA:pi/level2/verifier-pin.json" > "$RUNNER_TEMP/verifier-pin.json"
             echo "PI_PIN_SOURCE=base:$BASE_SHA" >> "$GITHUB_ENV"
+            echo "PI_PIN_TRUST=base" >> "$GITHUB_ENV"
           else
             git show "HEAD:pi/level2/verifier-pin.json" > "$RUNNER_TEMP/verifier-pin.json"
-            echo "PI_PIN_SOURCE=pr-bootstrap(base has no pin yet)" >> "$GITHUB_ENV"
+            echo "PI_PIN_SOURCE=pr-head(base has no pin)" >> "$GITHUB_ENV"
+            echo "PI_PIN_TRUST=bootstrap-pr" >> "$GITHUB_ENV"
+            echo "::warning title=bootstrap pin::verifier-pin.json comes from this PR; no protection against a malicious PR is claimed"
           fi
           cat "$RUNNER_TEMP/verifier-pin.json"
-      - name: Materialize pinned verifier from git objects (git, jq, sha256sum only)
+      - name: Materialize pinned lane from git objects (git, jq, sha256sum only)
         run: |
           mkdir "$TRUSTED"
           for name in $(jq -r '.files | keys[]' "$PI_VERIFIER_PIN"); do
             blob=$(jq -r --arg n "$name" '.files[$n].git_blob' "$PI_VERIFIER_PIN")
             want=$(jq -r --arg n "$name" '.files[$n].sha256' "$PI_VERIFIER_PIN")
+            mkdir -p "$(dirname "$TRUSTED/$name")"
             git cat-file blob "$blob" > "$TRUSTED/$name"
             echo "$want  $TRUSTED/$name" | sha256sum -c -
           done
           echo "PIN_CODE=$(jq -r .code_sha256 "$PI_VERIFIER_PIN")" >> "$GITHUB_ENV"
-      - name: Hostile edit - make the PR working tree's own verifier always pass
+      - name: Negative control - pinned suite must FAIL before the boundary exists
+        working-directory: ${{ runner.temp }}/trusted-lane
+        run: |
+          set +e
+          /usr/bin/python3 -E -s verifier-identity-test.py > "$RUNNER_TEMP/pre.log" 2>&1
+          rc=$?
+          set -e
+          cat "$RUNNER_TEMP/pre.log"
+          test "$rc" -eq 1
+          grep -q "FAIL: verifier boundary unavailable" "$RUNNER_TEMP/pre.log"
+          echo "negative control OK: missing boundary fails the suite (exit $rc)"
+      - name: Hostile edit - make the PR checkout's acceptance code always pass (4 decision points)
         run: |
           /usr/bin/python3 - <<'EOF'
           from pathlib import Path
-          p = Path("pi/level2/verifier_worker.py"); s = p.read_text()
-          old = 'return ("ok" if code == 0 and matched else "acceptance_failed"), result'
-          assert s.count(old) == 1
-          p.write_text(s.replace(old, 'return "ok", result  # BACKDOOR'))
+          edits = {
+           "pi/level2/verifier_worker.py": ('return ("ok" if code == 0 and matched else "acceptance_failed"), result',
+                                            'return "ok", result  # BACKDOOR: worker judgment'),
+           "pi/level2/verifier_boundary.py": (' passed = bool(accepted and att["passed"])',
+                                              ' passed = True  # BACKDOOR: broker acceptance'),
+           "pi/level2/subscription_bridge.py": ('def validate(bundle):\n',
+                                                'def validate(bundle):\n return bundle  # BACKDOOR: bundle checks\n'),
+           "pi/level2/verifier-identity-test.py": ('def check(cond, label):\n global count\n if not cond:',
+                                                   'def check(cond, label):\n global count\n if False:  # BACKDOOR: test'),
+          }
+          for name, (old, new) in edits.items():
+              p = Path(name); s = p.read_text()
+              assert s.count(old) == 1, name
+              p.write_text(s.replace(old, new))
           EOF
           git diff --stat
-      - name: Provisioning from the edited PR tree is refused (code not pinned)
+      - name: Control - the backdoored PR checkout really does accept wrong code
+        working-directory: pi/level2
+        run: |
+          /usr/bin/python3 - <<'EOF'
+          import copy, json, tempfile
+          from pathlib import Path
+          import handoff, subscription_bridge as sb, verifier_boundary as vb
+          real = json.loads(Path("proofs/subscription-proof6.bundle.json").read_text())
+          wrong = copy.deepcopy(real)
+          wrong["candidate_source"] = "def add(a, b):\n    return a - b\n"
+          wrong["candidate_sha256"] = sb.sha(wrong["candidate_source"].encode())
+          wrong["implementation"] = handoff.build("implementation", "implement", "codex-cli", sb.sha(handoff.canonical(real["proposal"])),
+              dict(real["implementation"]["payload"], after_sha256=wrong["candidate_sha256"]), mode=sb.REAL)
+          with tempfile.TemporaryDirectory() as t:
+              t = Path(t); (t / "b").mkdir()
+              k, i, pem = vb.generate_identity(t / "k", "pr-tree")
+              vb.write_registry(t / "b" / "r.json", [(i, "verifier", "pr-tree", pem)])
+              proof = sb.verify(wrong, t / "ws", t / "b", vb.load_registry(t / "b" / "r.json"), key_path=k, key_id=i, allow_unisolated=True)
+          print(json.dumps({"pr_tree_passed_wrong_code": proof["verifier"]["passed"], "statuses": proof["statuses"]}))
+          assert proof["verifier"]["passed"] and proof["statuses"]["implement"] == "verified", "backdoor not live"
+          print("BACKDOOR LIVE: code from the PR checkout verifies a wrong implementation")
+          EOF
+      - name: Provisioning from the edited PR checkout is refused (code not pinned)
         run: |
           set +e
           sudo /usr/bin/python3 -I -S pi/level2/verifier_provision.py --broker-user "$(id -un)" --expect-code-sha256 "$PIN_CODE" --check-only > refuse.log 2>&1
@@ -90,10 +131,11 @@ jobs:
           if sudo -n true 2>/dev/null; then echo "broker still has root"; exit 1; fi
           ls -l /etc/pi-level2/trust.json /opt/pi-level2-verifier
           ls -ld /var/lib/pi-level2-verifier/keys
-      - name: Separate-identity verifier adversarial tests + real bundle (fails if boundary or pin is missing)
-        timeout-minutes: 8
+      - name: Protected lane (pinned copy) - adversarial tests + CI replay of the real recording
+        timeout-minutes: 10
+        working-directory: ${{ runner.temp }}/trusted-lane
         env:
           PI_HOSTILE_EDIT: '1'
         run: |
-          /usr/bin/python3 pi/level2/verifier-identity-test.py
-          echo "::notice title=subscription-verified-proof::$(jq -c '{subject: .real_bundle.subject_mode_signed, verifier: .real_bundle.stages.verify, passed: .real_bundle.verifier.passed, calls_recorded: .real_bundle.provider_calls_recorded, calls_this_run: .real_bundle.provider_calls_this_run, statuses: .real_bundle.statuses, depths: .real_bundle.depths, code: .pin_code_sha256, pin_source: .pin_source, tree_code: .working_tree_code_sha256, wrong_bundle: .wrong_bundle_reason}' "$PI_PROOF_OUT")"
+          /usr/bin/python3 -E -s verifier-identity-test.py
+          echo "::notice title=subscription-verified-proof::$(jq -c '{pin_trust, malicious_pr_protection, pin_source, subject: .real_bundle.subject_mode_signed, verifier: .real_bundle.stages.verify, real_passed: .real_bundle.verifier.passed, wrong_bundle: .wrong_bundle_reason, calls_recorded_2026_11_03: .real_bundle.provider_calls_recorded, calls_this_run: .real_bundle.provider_calls_this_run, statuses: .real_bundle.statuses, depths: .real_bundle.depths, code: .pin_code_sha256, lane: .pin_lane_sha256, pr_tree_code: .pr_tree_code_sha256}' "$PI_PROOF_OUT")"

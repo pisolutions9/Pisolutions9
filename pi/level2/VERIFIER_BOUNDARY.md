@@ -1,6 +1,6 @@
 # Level 2 verifier boundary and provider adapters
 
-Status: two lanes. **Simulated lane** (`verifier-boundary-test.py`): local fixture keys on one OS account, real signatures. **OS-user lane** (`verifier-identity-test.py`, Linux CI verified 2026-11-04): the verifier runs as a separate OS account that holds the only copy of its key. Both lanes use mock providers. No paid provider call occurs in CI.
+Status: two lanes. **Simulated lane** (`verifier-boundary-test.py`): local fixture keys on one OS account, real signatures. **OS-user lane** (`verifier-identity-test.py`, Linux CI verified 2026-11-04 for the identity boundary; the pinned-lane version is pending CI): the verifier runs as a separate OS account that holds the only copy of its key. Both lanes use mock providers. No paid provider call occurs in CI.
 
 The [verifier-identity CI job](https://github.com/pisolutions9/Pisolutions9/actions/runs/41747125431/job/126302836879) first failed as expected before provisioning (`verifier_or_candidate_user_missing`), then passed 33 adversarial assertions after provisioning. It reported `identity: os-user:pi-verifier`, `candidate_identity: os-user:pi-candidate`, `key_readable_by_broker: false`, and `harness_isolation: os-user`. The job used mock Claude/Codex stages and zero paid calls.
 
@@ -28,11 +28,28 @@ The installed worker is always in os-user mode. It ignores caller-supplied `--ke
 
 **What the os-user lane still does not establish:** the verifier code is installed from the same PR checkout it tests. The boundary holds only from provisioning onward, and a hostile PR could change the provisioner itself. Pinning the verifier code to `main` or a separate repository is the next step. The identity is an OS account on one ephemeral VM, not a hardware or externally issued key. Root on that VM can still read the key.
 
-## Pinned verifier code and the real-subscription bridge (2026-11-04, CI result pending)
+## Pinned verification lane (2026-11-04; Linux CI result pending)
 
-**Pin.** `verifier-pin.json` names `verifier_worker.py`, `handoff.py` and `verifier_provision.py` by git blob id and sha256, plus their combined `code_sha256`. Blob ids are content addresses, so the pin survives rebases and re-created commits. In CI, `pi-level2-verifier-identity.yml` reads the pin from the **base branch when the base has one**, and from the PR only as a bootstrap until then (`PI_PIN_SOURCE` records which). It rebuilds those files from git objects using only git, jq and sha256sum, and provisions from that copy, never from the PR working tree. The provisioner exits 2 (`verifier_code_not_pinned`) before changing anything if its code does not hash to the pin. The worker signs `verifier_code_sha256` into every attestation. Root writes the pinned hash into the registry, and `require_identity="os-user"` rejects any mismatch, including a registry entry with no pin. `verifier_pin.py check` fails the sqlite job when the PR's verifier files drift from the pin, so a verifier change needs a deliberate, reviewable re-pin.
+**Which code decides "pass".** In the os-user lane, these files decide whether a signed result passes, and all of them are now pinned:
 
-Adversarial CI step: the workflow edits the PR working tree's `verifier_worker.py` to always return `ok`. Provisioning from that tree must be refused, and the pinned verifier must still sign a failure for real-labelled wrong code.
+| Decision | File |
+|---|---|
+| Oracle, judgment, signing (runs as `pi-verifier`) | `verifier_worker.py`, `handoff.py` |
+| Candidate sandbox (generates harness and root wrapper) | `verifier_provision.py` |
+| Accepting signature, identity and code hash | `verifier_boundary.py` |
+| Status transitions (verified, queued, blocked) | `queue_sqlite.py` |
+| Bundle scope and proof | `subscription_bridge.py` |
+| Acceptance contract and stages | `experiment.py`, `level2_fixtures.py` |
+| Assertions that make CI pass | `verifier-identity-test.py` |
+| Replayed subject | `proofs/subscription-proof6.bundle.json` |
+
+Before this change, only the first three were pinned. The broker's acceptance code and the test ran from the PR checkout, so a PR could make them always pass.
+
+**Pin.** `verifier-pin.json` (schema v2) names all ten lane files by git blob id and sha256, plus `code_sha256` (the three installed files, signed into every attestation and bound in the root-written registry) and `lane_sha256` (all ten). CI rebuilds the lane from git objects using only git, jq and sha256sum. It provisions `pi-verifier` from that copy and **runs the test from that copy**. The test exits 1 unless every lane file it runs from matches the pin. In the protected lane, nothing from the PR checkout executes except the workflow file. `verifier_pin.py check` fails the sqlite job when the PR's lane drifts from the pin, so any change to the decision code needs a visible re-pin. `pi/level2/.gitattributes` forces LF, so Windows and Linux checkouts produce the same hashes.
+
+**Trust label (no overclaim).** CI uses the base branch's pin when the base has one (`pin_trust: base`). Otherwise it uses the PR's own pin, labelled `pin_trust: bootstrap-pr`. The PR chose that pin, so the proof says `malicious_pr_protection: none`. A base-branch pin protects against a malicious PR only once an owner ruleset also protects the workflow file and the pin (a required workflow, or CODEOWNERS plus branch protection), because on `pull_request` the workflow file comes from the PR. Until then, the pin guarantees that the decision code CI runs is the reviewed, content-checked code named in the pin, and that any PR edit to it is visible. It is not a defence against a PR that also rewrites the pin or the workflow.
+
+**Negative test (in CI).** The workflow edits the PR checkout's acceptance code to always pass, at four decision points: worker judgment, broker `passed`, bundle `validate`, and the test's `check()`. A control step proves the backdoor is live: PR-tree code verifies a wrong implementation (`passed=True`, `implement: verified`). Provisioning from the edited tree must be refused (`verifier_code_not_pinned`). The protected lane, run from the pinned copy, must still sign a failure for the same wrong code, and must confirm that its broker modules loaded from the pinned copy. A local rehearsal of the same steps (simulated identity) gave PR tree `passed=True` and pinned copy `passed=False`.
 
 **Bridge.** `subscription_bridge.py` exports a real `subscription_experiment.py` run as a strict bundle: real-mode handoff envelopes, exact candidate bytes, call counts (1 Claude, 1 Codex), and CLI-reported provenance. `verify` imports the bundle into a fresh disposable queue (depth ≤ 2, attempts ≤ 2) and verifies it through the `pi-verifier` identity. It refuses tampered candidates, injected fields, paid or production claims, extra calls, raised limits, mock output relabelled as real, out-of-scope files, weakened acceptance, and broken upstream links.
 
@@ -81,7 +98,7 @@ Candidate interfaces are Claude Code headless mode and Codex CLI non-interactive
 
 ## Owner-gated dependencies for real (non-simulated) independence
 
-1. ~~A separate OS account for the verifier, holding its key~~: implemented and CI verified as the os-user lane on a disposable CI VM. Verifier code pinning is implemented as above (binding only after merge plus an owner ruleset). Still open: a separate runner/VM so that root on the implementer's machine cannot read the key.
+1. ~~A separate OS account for the verifier, holding its key~~: implemented and CI verified as the os-user lane on a disposable CI VM. Lane pinning is implemented as above: a bootstrap pin until it is on the base branch, and binding against a malicious PR only with an owner ruleset on the workflow and pin. Still open: a separate runner/VM so that root on the implementer's machine cannot read the key.
 2. A key bound to that identity (an environment secret or OIDC-issued signing), plus a registry change process the implementer cannot write to.
 3. Provider runner configuration and an explicit spending authorization replacing the `reserve_paid_call` denial.
 

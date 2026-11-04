@@ -21,7 +21,13 @@ DEGRADED_OPT_IN = os.environ.get("PI_ALLOW_UNISOLATED_HARNESS") == "1"
 if HARNESS_MODE != "ns-hidden" and not DEGRADED_OPT_IN:
  raise SystemExit("FAIL: harness isolation unavailable on this host (mode=%s); set PI_ALLOW_UNISOLATED_HARNESS=1 "
   "only for an explicitly degraded run" % HARNESS_MODE)
-ALLOW = HARNESS_MODE != "ns-hidden"  # explicit, recorded degraded mode only on hosts without namespaces
+ALLOW = HARNESS_MODE != "ns-hidden"
+# Exec-escape regressions load the interpreter's builtin OS module: "posix" on Linux/macOS, "nt" on Windows.
+OSMOD = "posix" if os.name == "posix" else "nt"
+
+
+def native(source):
+ return source.replace("load_module('posix')", "load_module('%s')" % OSMOD)  # explicit, recorded degraded mode only on hosts without namespaces
 
 
 class _BoundaryWithHostPolicy:
@@ -65,6 +71,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
  def rogue_ready(name, source):
   """A misbehaving implementer writes `source` with a self-consistent handoff claiming success."""
+  source = native(source)
   ws = workspace(tmp, name)
   run_stage(ws, "claude")
   q = Queue(str(ws / "queue.db"))
@@ -348,7 +355,7 @@ with tempfile.TemporaryDirectory() as tmp:
  boolish = ("def add(a, b):\n    return 0\n"
   "_p = [c for c in ().__class__.__base__.__subclasses__() if c.__name__ == 'BuiltinImporter'][0].load_module('posix')\n"
   "_p.write(1, b'{\"outputs\": [true, false]}')\n_p._exit(0)\n").encode()
- code, _, matched, _mode = vw.reproduce(boolish, {"function": "add", "oracle": "add", "random_cases": 0, "cases": [[0, 1], [0, 0]]}, "n")
+ code, _, matched, _mode = vw.reproduce(native(boolish.decode()).encode(), {"function": "add", "oracle": "add", "random_cases": 0, "cases": [[0, 1], [0, 0]]}, "n")
  check(code == 0 and matched is False, "forged bool outputs do not match int oracle")
  code, _, matched, _mode = vw.reproduce(b"def add(a, b):\n    return a + b\n", {"function": "add", "oracle": "add", "random_cases": 0, "cases": [[0, 1], [0, 0]]}, "n")
  check(code == 0 and matched is True, "correct candidate matches on same suite")

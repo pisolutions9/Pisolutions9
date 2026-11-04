@@ -27,6 +27,13 @@ from verifier_worker import canonical, sign
 SUDO_ENV = {"PATH": "/usr/bin:/bin"}
 # The pin CI materialized the verifier from (base branch's pin when it has one). Required: no pin, no pass.
 PIN_PATH = os.environ.get("PI_VERIFIER_PIN")
+HERE = Path(__file__).resolve().parent
+# Where the pin came from. "bootstrap-pr": read from the PR under test, so it does NOT protect against a malicious PR.
+# "base": read from the base branch; protects only while the workflow file is itself owner-protected (ruleset).
+PIN_TRUST = os.environ.get("PI_PIN_TRUST", "")
+TRUST_CLAIM = {"bootstrap-pr": "none: bootstrap pin chosen by the PR under test; no protection against a malicious PR",
+ "base": "base-branch pin; holds against a malicious PR only if an owner ruleset protects the workflow file"}
+PR_TREE = os.environ.get("PI_PR_TREE")
 BUNDLE = Path(__file__).resolve().parent / "proofs" / "subscription-proof6.bundle.json"
 WORKER = str(vw.INSTALL_DIR / "verifier_worker.py")
 
@@ -83,12 +90,21 @@ def boundary_problems():
   problems.append("verifier_pin_not_provided")
  else:
   pin = json.loads(Path(PIN_PATH).read_text())
+  for name in vw.CODE_FILES:
+   try:
+    if hashlib.sha256((vw.INSTALL_DIR / name).read_bytes()).hexdigest() != pin["files"][name]["sha256"]:
+     problems.append("installed_code_not_pinned:" + name)
+   except (OSError, KeyError):
+    problems.append("missing_installed:" + name)
+  # Self-check: this test and every broker-side decision file must be the pinned copy, not the PR working tree.
   for name, f in pin["files"].items():
    try:
-    if hashlib.sha256((vw.INSTALL_DIR / name).read_bytes()).hexdigest() != f["sha256"]:
-     problems.append("installed_code_not_pinned:" + name)
+    if hashlib.sha256((HERE / name).read_bytes()).hexdigest() != f["sha256"]:
+     problems.append("lane_file_not_pinned:" + name)
    except OSError:
-    problems.append("missing_installed:" + name)
+    problems.append("lane_file_missing:" + name)
+  if PIN_TRUST not in ("bootstrap-pr", "base"):
+   problems.append("pin_trust_unlabelled")
  for sock in ("/var/run/docker.sock", "/run/docker.sock"):
   if os.path.exists(sock) and os.access(sock, os.R_OK | os.W_OK):
    problems.append("docker_socket_accessible")
@@ -325,9 +341,20 @@ pin = json.loads(Path(PIN_PATH).read_text())
 reg = vb.load_registry(vb.PROTECTED_REGISTRY, require_protected=True)
 ident = reg[v_id]["identity"]
 check(ident["code_sha256"] == pin["code_sha256"] == vw.code_sha256(vw.INSTALL_DIR), "registry, pin and installed code agree")
-tree_code = vw.code_sha256(Path(vw.__file__).resolve().parent)
+tree_code = vw.code_sha256(PR_TREE) if PR_TREE else None
+tree_lane_files = {}
+if PR_TREE:
+ for name, f in pin["files"].items():
+  try:
+   tree_lane_files[name] = hashlib.sha256((Path(PR_TREE) / name).read_bytes()).hexdigest() == f["sha256"]
+  except OSError:
+   tree_lane_files[name] = False
 if os.environ.get("PI_HOSTILE_EDIT") == "1":
- check(tree_code != pin["code_sha256"], "the PR working tree's (edited) verifier is NOT what runs")
+ edited = sorted(n for n, same in tree_lane_files.items() if not same)
+ check(tree_code != pin["code_sha256"] and {"verifier_worker.py", "verifier_boundary.py", "subscription_bridge.py",
+  "verifier-identity-test.py"} <= set(edited), "PR tree's edited decision files differ from the pinned copy that runs: %r" % (edited,))
+ check(Path(vw.__file__).resolve().parent == HERE and Path(vb.__file__).resolve().parent == HERE
+  and Path(sb.__file__).resolve().parent == HERE, "broker modules loaded from the pinned lane, not the PR tree")
 with tempfile.TemporaryDirectory() as tmp2:
  tmp2 = Path(tmp2)
  (tmp2 / "broker").mkdir()
@@ -348,14 +375,21 @@ with tempfile.TemporaryDirectory() as tmp2:
  proof_out = os.environ.get("PI_PROOF_OUT")
  if proof_out:
   Path(proof_out).write_text(json.dumps({"real_bundle": proof, "wrong_bundle_reason": bad["verifier"]["reason"],
-   "pin_code_sha256": pin["code_sha256"], "pin_source": os.environ.get("PI_PIN_SOURCE", "unknown"),
-   "working_tree_code_sha256": tree_code}, sort_keys=True, indent=1))
+   "pin_code_sha256": pin["code_sha256"], "pin_lane_sha256": pin["lane_sha256"],
+   "pin_source": os.environ.get("PI_PIN_SOURCE", "unknown"), "pin_trust": PIN_TRUST,
+   "malicious_pr_protection": TRUST_CLAIM[PIN_TRUST],
+   "pr_tree_code_sha256": tree_code, "pr_tree_lane_files_matching_pin": tree_lane_files,
+   "evidence_kinds": {"real_cli_recording": "2026-11-03 operator machine, 1 Claude + 1 Codex subscription CLI call",
+    "ci_replay": "byte-for-byte replay of that recording, 0 provider calls", "mock_stages": "sections 1-8 (mock Claude/Codex)"}},
+   sort_keys=True, indent=1))
 
 result = {"status": "PASS", "assertions": count, "identity": "os-user:" + vw.VERIFIER_USER,
  "candidate_identity": "os-user:" + vw.CANDIDATE_USER, "key_readable_by_broker": False, "harness_isolation": "os-user",
- "providers": "mock stages + replayed real 2026-11-03 Claude/Codex CLI outputs; 0 provider calls in this run",
+ "providers": "mock stages (sections 1-8) + CI replay of the 2026-11-03 real CLI recording (section 9); 0 provider calls in this run",
  "real_subject_verified": proof["subject_mode_signed"] == sb.REAL and proof["verifier"]["passed"],
- "pinned_code_sha256": pin["code_sha256"], "pin_source": os.environ.get("PI_PIN_SOURCE", "unknown"),
+ "pinned_code_sha256": pin["code_sha256"], "pinned_lane_sha256": pin["lane_sha256"],
+ "pin_source": os.environ.get("PI_PIN_SOURCE", "unknown"), "pin_trust": PIN_TRUST,
+ "malicious_pr_protection": TRUST_CLAIM[PIN_TRUST],
  "paid_provider_calls": 0, "production_mutations": 0}
 print(result)
 if os.environ.get("GITHUB_ACTIONS") == "true":
