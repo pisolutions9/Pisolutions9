@@ -1,6 +1,8 @@
 # Level 2 verifier boundary and provider adapters
 
-Status: two lanes. **Simulated lane** (`verifier-boundary-test.py`): local fixture keys on one OS account, real signatures. **OS-user lane** (`verifier-identity-test.py`, implemented 2026-11-03, **Linux CI result pending**): the verifier runs as a separate OS account that holds the only copy of its key. Both lanes use mock providers. No provider is connected and no paid call is possible.
+Status: two lanes. **Simulated lane** (`verifier-boundary-test.py`): local fixture keys on one OS account, real signatures. **OS-user lane** (`verifier-identity-test.py`, Linux CI verified 2026-11-04): the verifier runs as a separate OS account that holds the only copy of its key. Both lanes use mock providers. No paid provider call occurs in CI.
+
+The [verifier-identity CI job](https://github.com/pisolutions9/Pisolutions9/actions/runs/41747125431/job/126302836879) first failed as expected before provisioning (`verifier_or_candidate_user_missing`), then passed 33 adversarial assertions after provisioning. It reported `identity: os-user:pi-verifier`, `candidate_identity: os-user:pi-candidate`, `key_readable_by_broker: false`, and `harness_isolation: os-user`. The job used mock Claude/Codex stages and zero paid calls.
 
 ## Separate OS identity (os-user lane)
 
@@ -67,7 +69,8 @@ Candidate interfaces are Claude Code headless mode and Codex CLI non-interactive
 
 ## Owner-gated dependencies for real (non-simulated) independence
 
-1. ~~A separate OS account for the verifier, holding its key~~: implemented as the os-user lane on a disposable CI VM (CI result pending). Still open: verifier code pinned outside the PR under test, and a separate runner/VM so that root on the implementer's machine cannot read the key.
+1. ~~A separate OS account for the verifier, holding its key~~: implemented and CI verified as the os-user lane on a disposable CI VM. Still open: verifier code pinned outside the PR under test, and a separate runner/VM so that root on the implementer's machine cannot read the key.
 2. A key bound to that identity (an environment secret or OIDC-issued signing), plus a registry change process the implementer cannot write to.
 3. Provider runner configuration and an explicit spending authorization replacing the `reserve_paid_call` denial.
+
 
