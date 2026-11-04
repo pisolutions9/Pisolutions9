@@ -14,7 +14,7 @@ Max 12 tasks, 2 attempts, delegation depth 2, default paid calls 0 and spend USD
 
 Queue is persistent only for a **single host**, protected by an exclusive lock file. It is not a distributed queue or GitHub Actions durable state. Hash-linked events are diagnostic only.
 
-Verifier contract presently checks a string marker; it **does not establish independent identity**. A separate verifier process with identity and clean checkout is required before real model integrations.
+The original mock verifier contract checks a string marker and does not establish identity. The later Linux CI lane provisions a separate verifier OS account and pins its decision code; the pin remains PR-controlled until it reaches a protected base branch.
 
 ## Next integration gates
 1. Transactional persistent shared queue (SQLite/DB), leases/heartbeats/crash and concurrency tests; mirror tasks to GitHub Issues for collaboration.
@@ -35,17 +35,17 @@ The queue enforces parent depth and readiness before accepting a child task. It 
 
 If a depth-two verifier child reaches `blocked`, the queue blocks its `awaiting_review` implementation parent in the same transaction and records `failure_reason=verifier_child_terminal`. A `codex` `write_patch` task cannot become `verified` until a depth-two verifier child is verified. This is a queue state rule, not proof of authenticated reviewer identity.
 
-This is an **end-to-end mock integration**, not real Claude or Codex provider execution. The fixed fixture and controlled output do not establish general sandboxing for untrusted generated code. The verifier is a separate process with an independently computed check, but it has no separate authenticated identity or operating-system security boundary. The SQLite queue is durable on one host; it is not a cross-run distributed service. No provider adapter is enabled because no Claude provider connection or paid-call authorization is present in this workflow. Zero paid calls is enforced by `Queue.reserve_paid_call` denying all calls.
+This command is an **end-to-end mock integration**. Its verifier is a separate process under the same OS account. The fixed fixture does not establish general sandboxing for arbitrary generated code. The SQLite queue is durable on one host, not a cross-run distributed service. The provider adapters in this workflow are disabled by default, and `Queue.reserve_paid_call` denies paid calls.
 
 ## One-run subscription CLI proof
 
 `subscription_experiment.py` is a separate, opt-in experiment for the same disposable arithmetic fixture. It requires a Claude Code `claude.ai` subscription login, a Codex ChatGPT login, and an explicit `--subscription-credit-off-confirmed` flag after checking Claude's extra usage credits are off. It rejects API keys and third-party provider environment settings. The script accepts an empty workspace only under its sibling `level2-runs` directory, and it never runs on a schedule. Claude gets one no-tools turn; Codex gets a read-only turn to return replacement source. The broker applies that source only if it exactly matches the fixed approved change. A separate Python process checks the result. The SQLite queue enforces two attempts and depth two. Both CLI calls have 120-second timeouts. Each run writes `proof.json` with real provider labels and exact statuses.
 
-This path uses existing subscriptions, not paid APIs; it cannot query the account's extra-credit switch, so the flag is a human-verified prerequisite and zero incremental charge is not a provider-enforced CLI budget. The verifier is a separate process under the same OS account, not an authenticated independent identity or a general untrusted-code sandbox. The CI lane remains mock-only and never calls either provider.
+This path uses existing subscriptions, not paid APIs; it cannot query the account's extra-credit switch, so the flag is a human-verified prerequisite and zero incremental charge is not a provider-enforced CLI budget. The operator-machine run used a same-account verifier. CI replays the recorded output through a separate verifier OS identity with zero new provider calls; other CI stages use mocks.
 
 ## Structured handoffs
 
-`handoff.py` defines one closed envelope schema, `pi.level2.handoff.v1`, for the three handoffs: `proposal` (claude), `implementation` (codex) and `verification` (verifier). Each envelope fixes its producer role, requires `mode=mock` and integer `paid_calls=0`, restricts file names to a single workspace basename, and has an exact payload key set with bounded field sizes. Envelopes are written as canonical JSON under `handoff/`, and the queue stores `handoff/<kind>.json#sha256=<hex>` as the task's `evidence_ref`.
+`handoff.py` defines one closed envelope schema, `pi.level2.handoff.v1`, for the three handoffs: `proposal` (claude), `implementation` (codex) and `verification` (verifier). Each envelope fixes its producer role, requires integer `paid_calls=0`, restricts file names to a single workspace basename, and has an exact payload key set with bounded field sizes. The mode distinguishes `mock` from `real-subscription-cli`. Envelopes are written as canonical JSON under `handoff/`, and the queue stores `handoff/<kind>.json#sha256=<hex>` as the task's `evidence_ref`.
 
 Each downstream stage loads its upstream artifact through the hash the **queue** recorded, not whatever file is on disk. Codex refuses (non-zero exit, candidate untouched, no handoff advanced) if the approved proposal changed after approval. The verifier also checks the implementation's `upstream_sha256` against the queue-recorded proposal hash and the task-id links. Any mismatch becomes a recorded `passed=false` verification with a reason code, so the existing two-attempt queue rules apply. Envelopes carry no timestamps, so independent runs reproduce byte-identical hashes. `proof.json` lists them.
 

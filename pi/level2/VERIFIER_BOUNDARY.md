@@ -26,9 +26,9 @@ The installed worker is always in os-user mode. It ignores caller-supplied `--ke
 
 **Fail-closed tests.** `verifier-identity-test.py` first checks every precondition from the broker account. Each failure exits 1 and lists what is missing: a distinct uid, an unreadable key, a protected registry, root-owned code, no broker sudo, no docker socket, and no arbitrary command as the verifier. The only skip is `PI_VERIFIER_BOUNDARY=optional`, which CI never sets. CI runs the suite once **before** provisioning as a negative control that must fail. `verifier-boundary-test.py` now also fails when namespaces are unavailable, unless `PI_ALLOW_UNISOLATED_HARNESS=1` explicitly opts into the degraded simulated lane.
 
-**What the os-user lane still does not establish:** the verifier code is installed from the same PR checkout it tests. The boundary holds only from provisioning onward, and a hostile PR could change the provisioner itself. Pinning the verifier code to `main` or a separate repository is the next step. The identity is an OS account on one ephemeral VM, not a hardware or externally issued key. Root on that VM can still read the key.
+**What the os-user lane still does not establish:** CI installs and runs verifier decision code from the content-addressed pin described below, but the pin and workflow are currently supplied by this PR. A hostile PR could change both. A protected pin on `main` and owner-enforced workflow review are still required. The identity is an OS account on one ephemeral VM, not a hardware or externally issued key. Root on that VM can still read the key.
 
-## Pinned verification lane (2026-11-04; Linux CI result pending)
+## Pinned verification lane (2026-11-04; Linux CI passed)
 
 **Which code decides "pass".** In the os-user lane, these files decide whether a signed result passes, and all of them are now pinned:
 
@@ -94,7 +94,7 @@ Before this change, only the first three were pinned. The broker's acceptance co
 
 Gate order is deterministic: bounded contract (role/action/depth ≤ 2/timeout ≤ 300 s) → restricted-scope check → broker-side runner command (never from the repo; default none → `provider_not_configured`) → `Queue.reserve_paid_call` (denies all in this candidate) → one concurrent call per provider. Output is accepted only as one `pi.level2.handoff.v1` envelope of the expected kind and task. Prose, injected fields, and self-reported paid calls are rejected. Credentials would come from the provider CLI's own login on an owner-controlled runner. None are in the repository.
 
-Candidate interfaces are Claude Code headless mode and Codex CLI non-interactive exec. Their exact flags are **not** hard-coded and were **not verified here**, because neither CLI is installed in this environment.
+Candidate interfaces are Claude Code headless mode and Codex CLI non-interactive exec. The disabled adapter tests do not call providers. A separate operator-machine subscription experiment verified one fixed CLI invocation for each provider; it does not establish a general provider adapter or a hard subscription spending cap.
 
 ## Owner-gated dependencies for real (non-simulated) independence
 
