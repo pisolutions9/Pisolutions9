@@ -1,0 +1,67 @@
+{
+ "candidate_sha256": "ba1a531f581d2e6094e978ed6f7aca7a8d92eeb62c6e7ad73ee692f7f18bc772",
+ "candidate_source": "def add(a, b):\n    return a + b\n",
+ "implementation": {
+  "kind": "implementation",
+  "mode": "real-subscription-cli",
+  "paid_calls": 0,
+  "payload": {
+   "after_sha256": "ba1a531f581d2e6094e978ed6f7aca7a8d92eeb62c6e7ad73ee692f7f18bc772",
+   "before_sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+   "file": "candidate.py"
+  },
+  "producer": "codex-cli",
+  "producer_role": "codex",
+  "schema": "pi.level2.handoff.v1",
+  "task_id": "implement",
+  "upstream_sha256": "3bebe44ebdbd1d50dbdc6ac38af5ed729946c3d7959b6d404133171dedbd6ea2"
+ },
+ "limits": {
+  "max_attempts": 2,
+  "max_depth": 2,
+  "paid_call_cap": 0
+ },
+ "paid_api_calls": 0,
+ "production_mutations": 0,
+ "proposal": {
+  "kind": "proposal",
+  "mode": "real-subscription-cli",
+  "paid_calls": 0,
+  "payload": {
+   "acceptance": "add(2, 3) == 5 and add(-2, 1) == -1",
+   "before_sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+   "change": "Replace subtraction with addition in add.",
+   "file": "candidate.py"
+  },
+  "producer": "claude-cli",
+  "producer_role": "claude",
+  "schema": "pi.level2.handoff.v1",
+  "task_id": "propose",
+  "upstream_sha256": null
+ },
+ "provenance": {
+  "attestation": "operator-recorded-cli-metadata",
+  "claude": {
+   "auth": "claude.ai subscription",
+   "cli": "claude",
+   "model": "not_retained",
+   "reported_cost_usd": "not_retained",
+   "session_id": "not_retained",
+   "turns": 1
+  },
+  "codex": {
+   "auth": "ChatGPT subscription",
+   "cli": "codex",
+   "sandbox": "read-only",
+   "stdout_sha256": "not_retained",
+   "version": "not_retained"
+  }
+ },
+ "provider_calls_recorded": {
+  "claude-cli": 1,
+  "codex-cli": 1
+ },
+ "recorded_at": "2026-11-03T17:40-06:00",
+ "run_label": "proof6",
+ "schema": "pi.level2.subscription-bundle.v1"
+}

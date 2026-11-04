@@ -34,7 +34,8 @@ INBOX = vw.STATE_DIR / "inbox"
 SYSTEM_PYTHON = "/usr/bin/python3"
 PROTECTED_REGISTRY = Path("/etc/pi-level2/trust.json")
 ATTESTATION_KEYS = {"schema", "identity_mode", "nonce", "task_id", "attempt", "key_id", "proposal_ref",
- "implementation_ref", "candidate_sha256", "acceptance", "exit_code", "candidate_sha256_after", "harness_isolation", "reason", "passed"}
+ "implementation_ref", "candidate_sha256", "acceptance", "exit_code", "candidate_sha256_after", "harness_isolation", "reason", "passed",
+ "verifier_code_sha256", "subject_mode"}
 CHALLENGES = """CREATE TABLE IF NOT EXISTS verifier_challenges(
  nonce TEXT PRIMARY KEY, task_id TEXT NOT NULL, attempt INTEGER NOT NULL,
  proposal_ref TEXT NOT NULL, implementation_ref TEXT NOT NULL, candidate_sha256 TEXT NOT NULL,
@@ -289,8 +290,12 @@ def separate_identity(entry, att, required):
  if required != "os-user":
   return False
  ident = entry.get("identity") or {}
+ code = ident.get("code_sha256")
+ # The signed code hash must equal the pinned hash root recorded at provisioning: a verifier whose code was replaced
+ # after provisioning (or a registry entry without a pin) is not the separate identity this policy requires.
  return (ident.get("mode") == "os-user" and ident.get("user") == vw.VERIFIER_USER
-  and att.get("identity_mode") == "os-user" and att.get("harness_isolation") == "os-user")
+  and att.get("identity_mode") == "os-user" and att.get("harness_isolation") == "os-user"
+  and isinstance(code, str) and len(code) == 64 and att.get("verifier_code_sha256") == code)
 
 
 def run_verification(q, root, registry, broker_dir, key_path, key_id, acceptance, worker_label=None, mutate=None, ttl=60,

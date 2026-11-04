@@ -1,6 +1,8 @@
 name: PI Level 2 Verifier Identity Boundary
-# Separate OS identity for the verifier on a DISPOSABLE GitHub-hosted runner. Mock Claude/Codex stages only:
-# no provider credentials, no secrets, no network calls from candidate code, zero paid usage, no deploy, no merge.
+# Separate OS identity for the verifier on a DISPOSABLE GitHub-hosted runner, running PINNED verifier code.
+# Provider use: ZERO calls. Mock Claude/Codex stages, plus byte-for-byte replay of one committed bundle of real
+# Claude/Codex subscription CLI output recorded on the operator machine (pi/level2/proofs/). No provider
+# credentials, no secrets, no network from candidate code, zero paid usage, no deploy, no merge.
 on:
   workflow_dispatch:
   pull_request:
@@ -20,6 +22,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Negative control - suite must FAIL before the boundary exists
         run: |
           set +e
@@ -30,18 +33,67 @@ jobs:
           test "$rc" -eq 1
           grep -q "FAIL: verifier boundary unavailable" pre.log
           echo "negative control OK: missing boundary fails the suite (exit $rc)"
+      - name: Resolve verifier pin (base branch pin wins when the base has one)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          echo "PI_VERIFIER_PIN=$RUNNER_TEMP/verifier-pin.json" >> "$GITHUB_ENV"
+          echo "TRUSTED=$RUNNER_TEMP/trusted-verifier" >> "$GITHUB_ENV"
+          echo "PI_PROOF_OUT=$RUNNER_TEMP/subscription-verified-proof.json" >> "$GITHUB_ENV"
+          if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:pi/level2/verifier-pin.json" 2>/dev/null; then
+            git show "$BASE_SHA:pi/level2/verifier-pin.json" > "$RUNNER_TEMP/verifier-pin.json"
+            echo "PI_PIN_SOURCE=base:$BASE_SHA" >> "$GITHUB_ENV"
+          else
+            git show "HEAD:pi/level2/verifier-pin.json" > "$RUNNER_TEMP/verifier-pin.json"
+            echo "PI_PIN_SOURCE=pr-bootstrap(base has no pin yet)" >> "$GITHUB_ENV"
+          fi
+          cat "$RUNNER_TEMP/verifier-pin.json"
+      - name: Materialize pinned verifier from git objects (git, jq, sha256sum only)
+        run: |
+          mkdir "$TRUSTED"
+          for name in $(jq -r '.files | keys[]' "$PI_VERIFIER_PIN"); do
+            blob=$(jq -r --arg n "$name" '.files[$n].git_blob' "$PI_VERIFIER_PIN")
+            want=$(jq -r --arg n "$name" '.files[$n].sha256' "$PI_VERIFIER_PIN")
+            git cat-file blob "$blob" > "$TRUSTED/$name"
+            echo "$want  $TRUSTED/$name" | sha256sum -c -
+          done
+          echo "PIN_CODE=$(jq -r .code_sha256 "$PI_VERIFIER_PIN")" >> "$GITHUB_ENV"
+      - name: Hostile edit - make the PR working tree's own verifier always pass
+        run: |
+          /usr/bin/python3 - <<'EOF'
+          from pathlib import Path
+          p = Path("pi/level2/verifier_worker.py"); s = p.read_text()
+          old = 'return ("ok" if code == 0 and matched else "acceptance_failed"), result'
+          assert s.count(old) == 1
+          p.write_text(s.replace(old, 'return "ok", result  # BACKDOOR'))
+          EOF
+          git diff --stat
+      - name: Provisioning from the edited PR tree is refused (code not pinned)
+        run: |
+          set +e
+          sudo /usr/bin/python3 -I -S pi/level2/verifier_provision.py --broker-user "$(id -un)" --expect-code-sha256 "$PIN_CODE" --check-only > refuse.log 2>&1
+          rc=$?
+          set -e
+          cat refuse.log
+          test "$rc" -eq 2
+          grep -q '"error": "verifier_code_not_pinned"' refuse.log
+          echo "refused as expected (exit $rc)"
       - name: Record broker escalation paths before lockdown
         run: |
           id
           sudo -n -l || true
-      - name: Provision verifier identity and remove broker escalation (root, before any candidate code)
-        run: sudo /usr/bin/python3 -I -S pi/level2/verifier_provision.py --broker-user "$(id -un)" --lockdown
+      - name: Provision PINNED verifier identity and remove broker escalation (root, before any candidate code)
+        run: sudo /usr/bin/python3 -I -S "$TRUSTED/verifier_provision.py" --broker-user "$(id -un)" --expect-code-sha256 "$PIN_CODE" --lockdown
       - name: Confirm broker can no longer become root
         run: |
           id
           if sudo -n true 2>/dev/null; then echo "broker still has root"; exit 1; fi
           ls -l /etc/pi-level2/trust.json /opt/pi-level2-verifier
           ls -ld /var/lib/pi-level2-verifier/keys
-      - name: Separate-identity verifier adversarial tests (fails if boundary is missing)
+      - name: Separate-identity verifier adversarial tests + real bundle (fails if boundary or pin is missing)
         timeout-minutes: 8
-        run: /usr/bin/python3 pi/level2/verifier-identity-test.py
+        env:
+          PI_HOSTILE_EDIT: '1'
+        run: |
+          /usr/bin/python3 pi/level2/verifier-identity-test.py
+          echo "::notice title=subscription-verified-proof::$(jq -c '{subject: .real_bundle.subject_mode_signed, verifier: .real_bundle.stages.verify, passed: .real_bundle.verifier.passed, calls_recorded: .real_bundle.provider_calls_recorded, calls_this_run: .real_bundle.provider_calls_this_run, statuses: .real_bundle.statuses, depths: .real_bundle.depths, code: .pin_code_sha256, pin_source: .pin_source, tree_code: .working_tree_code_sha256, wrong_bundle: .wrong_bundle_reason}' "$PI_PROOF_OUT")"

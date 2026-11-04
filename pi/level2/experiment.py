@@ -63,7 +63,7 @@ def stage(root, name):
     raise ValueError("proposal_mismatch")
    if plan["before_sha256"] != digest((root / plan["file"]).read_text(encoding="utf-8")):
     raise ValueError("proposal_mismatch")
-   (root / plan["file"]).write_text(FIXED, encoding="utf-8")
+   (root / plan["file"]).write_bytes(FIXED.encode("utf-8"))
    envelope = handoff.build("implementation", claim["id"], "mock-codex", proposal_sha, {"file": plan["file"], "before_sha256": plan["before_sha256"], "after_sha256": digest(FIXED)})
    ref = handoff.write(root, envelope)
    assert q.finish(claim["id"], "mock-codex", "fixture implementation", ref) == "awaiting_review"
@@ -110,7 +110,7 @@ def seed(root):
  root = Path(root).resolve()
  root.mkdir(parents=True, exist_ok=True)
  if any(root.iterdir()): raise ValueError("workspace_must_be_empty")
- (root / "candidate.py").write_text(FIXTURE, encoding="utf-8")
+ (root / "candidate.py").write_bytes(FIXTURE.encode("utf-8"))
  write_json(root / "manifest.json", MANIFEST)
  q = Queue(str(root / "queue.db"))
  try:

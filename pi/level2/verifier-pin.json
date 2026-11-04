@@ -1,0 +1,18 @@
+{
+ "code_sha256": "4c88ed2367e5dea6aa237d3c08dffd66a348acf69bcf750b03ccdbe00275cb33",
+ "files": {
+  "handoff.py": {
+   "git_blob": "ec270833f57b8d79b2f5884b1c452dfd37b33ade",
+   "sha256": "d4534e300c4b83e82e3243e0e3f2e1df62a74dbfddbb2893a64a33e606b93c99"
+  },
+  "verifier_provision.py": {
+   "git_blob": "fc08640b881c0b31280314e3adcd09a3f051a3e9",
+   "sha256": "d4988fcef480e0f368a3b4ae501f2fc794ed54e2f49b255d0d300e6c2be15ff7"
+  },
+  "verifier_worker.py": {
+   "git_blob": "1308d06f88d7a1b3f6477cf8f43671e263183233",
+   "sha256": "37d6cca57b6f29af31c7367a31c89800898d7820664c18a49a5f289ce0995e88"
+  }
+ },
+ "schema": "pi.level2.verifier-pin.v1"
+}

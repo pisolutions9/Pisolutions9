@@ -69,7 +69,7 @@ with tempfile.TemporaryDirectory() as tmp:
   run_stage(ws, "claude")
   q = Queue(str(ws / "queue.db"))
   claim = q.claim("codex", "rogue-codex")
-  (ws / "candidate.py").write_text(source, encoding="utf-8")
+  (ws / "candidate.py").write_bytes(source.encode("utf-8"))
   p_sha = handoff.parse_ref(rows(ws)["propose"]["evidence_ref"])[1]
   env = handoff.build("implementation", "implement", "rogue-codex", p_sha, {"file": "candidate.py", "before_sha256": digest(FIXTURE), "after_sha256": digest(source)})
   q.finish(claim["id"], "rogue-codex", "all tests pass (claimed)", handoff.write(ws, env))

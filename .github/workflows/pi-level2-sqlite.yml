@@ -35,5 +35,11 @@ jobs:
         run: python3 pi/level2/providers-test.py
       - name: Run subscription proof offline safety tests
         run: python3 pi/level2/subscription-test.py
+      - name: Verifier code matches verifier-pin.json (unreviewed verifier changes fail)
+        run: python3 pi/level2/verifier_pin.py check
+      - name: Real-subscription bundle bridge + pin adversarial tests (simulated lane, 0 provider calls)
+        env:
+          PI_ALLOW_UNISOLATED_HARNESS: '1'
+        run: python3 pi/level2/subscription-bridge-test.py
 
 

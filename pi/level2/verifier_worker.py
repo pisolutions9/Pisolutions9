@@ -101,6 +101,18 @@ OS_OUT = STATE_DIR / "out"
 CANDIDATE_RUNNER = INSTALL_DIR / "run-candidate"
 VERIFIER_USER, CANDIDATE_USER = "pi-verifier", "pi-candidate"
 NONCE_RE = re.compile(r"[0-9a-f]{32}")
+# The verifier's own code. Its combined hash is signed into every attestation and must equal the pinned value that
+# root wrote into the registry at provisioning time (see verifier-pin.json).
+CODE_FILES = ("verifier_worker.py", "handoff.py", "verifier_provision.py")
+
+
+def code_sha256(directory):
+ """sha256 over {file: sha256(bytes)} for the verifier code files in `directory`; None if any is missing."""
+ try:
+  files = {name: sha((Path(directory) / name).read_bytes()) for name in CODE_FILES}
+ except OSError:
+  return None
+ return sha(canonical(files))
 
 
 def _user_name(uid):
@@ -254,7 +266,7 @@ def evaluate(inputs, hide=(), os_user=False):
  proposal_bytes = read_input(inputs, "proposal.json")
  impl_bytes = read_input(inputs, "implementation.json")
  candidate = read_input(inputs, "candidate.bin")
- result = {"exit_code": None, "candidate_sha256_after": None, "harness_isolation": "not_run"}
+ result = {"exit_code": None, "candidate_sha256_after": None, "harness_isolation": "not_run", "subject_mode": None}
  _, p_sha = handoff.parse_ref(ch["proposal_ref"])
  _, i_sha = handoff.parse_ref(ch["implementation_ref"])
  if sha(proposal_bytes) != p_sha or sha(impl_bytes) != i_sha:
@@ -270,6 +282,8 @@ def evaluate(inputs, hide=(), os_user=False):
   return "handoff_wrong_kind", result
  if impl["task_id"] != ch["implementation_task"] or proposal["task_id"] != ch["proposal_task"]:
   return "task_link_mismatch", result
+ # The provider mode of what is being verified (mock vs real CLI output) is signed into the attestation.
+ result["subject_mode"] = impl["mode"] if impl["mode"] == proposal["mode"] else "mixed"
  if impl["upstream_sha256"] != p_sha:
   return "upstream_mismatch", result
  if impl["payload"]["file"] != proposal["payload"]["file"] or impl["payload"]["before_sha256"] != proposal["payload"]["before_sha256"]:
@@ -283,7 +297,7 @@ def evaluate(inputs, hide=(), os_user=False):
   code, after, matched, mode = reproduce_os_user(candidate, suite, ch["nonce"])
  else:
   code, after, matched, mode = reproduce(candidate, suite, ch["nonce"], hide)
- result = {"exit_code": code, "candidate_sha256_after": after, "harness_isolation": mode}
+ result = {"exit_code": code, "candidate_sha256_after": after, "harness_isolation": mode, "subject_mode": result["subject_mode"]}
  if after != ch["candidate_sha256"]:
   return "candidate_mutated_during_test", result
  return ("ok" if code == 0 and matched else "acceptance_failed"), result
@@ -329,6 +343,7 @@ def main():
    sys.stderr.write(json.dumps({"error": "bad_nonce"}) + "\n")
    sys.exit(4)
   key, key_id, identity_mode = OS_KEY, public_key_id(OS_KEY), "os-user"
+  code = code_sha256(INSTALL_DIR)
   out = OS_OUT / ch["nonce"]
   out.mkdir(mode=0o755)  # FileExistsError: never overwrite an earlier attestation for this nonce
   os.chmod(out, 0o755)
@@ -338,6 +353,7 @@ def main():
    ap.error("--key, --key-id and --out are required in simulated mode")
   ch = json.loads(read_input(inputs, "challenge.json").decode("ascii"))
   key, key_id, identity_mode, out = a.key, a.key_id, "simulated-local-key", Path(a.out)
+  code = code_sha256(Path(__file__).resolve().parent)
   out.mkdir(parents=True, exist_ok=True)  # must exist before it can be hidden
   # Hide the private key, the challenge inputs and the output directory from candidate code.
   reason, result = evaluate(inputs, hide=(Path(key).resolve().parent, inputs.resolve(), out.resolve()))
@@ -346,7 +362,7 @@ def main():
   "proposal_ref": ch["proposal_ref"], "implementation_ref": ch["implementation_ref"],
   "candidate_sha256": ch["candidate_sha256"], "acceptance": ch["acceptance"],
   "exit_code": result["exit_code"], "candidate_sha256_after": result["candidate_sha256_after"],
-  "harness_isolation": result["harness_isolation"],
+  "harness_isolation": result["harness_isolation"], "verifier_code_sha256": code, "subject_mode": result["subject_mode"],
   "reason": reason, "passed": reason == "ok"}
  data = canonical(attestation)
  (out / "attestation.json").write_bytes(data)

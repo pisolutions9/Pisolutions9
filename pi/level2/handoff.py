@@ -17,6 +17,10 @@ TASK_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 LABEL = re.compile(r"^[a-z0-9_-]{1,64}$")
 FILE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,63}$")
 REF = re.compile(r"^handoff/(proposal|implementation|verification)\.json#sha256=([0-9a-f]{64})$")
+# "mock": produced by the in-repo mock stages. "real-subscription-cli": produced by a real Claude Code / Codex CLI call
+# on an operator machine (subscription login, never an API key). Verification envelopes are always produced locally.
+MODES = {"mock", "real-subscription-cli"}
+REAL_MODE_KINDS = {"proposal", "implementation"}
 ENVELOPE_KEYS = {"schema", "kind", "task_id", "producer_role", "producer", "mode", "paid_calls", "upstream_sha256", "payload"}
 
 # kind -> (producer role, upstream kind, payload field validators)
@@ -75,7 +79,7 @@ def validate(envelope):
   raise HandoffError("bad_task_id")
  if not isinstance(envelope["producer"], str) or not LABEL.match(envelope["producer"]):
   raise HandoffError("bad_producer")
- if envelope["mode"] != "mock":
+ if envelope["mode"] not in MODES or (envelope["mode"] != "mock" and kind not in REAL_MODE_KINDS):
   raise HandoffError("bad_mode")
  paid = envelope["paid_calls"]
  if type(paid) is not int or paid != 0:
@@ -96,11 +100,11 @@ def validate(envelope):
  return envelope
 
 
-def build(kind, task_id, producer, upstream_sha256, payload):
+def build(kind, task_id, producer, upstream_sha256, payload, mode="mock"):
  if kind not in KINDS:
   raise HandoffError("bad_kind")
  return validate({"schema": SCHEMA, "kind": kind, "task_id": task_id, "producer_role": KINDS[kind][0],
-  "producer": producer, "mode": "mock", "paid_calls": 0, "upstream_sha256": upstream_sha256,
+  "producer": producer, "mode": mode, "paid_calls": 0, "upstream_sha256": upstream_sha256,
   "payload": dict(payload)})
 
 

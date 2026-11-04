@@ -4,7 +4,9 @@ Requires a runner provisioned by verifier_provision.py (Linux). FAILS CLOSED: if
 this test exits 1 and lists what is missing. The only way to skip is PI_VERIFIER_BOUNDARY=optional, which prints
 NOT EXERCISED; CI never sets it. This process plays the broker AND a hostile implementer (same account).
 """
+import hashlib
 import json
+import copy
 import os
 import shutil
 import subprocess
@@ -14,6 +16,7 @@ import time
 from pathlib import Path
 
 import handoff
+import subscription_bridge as sb
 import verifier_boundary as vb
 import verifier_worker as vw
 from experiment import ACCEPTANCE, FIXTURE, digest
@@ -22,6 +25,9 @@ from queue_sqlite import Queue
 from verifier_worker import canonical, sign
 
 SUDO_ENV = {"PATH": "/usr/bin:/bin"}
+# The pin CI materialized the verifier from (base branch's pin when it has one). Required: no pin, no pass.
+PIN_PATH = os.environ.get("PI_VERIFIER_PIN")
+BUNDLE = Path(__file__).resolve().parent / "proofs" / "subscription-proof6.bundle.json"
 WORKER = str(vw.INSTALL_DIR / "verifier_worker.py")
 
 
@@ -73,6 +79,16 @@ def boundary_problems():
   problems.append("broker_can_run_arbitrary_python_as_verifier")
  if sh("sudo", "-n", str(vw.CANDIDATE_RUNNER)).returncode == 0:
   problems.append("broker_can_run_candidate_runner")
+ if not PIN_PATH or not Path(PIN_PATH).is_file():
+  problems.append("verifier_pin_not_provided")
+ else:
+  pin = json.loads(Path(PIN_PATH).read_text())
+  for name, f in pin["files"].items():
+   try:
+    if hashlib.sha256((vw.INSTALL_DIR / name).read_bytes()).hexdigest() != f["sha256"]:
+     problems.append("installed_code_not_pinned:" + name)
+   except OSError:
+    problems.append("missing_installed:" + name)
  for sock in ("/var/run/docker.sock", "/run/docker.sock"):
   if os.path.exists(sock) and os.access(sock, os.R_OK | os.W_OK):
    problems.append("docker_socket_accessible")
@@ -123,7 +139,7 @@ with tempfile.TemporaryDirectory() as tmp:
   run_stage(ws, "claude")
   q = Queue(str(ws / "queue.db"))
   claim = q.claim("codex", "rogue-codex")
-  (ws / "candidate.py").write_text(source, encoding="utf-8")
+  (ws / "candidate.py").write_bytes(source.encode("utf-8"))
   p_sha = handoff.parse_ref(rows(ws)["propose"]["evidence_ref"])[1]
   env = handoff.build("implementation", "implement", "rogue-codex", p_sha,
    {"file": "candidate.py", "before_sha256": digest(FIXTURE), "after_sha256": digest(source)})
@@ -304,9 +320,43 @@ with tempfile.TemporaryDirectory() as tmp:
   check(str(exc) == "unknown_boundary", "unknown boundary refused")
  q.close()
 
+# 9. Pinned verifier code, and the REAL Claude/Codex subscription output verified by the separate identity.
+pin = json.loads(Path(PIN_PATH).read_text())
+reg = vb.load_registry(vb.PROTECTED_REGISTRY, require_protected=True)
+ident = reg[v_id]["identity"]
+check(ident["code_sha256"] == pin["code_sha256"] == vw.code_sha256(vw.INSTALL_DIR), "registry, pin and installed code agree")
+tree_code = vw.code_sha256(Path(vw.__file__).resolve().parent)
+if os.environ.get("PI_HOSTILE_EDIT") == "1":
+ check(tree_code != pin["code_sha256"], "the PR working tree's (edited) verifier is NOT what runs")
+with tempfile.TemporaryDirectory() as tmp2:
+ tmp2 = Path(tmp2)
+ (tmp2 / "broker").mkdir()
+ real = sb.load(BUNDLE)
+ proof = sb.verify(real, tmp2 / "real", tmp2 / "broker", reg, boundary="os-user", require_identity="os-user")
+ check(proof["verifier"]["passed"] and set(proof["statuses"].values()) == {"verified"}, "real bundle verified by os-user: %r" % (proof,))
+ check(proof["subject_mode_signed"] == sb.REAL and proof["stages"]["verify"] == "os-user-verifier", "signed: real subject, os-user verifier")
+ check(proof["verifier"]["code_sha256"] == pin["code_sha256"] and proof["verifier"]["key_id"] == v_id, "pinned code and os-user key")
+ check(proof["provider_calls_this_run"] == 0 and proof["depths"] == {"propose": 0, "implement": 1, "verify": 2}, "bounded, no calls")
+ wrong = copy.deepcopy(real)
+ wrong["candidate_source"] = "def add(a, b):\n    return a - b\n"
+ wrong["candidate_sha256"] = sb.sha(wrong["candidate_source"].encode())
+ wrong["implementation"] = handoff.build("implementation", "implement", "codex-cli", sb.sha(handoff.canonical(real["proposal"])),
+  dict(real["implementation"]["payload"], after_sha256=wrong["candidate_sha256"]), mode=sb.REAL)
+ bad = sb.verify(wrong, tmp2 / "wrong", tmp2 / "broker", reg, boundary="os-user", require_identity="os-user")
+ check(bad["verifier"]["accepted"] and not bad["verifier"]["passed"] and bad["statuses"]["implement"] == "queued",
+  "real-labelled wrong code fails under the pinned verifier (an always-pass edit in the PR tree has no effect)")
+ proof_out = os.environ.get("PI_PROOF_OUT")
+ if proof_out:
+  Path(proof_out).write_text(json.dumps({"real_bundle": proof, "wrong_bundle_reason": bad["verifier"]["reason"],
+   "pin_code_sha256": pin["code_sha256"], "pin_source": os.environ.get("PI_PIN_SOURCE", "unknown"),
+   "working_tree_code_sha256": tree_code}, sort_keys=True, indent=1))
+
 result = {"status": "PASS", "assertions": count, "identity": "os-user:" + vw.VERIFIER_USER,
  "candidate_identity": "os-user:" + vw.CANDIDATE_USER, "key_readable_by_broker": False, "harness_isolation": "os-user",
- "providers": "mock (no Claude/Codex call)", "paid_provider_calls": 0, "production_mutations": 0}
+ "providers": "mock stages + replayed real 2026-11-03 Claude/Codex CLI outputs; 0 provider calls in this run",
+ "real_subject_verified": proof["subject_mode_signed"] == sb.REAL and proof["verifier"]["passed"],
+ "pinned_code_sha256": pin["code_sha256"], "pin_source": os.environ.get("PI_PIN_SOURCE", "unknown"),
+ "paid_provider_calls": 0, "production_mutations": 0}
 print(result)
 if os.environ.get("GITHUB_ACTIONS") == "true":
  print("::notice title=verifier-identity-proof::" + json.dumps(result, sort_keys=True))

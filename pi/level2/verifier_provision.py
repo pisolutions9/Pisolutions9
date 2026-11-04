@@ -1,7 +1,11 @@
 """Provision the PI L2 verifier OS-user boundary on a DISPOSABLE Linux runner. Run once, as root, BEFORE any
 implementer or candidate code runs:
 
-    sudo /usr/bin/python3 -I -S pi/level2/verifier_provision.py --broker-user "$USER" --lockdown
+    sudo /usr/bin/python3 -I -S <pinned copy>/verifier_provision.py --broker-user "$USER"       --expect-code-sha256 <verifier-pin.json code_sha256> --lockdown
+
+Run it from the copy CI materializes from the git objects named in verifier-pin.json, never from the PR working
+tree: the code under review must not be able to replace its own verifier. It refuses (exit 2) before changing
+anything if its own code files do not hash to the pinned value.
 
 What it creates (fixed paths, see verifier_worker.py):
   users        pi-verifier (owns the signing key), pi-candidate (runs untrusted candidate code); no login shell
@@ -111,7 +115,18 @@ def main():
  ap = argparse.ArgumentParser()
  ap.add_argument("--broker-user", required=True)
  ap.add_argument("--lockdown", action="store_true")
+ ap.add_argument("--expect-code-sha256", required=True,
+  help="pinned verifier code hash (verifier-pin.json code_sha256); provisioning refuses any other code")
+ ap.add_argument("--check-only", action="store_true", help="verify the code pin and exit without changing anything")
  a = ap.parse_args()
+ # Pin check FIRST, before any change: the code about to be installed must be exactly the pinned code.
+ actual = vw.code_sha256(HERE)
+ if actual != a.expect_code_sha256:
+  print(json.dumps({"error": "verifier_code_not_pinned", "expected": a.expect_code_sha256, "actual": actual}))
+  sys.exit(2)
+ if a.check_only:
+  print(json.dumps({"pinned_code_ok": True, "code_sha256": actual}))
+  return
  if os.geteuid() != 0:
   sys.exit("must run as root")
  broker = pwd.getpwnam(a.broker_user)
@@ -120,12 +135,16 @@ def main():
  ver, cand = ensure_user(vw.VERIFIER_USER), ensure_user(vw.CANDIDATE_USER)
 
  mkdir(vw.INSTALL_DIR, 0, 0, 0o755)
- for name in ("verifier_worker.py", "handoff.py"):
+ for name in vw.CODE_FILES:
   install_file(vw.INSTALL_DIR / name, (HERE / name).read_bytes(), 0o644)
  harness = vw.INSTALL_DIR / "harness.py"
  install_file(harness, vw.HARNESS_STDIN.encode("utf-8"), 0o644)
  script = RUN_CANDIDATE % {"cand": vw.CANDIDATE_USER, "hide": " ".join(HIDE), "py": SYSTEM_PYTHON, "harness": harness}
  install_file(vw.CANDIDATE_RUNNER, script.encode("ascii"), 0o755)
+
+ installed_code = vw.code_sha256(vw.INSTALL_DIR)
+ if installed_code != a.expect_code_sha256:
+  sys.exit("installed verifier code does not match the pin")
 
  mkdir(vw.STATE_DIR, 0, 0, 0o755)
  mkdir(vw.OS_KEY.parent, ver.pw_uid, ver.pw_gid, 0o700)
@@ -143,7 +162,8 @@ def main():
 
  mkdir(REGISTRY.parent, 0, 0, 0o755)
  reg = {"schema": "pi.level2.trust.v1", "keys": {key_id: {"role": "verifier", "label": "pi-verifier-os-user",
-  "public_pem": pem, "identity": {"mode": "os-user", "user": vw.VERIFIER_USER, "uid": ver.pw_uid}}}}
+  "public_pem": pem, "identity": {"mode": "os-user", "user": vw.VERIFIER_USER, "uid": ver.pw_uid,
+  "code_sha256": installed_code}}}}
  install_file(REGISTRY, json.dumps(reg, sort_keys=True).encode("ascii"), 0o644)
 
  rules = ("Defaults:%(b)s !requiretty\n"
@@ -157,7 +177,7 @@ def main():
 
  summary = {"verifier_user": vw.VERIFIER_USER, "verifier_uid": ver.pw_uid, "candidate_user": vw.CANDIDATE_USER,
   "candidate_uid": cand.pw_uid, "broker_user": a.broker_user, "broker_uid": broker.pw_uid, "key_id": key_id,
-  "registry": str(REGISTRY), "lockdown": lockdown(a.broker_user) if a.lockdown else None}
+  "code_sha256": installed_code, "registry": str(REGISTRY), "lockdown": lockdown(a.broker_user) if a.lockdown else None}
  print(json.dumps(summary, sort_keys=True))
 
 

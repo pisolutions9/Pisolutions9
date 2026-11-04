@@ -28,6 +28,18 @@ The installed worker is always in os-user mode. It ignores caller-supplied `--ke
 
 **What the os-user lane still does not establish:** the verifier code is installed from the same PR checkout it tests. The boundary holds only from provisioning onward, and a hostile PR could change the provisioner itself. Pinning the verifier code to `main` or a separate repository is the next step. The identity is an OS account on one ephemeral VM, not a hardware or externally issued key. Root on that VM can still read the key.
 
+## Pinned verifier code and the real-subscription bridge (2026-11-04, CI result pending)
+
+**Pin.** `verifier-pin.json` names `verifier_worker.py`, `handoff.py` and `verifier_provision.py` by git blob id and sha256, plus their combined `code_sha256`. Blob ids are content addresses, so the pin survives rebases and re-created commits. In CI, `pi-level2-verifier-identity.yml` reads the pin from the **base branch when the base has one**, and from the PR only as a bootstrap until then (`PI_PIN_SOURCE` records which). It rebuilds those files from git objects using only git, jq and sha256sum, and provisions from that copy, never from the PR working tree. The provisioner exits 2 (`verifier_code_not_pinned`) before changing anything if its code does not hash to the pin. The worker signs `verifier_code_sha256` into every attestation. Root writes the pinned hash into the registry, and `require_identity="os-user"` rejects any mismatch, including a registry entry with no pin. `verifier_pin.py check` fails the sqlite job when the PR's verifier files drift from the pin, so a verifier change needs a deliberate, reviewable re-pin.
+
+Adversarial CI step: the workflow edits the PR working tree's `verifier_worker.py` to always return `ok`. Provisioning from that tree must be refused, and the pinned verifier must still sign a failure for real-labelled wrong code.
+
+**Bridge.** `subscription_bridge.py` exports a real `subscription_experiment.py` run as a strict bundle: real-mode handoff envelopes, exact candidate bytes, call counts (1 Claude, 1 Codex), and CLI-reported provenance. `verify` imports the bundle into a fresh disposable queue (depth ≤ 2, attempts ≤ 2) and verifies it through the `pi-verifier` identity. It refuses tampered candidates, injected fields, paid or production claims, extra calls, raised limits, mock output relabelled as real, out-of-scope files, weakened acceptance, and broken upstream links.
+
+**Real vs mock.** Handoff `mode` is `mock` or `real-subscription-cli`. The verifier signs `subject_mode` into its attestation, so a mock pipeline and a real bundle are distinguishable in signed evidence. Proofs separate `provider_calls_recorded` (the operator run) from `provider_calls_this_run` (always 0 in CI).
+
+**Limits.** Provenance is operator-recorded CLI metadata, not a provider-signed receipt. The committed proof6 bundle predates metadata capture, so its session id, model and cost are `not_retained`; new runs record them. The workflow file is still PR-controlled. Only a repository ruleset (required workflow, or CODEOWNERS plus branch protection on `pi/level2/verifier-pin.json` and the workflow) makes the base-branch pin binding on a hostile PR. That is an owner setting, not code.
+
 ## What is enforced
 
 | Property | Mechanism | Real or simulated |
@@ -69,7 +81,7 @@ Candidate interfaces are Claude Code headless mode and Codex CLI non-interactive
 
 ## Owner-gated dependencies for real (non-simulated) independence
 
-1. ~~A separate OS account for the verifier, holding its key~~: implemented and CI verified as the os-user lane on a disposable CI VM. Still open: verifier code pinned outside the PR under test, and a separate runner/VM so that root on the implementer's machine cannot read the key.
+1. ~~A separate OS account for the verifier, holding its key~~: implemented and CI verified as the os-user lane on a disposable CI VM. Verifier code pinning is implemented as above (binding only after merge plus an owner ruleset). Still open: a separate runner/VM so that root on the implementer's machine cannot read the key.
 2. A key bound to that identity (an environment secret or OIDC-issued signing), plus a registry change process the implementer cannot write to.
 3. Provider runner configuration and an explicit spending authorization replacing the `reserve_paid_call` denial.
 

@@ -30,6 +30,11 @@ def call(args, *, cwd, timeout, input_text=None):
  return subprocess.run(args, cwd=cwd, input=input_text, text=True, capture_output=True, timeout=timeout, check=True, env=env)
 
 
+def proof_date():
+ import datetime
+ return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+
+
 def preflight(claude, codex, root):
  if any(os.environ.get(name) for name in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL", "OPENAI_BASE_URL", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY")):
   raise PermissionError("api_or_third_party_credentials_present")
@@ -79,7 +84,11 @@ def run(root, claude, codex):
   if result.get("is_error") or result.get("subtype") != "success" or result.get("num_turns") != 1:
    raise ValueError("claude_call_failed")
   proposal = json.loads(result["result"])
-  write(root / "claude-call.json", {"proposal":proposal, "turns":result["num_turns"]})
+  # Provider-reported metadata: what distinguishes a real CLI call from a mock in the exported bundle.
+  write(root / "claude-call.json", {"proposal":proposal, "turns":result["num_turns"],
+   "session_id":str(result.get("session_id", "not_reported")),
+   "model":",".join(sorted((result.get("modelUsage") or {}).keys())) or "not_reported",
+   "reported_cost_usd":result.get("total_cost_usd", "not_reported")})
   if (set(proposal) != {"file", "before_sha256", "acceptance", "change"}
    or proposal["file"] != "candidate.py" or proposal["before_sha256"] != sha(FIXTURE)
    or proposal["acceptance"] != ACCEPTANCE or not isinstance(proposal["change"], str)
@@ -95,10 +104,12 @@ def run(root, claude, codex):
    "Change only the operator in add from subtraction to addition. Do not access files, network, credentials, or other paths.")
   codex_result = call([codex, "exec", "--sandbox", "read-only", "--skip-git-repo-check", "--ephemeral", "--ignore-user-config", "-C", str(root), codex_prompt], cwd=root, timeout=120)
   generated = codex_result.stdout.strip() + "\n"
+  codex_version = call([codex, "--version"], cwd=root, timeout=15).stdout.strip()[:64]
   if generated != FIXED: raise ValueError("codex_output_out_of_scope")
   (root / "candidate.py").write_bytes(generated.encode("utf-8"))
   source = (root / "candidate.py").read_text(encoding="utf-8")
-  write(root / "implementation.json", {"provider":"codex-cli", "before_sha256":sha(FIXTURE), "after_sha256":sha(source), "file":"candidate.py"})
+  write(root / "implementation.json", {"provider":"codex-cli", "before_sha256":sha(FIXTURE), "after_sha256":sha(source), "file":"candidate.py",
+   "stdout_sha256":sha(codex_result.stdout), "cli_version":codex_version})
   assert q.finish("implement", "codex-cli", "disposable implementation", "implementation.json") == "awaiting_review"
   assert q.submit({"id":"verify", "role":"verifier", "action":"review", "goal":"Check disposable arithmetic fixture independently", "depth":2, "parent_id":"implement", "acceptance":[ACCEPTANCE]}) == "accepted"
   assert q.claim("verifier", "python-verifier", lease_seconds=300)
@@ -116,6 +127,10 @@ def run(root, claude, codex):
    "extra_usage_credits":"must_be_off_in_account_settings"}
   write(root / "proof.json", proof)
   if not passed or set(proof["statuses"].values()) != {"verified"}: raise AssertionError("experiment_failed")
+  # Hand the real outputs to the separate-identity verifier lane (verified in CI by `pi-verifier`, pinned code).
+  import subscription_bridge
+  bundle = subscription_bridge.export(root, root.name, proof_date())
+  (root / "bundle.json").write_text(json.dumps(bundle, sort_keys=True, indent=1) + "\n", encoding="utf-8")
   return proof
  finally: q.close()
 
