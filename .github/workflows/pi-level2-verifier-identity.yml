@@ -1,0 +1,47 @@
+name: PI Level 2 Verifier Identity Boundary
+# Separate OS identity for the verifier on a DISPOSABLE GitHub-hosted runner. Mock Claude/Codex stages only:
+# no provider credentials, no secrets, no network calls from candidate code, zero paid usage, no deploy, no merge.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'pi/level2/**'
+      - '.github/workflows/pi-level2-verifier-identity.yml'
+permissions:
+  contents: read
+concurrency:
+  group: pi-level2-verifier-identity-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verifier-identity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Negative control - suite must FAIL before the boundary exists
+        run: |
+          set +e
+          /usr/bin/python3 pi/level2/verifier-identity-test.py > pre.log 2>&1
+          rc=$?
+          set -e
+          cat pre.log
+          test "$rc" -eq 1
+          grep -q "FAIL: verifier boundary unavailable" pre.log
+          echo "negative control OK: missing boundary fails the suite (exit $rc)"
+      - name: Record broker escalation paths before lockdown
+        run: |
+          id
+          sudo -n -l || true
+      - name: Provision verifier identity and remove broker escalation (root, before any candidate code)
+        run: sudo /usr/bin/python3 -I -S pi/level2/verifier_provision.py --broker-user "$(id -un)" --lockdown
+      - name: Confirm broker can no longer become root
+        run: |
+          id
+          if sudo -n true 2>/dev/null; then echo "broker still has root"; exit 1; fi
+          ls -l /etc/pi-level2/trust.json /opt/pi-level2-verifier
+          ls -ld /var/lib/pi-level2-verifier/keys
+      - name: Separate-identity verifier adversarial tests (fails if boundary is missing)
+        timeout-minutes: 8
+        run: /usr/bin/python3 pi/level2/verifier-identity-test.py

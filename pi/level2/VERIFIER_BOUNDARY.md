@@ -1,6 +1,30 @@
 # Level 2 verifier boundary and provider adapters
 
-Status: **simulated identity, real signatures, mock providers.** No provider is connected and no paid call is possible.
+Status: two lanes. **Simulated lane** (`verifier-boundary-test.py`): local fixture keys on one OS account, real signatures. **OS-user lane** (`verifier-identity-test.py`, implemented 2026-11-03, **Linux CI result pending**): the verifier runs as a separate OS account that holds the only copy of its key. Both lanes use mock providers. No provider is connected and no paid call is possible.
+
+## Separate OS identity (os-user lane)
+
+`verifier_provision.py` runs once as root on a **disposable** Linux runner, before any implementer or candidate code. It sets up:
+
+| Piece | Owner / mode | Purpose |
+|---|---|---|
+| `pi-verifier` user | system user, no login shell | the only account that can read the signing key |
+| `/var/lib/pi-level2-verifier/keys/verifier.key` | pi-verifier, 0600 in 0700 dir | Ed25519 key, generated *by* pi-verifier |
+| `pi-candidate` user | system user | runs untrusted candidate code |
+| `/opt/pi-level2-verifier/` | root, 0755/0644 | installed worker, harness, `run-candidate` wrapper; the broker cannot edit what pi-verifier runs |
+| `/etc/pi-level2/trust.json` | root, 0644 | registry binding the public key to `{"mode": "os-user", "user": "pi-verifier"}` |
+| `/etc/sudoers.d/pi-level2` | root, 0440 | broker → pi-verifier: only `python3 -I -S <installed worker> *`; pi-verifier → root: only `run-candidate` with no arguments |
+| `--lockdown` | | moves the broker's own passwordless sudo grants aside and stops docker, so the broker cannot reach the key through root |
+
+`run-candidate` runs the fixed harness as `pi-candidate`. It has no network and its own pid, mount, ipc and uts namespaces. Empty tmpfs mounts cover the verifier state dir, `/home`, `/tmp` and `/run`. It also sets CPU, memory, process and file limits, `no_new_privs`, and a 15 s hard kill. Source and inputs arrive on stdin. Every helper is called by absolute path with a pinned PATH.
+
+The broker policy is `run_verification(..., boundary="os-user", require_identity="os-user")`. It accepts only attestations whose registry entry (root-provisioned) and signed fields both say `os-user`. Anything else gets `identity_not_separate`, including a same-account key that is registered as a verifier, or one that claims os-user in the attestation. A missing boundary gives `verifier_boundary_unavailable` and verifies nothing. There is no fallback to the same-account mode. `attested_pass` / `queue_next_task` apply the same requirement to durable records. `load_registry(..., require_protected=True)` refuses a registry that any non-root account can write (`registry_not_protected`).
+
+The installed worker is always in os-user mode. It ignores caller-supplied `--key`/`--out`, refuses symlinked inputs (`O_NOFOLLOW`) and non-hex nonces, and never overwrites an earlier nonce's output. It exits 3 if any boundary precondition fails.
+
+**Fail-closed tests.** `verifier-identity-test.py` first checks every precondition from the broker account. Each failure exits 1 and lists what is missing: a distinct uid, an unreadable key, a protected registry, root-owned code, no broker sudo, no docker socket, and no arbitrary command as the verifier. The only skip is `PI_VERIFIER_BOUNDARY=optional`, which CI never sets. CI runs the suite once **before** provisioning as a negative control that must fail. `verifier-boundary-test.py` now also fails when namespaces are unavailable, unless `PI_ALLOW_UNISOLATED_HARNESS=1` explicitly opts into the degraded simulated lane.
+
+**What the os-user lane still does not establish:** the verifier code is installed from the same PR checkout it tests. The boundary holds only from provisioning onward, and a hostile PR could change the provisioner itself. Pinning the verifier code to `main` or a separate repository is the next step. The identity is an OS account on one ephemeral VM, not a hardware or externally issued key. Root on that VM can still read the key.
 
 ## What is enforced
 
@@ -43,7 +67,7 @@ Candidate interfaces are Claude Code headless mode and Codex CLI non-interactive
 
 ## Owner-gated dependencies for real (non-simulated) independence
 
-1. A separate runner or OS account for the verifier, holding its key: for example, a separate GitHub environment with required reviewers, or a disposable VM.
+1. ~~A separate OS account for the verifier, holding its key~~: implemented as the os-user lane on a disposable CI VM (CI result pending). Still open: verifier code pinned outside the PR under test, and a separate runner/VM so that root on the implementer's machine cannot read the key.
 2. A key bound to that identity (an environment secret or OIDC-issued signing), plus a registry change process the implementer cannot write to.
 3. Provider runner configuration and an explicit spending authorization replacing the `reserve_paid_call` denial.
 

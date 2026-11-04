@@ -14,8 +14,13 @@ from verifier_worker import canonical, sign
 import verifier_worker as vw
 HARNESS_MODE = vw.harness_prefix([])[1]
 import os
-if os.environ.get("PI_REQUIRE_HARNESS_ISOLATION") == "1" and HARNESS_MODE != "ns-hidden":
- raise SystemExit("FAIL: PI_REQUIRE_HARNESS_ISOLATION=1 but this host cannot isolate the harness (mode=%s)" % HARNESS_MODE)
+# Fail closed by default: without namespace isolation the key-theft regression is not exercised, so the suite FAILS
+# unless degraded mode is explicitly requested (PI_ALLOW_UNISOLATED_HARNESS=1, printed in the PASS line).
+# The real separate-identity boundary is tested by verifier-identity-test.py, which has no degraded mode.
+DEGRADED_OPT_IN = os.environ.get("PI_ALLOW_UNISOLATED_HARNESS") == "1"
+if HARNESS_MODE != "ns-hidden" and not DEGRADED_OPT_IN:
+ raise SystemExit("FAIL: harness isolation unavailable on this host (mode=%s); set PI_ALLOW_UNISOLATED_HARNESS=1 "
+  "only for an explicitly degraded run" % HARNESS_MODE)
 ALLOW = HARNESS_MODE != "ns-hidden"  # explicit, recorded degraded mode only on hosts without namespaces
 
 
@@ -411,5 +416,6 @@ with tempfile.TemporaryDirectory() as tmp:
   q.close()
 
 print({"status": "PASS", "assertions": count, "identity": "simulated-local-ed25519", "harness_isolation": HARNESS_MODE,
- "key_theft_isolation_exercised": HARNESS_MODE == "ns-hidden", "paid_provider_calls": 0, "production_mutations": 0})
+ "key_theft_isolation_exercised": HARNESS_MODE == "ns-hidden", "degraded_opt_in": ALLOW,
+ "paid_provider_calls": 0, "production_mutations": 0})
 

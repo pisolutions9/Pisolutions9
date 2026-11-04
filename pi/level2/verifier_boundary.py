@@ -6,8 +6,11 @@ worker runs as a separate process (network namespace removed when available) and
 The broker accepts it only if the key is a registered verifier key, the signature verifies, the nonce is
 fresh and unused, and the queue and candidate still match what was challenged.
 
-IDENTITY IS SIMULATED: keys are local fixtures and the processes share one OS account. The signature
-boundary is real (Ed25519 via system openssl); the account/host isolation is not.
+Two identity modes. `simulated-local-key` (default, tests/dev): keys are local fixtures and the processes share one
+OS account. `os-user` (boundary="os-user"): the worker runs as the provisioned `pi-verifier` account whose key
+this broker account cannot read, and candidate code runs as `pi-candidate`. With require_identity="os-user",
+anything else is rejected (`identity_not_separate`), and an unavailable boundary fails closed
+(`verifier_boundary_unavailable`); there is no fallback to the simulated mode.
 """
 import hashlib
 import json
@@ -21,10 +24,15 @@ from pathlib import Path
 
 import handoff
 from queue_sqlite import Queue
+import verifier_worker as vw
 from verifier_worker import ATTESTATION_SCHEMA, canonical
 
 WORKER = Path(__file__).resolve().with_name("verifier_worker.py")
 TRUST_SCHEMA = "pi.level2.trust.v1"
+ISOLATED_HARNESS = ("ns-hidden", "os-user")
+INBOX = vw.STATE_DIR / "inbox"
+SYSTEM_PYTHON = "/usr/bin/python3"
+PROTECTED_REGISTRY = Path("/etc/pi-level2/trust.json")
 ATTESTATION_KEYS = {"schema", "identity_mode", "nonce", "task_id", "attempt", "key_id", "proposal_ref",
  "implementation_ref", "candidate_sha256", "acceptance", "exit_code", "candidate_sha256_after", "harness_isolation", "reason", "passed"}
 CHALLENGES = """CREATE TABLE IF NOT EXISTS verifier_challenges(
@@ -65,12 +73,36 @@ def key_id_for(pem):
 
 
 def write_registry(path, entries):
- """entries: list of (key_id, role, label, public_pem)."""
- keys = {kid: {"role": role, "label": label, "public_pem": pem} for kid, role, label, pem in entries}
+ """entries: list of (key_id, role, label, public_pem[, identity]). identity e.g. {"mode": "os-user", "user": ...}."""
+ keys = {}
+ for kid, role, label, pem, *identity in entries:
+  keys[kid] = {"role": role, "label": label, "public_pem": pem}
+  if identity:
+   keys[kid]["identity"] = identity[0]
  Path(path).write_text(json.dumps({"schema": TRUST_SCHEMA, "keys": keys}, sort_keys=True), encoding="ascii")
 
 
-def load_registry(path):
+def registry_protection_problems(path):
+ """A registry the implementer/broker account can write is not a trust root. [] means root-owned and read-only."""
+ if not hasattr(os, "getuid"):
+  return ["not_posix"]
+ problems = []
+ p = Path(path).resolve()
+ for node in [p, *p.parents]:
+  try:
+   st = os.lstat(node)
+  except OSError:
+   return ["missing:" + str(node)]
+  if st.st_uid != 0 or st.st_mode & 0o022:
+   problems.append("writable_by_non_root:" + str(node))
+ if os.access(p, os.W_OK) and os.getuid() != 0:
+  problems.append("writable_by_caller")
+ return problems
+
+
+def load_registry(path, require_protected=False):
+ if require_protected and registry_protection_problems(path):
+  raise BoundaryError("registry_not_protected")
  reg = json.loads(Path(path).read_text(encoding="ascii"))
  if reg.get("schema") != TRUST_SCHEMA or not isinstance(reg.get("keys"), dict):
   raise BoundaryError("bad_registry")
@@ -147,7 +179,37 @@ def isolation_prefix():
  return [], "process-only"
 
 
-def launch_verifier(inputs, key_path, key_id, out_dir, timeout=30):
+def launch_os_user_verifier(inputs, out_dir, user=vw.VERIFIER_USER, timeout=60):
+ """Run the installed worker as the separate verifier OS user. Never falls back to this account."""
+ nonce = json.loads((Path(inputs) / "challenge.json").read_text(encoding="ascii"))["nonce"]
+ if not vw.NONCE_RE.fullmatch(nonce):
+  raise BoundaryError("bad_nonce")
+ shared = INBOX / nonce
+ try:
+  shared.mkdir(mode=0o755)
+  os.chmod(shared, 0o755)
+  for f in Path(inputs).iterdir():
+   shutil.copyfile(f, shared / f.name)
+   os.chmod(shared / f.name, 0o644)
+ except OSError as exc:
+  raise BoundaryError("verifier_boundary_unavailable:inbox:" + type(exc).__name__)
+ proc = subprocess.run(["sudo", "-n", "-u", user, SYSTEM_PYTHON, "-I", "-S", str(vw.INSTALL_DIR / "verifier_worker.py"),
+  "--os-user", "--inputs", str(shared)], cwd="/", timeout=timeout, capture_output=True, text=True,
+  env={"PATH": "/usr/bin:/bin"})
+ if proc.returncode == 3 or (proc.returncode and "sudo:" in proc.stderr):
+  raise BoundaryError("verifier_boundary_unavailable:" + (proc.stderr.strip().splitlines() or ["?"])[-1][:200])
+ produced = vw.OS_OUT / nonce
+ if produced.is_dir():
+  # A broker-side copy; the verifier's own directory stays read-only to this account.
+  shutil.copytree(produced, out_dir)
+ return proc, "os-user:" + user
+
+
+def launch_verifier(inputs, key_path, key_id, out_dir, timeout=30, boundary=None, verifier_user=vw.VERIFIER_USER):
+ if boundary == "os-user":
+  return launch_os_user_verifier(inputs, out_dir, verifier_user)
+ if boundary is not None:
+  raise BoundaryError("unknown_boundary")
  prefix, mode = isolation_prefix()
  work = Path(tempfile.mkdtemp(prefix="pi-verifier-home-"))
  try:
@@ -159,7 +221,7 @@ def launch_verifier(inputs, key_path, key_id, out_dir, timeout=30):
  return proc, mode
 
 
-def accept_attestation(q, root, registry, out_dir, allow_unisolated=False):
+def accept_attestation(q, root, registry, out_dir, allow_unisolated=False, require_identity=None):
  """Return (accepted, reason, attestation). Accepting consumes the nonce exactly once."""
  _ensure(q)
  out_dir = Path(out_dir)
@@ -178,7 +240,10 @@ def accept_attestation(q, root, registry, out_dir, allow_unisolated=False):
   return False, "bad_signature", att
  if att["passed"] is not (att["reason"] == "ok" and att["exit_code"] == 0 and att["candidate_sha256_after"] == att["candidate_sha256"]):
   return False, "inconsistent_result", att
- if att["passed"] and att["harness_isolation"] != "ns-hidden" and not allow_unisolated:
+ if require_identity is not None and not separate_identity(entry, att, require_identity):
+  q._event(att["task_id"], "attestation_rejected", {"reason": "identity_not_separate", "nonce": att["nonce"]})
+  return False, "identity_not_separate", att
+ if att["passed"] and att["harness_isolation"] not in ISOLATED_HARNESS and not allow_unisolated:
   # Fail closed: an unisolated harness lets candidate code read the verifier key (see VERIFIER_BOUNDARY.md).
   q._event(att["task_id"], "attestation_rejected", {"reason": "harness_not_isolated", "nonce": att["nonce"]})
   return False, "harness_not_isolated", att
@@ -219,9 +284,19 @@ def accept_attestation(q, root, registry, out_dir, allow_unisolated=False):
  return True, att["reason"], att
 
 
-def run_verification(q, root, registry, broker_dir, key_path, key_id, acceptance, worker_label=None, mutate=None, ttl=60, allow_unisolated=False):
+def separate_identity(entry, att, required):
+ """The registry (root-provisioned) and the signed attestation must both say the separate identity was used."""
+ if required != "os-user":
+  return False
+ ident = entry.get("identity") or {}
+ return (ident.get("mode") == "os-user" and ident.get("user") == vw.VERIFIER_USER
+  and att.get("identity_mode") == "os-user" and att.get("harness_isolation") == "os-user")
+
+
+def run_verification(q, root, registry, broker_dir, key_path, key_id, acceptance, worker_label=None, mutate=None, ttl=60,
+  allow_unisolated=False, boundary=None, require_identity=None, verifier_user=vw.VERIFIER_USER):
  """Claim the verifier task, challenge, launch the worker, accept, then settle via queue review."""
- worker = worker_label or "verifier-" + key_id[:16]
+ worker = worker_label or "verifier-" + (key_id or boundary or "unknown")[:16]
  claim = q.claim("verifier", worker, lease_seconds=60)
  if not claim:
   raise BoundaryError("no_verifier_task")
@@ -236,10 +311,19 @@ def run_verification(q, root, registry, broker_dir, key_path, key_id, acceptance
   q.review(impl_id, "reviewer:attested-none", False, ref)
   return {"challenge": None, "accepted": False, "reason": "challenge_refused:" + str(exc), "passed": False, "isolation": None, "worker_exit": None}
  out = Path(broker_dir) / ("out-" + ch["nonce"])
- proc, mode = launch_verifier(inputs, key_path, key_id, out)
+ try:
+  proc, mode = launch_verifier(inputs, key_path, key_id, out, boundary=boundary, verifier_user=verifier_user)
+ except (BoundaryError, OSError, subprocess.TimeoutExpired) as exc:
+  # Fail closed: no fallback to a same-account verifier. The attempt is spent and recorded.
+  ref = "verifier-boundary-unavailable:" + ch["nonce"]
+  q.finish(claim["id"], worker, "boundary unavailable", ref)
+  q.review(claim["id"], "reviewer:broker", False, ref)
+  q.review(impl_id, "reviewer:attested-none", False, ref)
+  return {"challenge": ch, "accepted": False, "reason": "verifier_boundary_unavailable", "detail": str(exc)[:300],
+   "passed": False, "isolation": None, "worker_exit": None}
  if mutate:
   mutate(ch, out)
- accepted, reason, att = accept_attestation(q, root, registry, out, allow_unisolated)
+ accepted, reason, att = accept_attestation(q, root, registry, out, allow_unisolated, require_identity)
  passed = bool(accepted and att["passed"])
  ref = "verifier-attestation:" + ch["nonce"]
  q.finish(claim["id"], worker, "attestation " + ("accepted" if accepted else "rejected") + ":" + reason, ref)
@@ -254,7 +338,7 @@ NEXT_TASK = {"id": "next-regression", "role": "claude", "action": "plan", "depth
  "acceptance": ["One case, fixture-only, no new permissions"]}
 
 
-def attested_pass(q, registry, implementation_id, allow_unisolated=False):
+def attested_pass(q, registry, implementation_id, allow_unisolated=False, require_identity=None):
  """Re-verify a durable result from the database and trust registry alone. Row flags are never trusted."""
  _ensure(q)
  row = _row(q, implementation_id)
@@ -277,7 +361,9 @@ def attested_pass(q, registry, implementation_id, allow_unisolated=False):
   return False
  if att["nonce"] != nonce or att["task_id"] != ch["task_id"] or att["passed"] is not True or att["reason"] != "ok":
   return False
- if att["harness_isolation"] != "ns-hidden" and not allow_unisolated:
+ if att["harness_isolation"] not in ISOLATED_HARNESS and not allow_unisolated:
+  return False
+ if require_identity is not None and not separate_identity(entry, att, require_identity):
   return False
  child = _row(q, att["task_id"])
  if not child or child["role"] != "verifier" or child["parent_id"] != implementation_id or child["status"] != "verified":
@@ -285,9 +371,9 @@ def attested_pass(q, registry, implementation_id, allow_unisolated=False):
  return att["implementation_ref"] == ch["implementation_ref"] == row["evidence_ref"]
 
 
-def queue_next_task(q, implementation_id, registry, allow_unisolated=False):
+def queue_next_task(q, implementation_id, registry, allow_unisolated=False, require_identity=None):
  """Durable result -> next bounded task: only after the stored attestation re-verifies against the registry."""
- if not attested_pass(q, registry, implementation_id, allow_unisolated):
+ if not attested_pass(q, registry, implementation_id, allow_unisolated, require_identity):
   return "not_attested"
  return q.submit(dict(NEXT_TASK))
 

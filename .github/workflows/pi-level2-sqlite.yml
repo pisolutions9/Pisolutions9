@@ -24,8 +24,12 @@ jobs:
         run: python3 pi/level2/experiment-test.py
       - name: Run structured handoff adversarial tests
         run: python3 pi/level2/handoff-test.py
-      - name: Run signed verifier boundary adversarial tests
+      - name: Run signed verifier boundary adversarial tests (simulated identity, explicit degraded harness)
         timeout-minutes: 8
+        # This lane has no namespace isolation (Ubuntu 24.04 AppArmor). The suite fails closed without this opt-in;
+        # the real separate-identity boundary is gated by pi-level2-verifier-identity.yml.
+        env:
+          PI_ALLOW_UNISOLATED_HARNESS: '1'
         run: python3 pi/level2/verifier-boundary-test.py
       - name: Run disabled provider adapter tests
         run: python3 pi/level2/providers-test.py
